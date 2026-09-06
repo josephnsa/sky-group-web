@@ -1,0 +1,13 @@
+---
+import { IconSun, IconMoon } from "./icons/ui";
+---
+
+<button
+  id="theme-toggle"
+  type="button"
+  aria-label="Cambiar tema claro/oscuro"
+  class="rounded-md p-2.5 text-white/90 transition-colors duration-200 hover:bg-white/15 hover:text-white"
+>
+  <IconSun class="h-5 w-5 dark:hidden" />
+  <IconMoon class="hidden h-5 w-5 dark:block" />
+</button>

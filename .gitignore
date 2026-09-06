@@ -1,0 +1,43 @@
+# build output
+dist/
+dev-dist/
+# generated types
+.astro/
+
+# dependencies
+node_modules/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# environment variables
+.env
+.env.production
+
+# macOS-specific files
+.DS_Store
+
+# jetbrains setting folder
+.idea/
+
+# secretos y credenciales — nunca deben subirse
+client_secret_*.json
+*.pem
+*.key
+
+# documentos fuente del negocio (planificación interna, no código del sitio;
+# ya procesados hacia public/images/ y src/data/catalog.ts)
+PRESENTACION SKY GROUP 2026.pptx
+CATEGORIA PRODUCTOS.xlsx
+ImagenCarruselprincipal.jpg
+image.png
+/imagenes/
+
+# skills/config de Claude Code — herramienta local, no parte del sitio
+.claude/
+.agents/
+skills-lock.json

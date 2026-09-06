@@ -1,0 +1,55 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import CatalogoInteractivo from "../../../components/CatalogoInteractivo";
+import { iconoDeCategoria } from "../../../components/icons/categorias";
+import { getCategorias, getProductosPorCategoria, getFotoCategoria } from "../../../data/catalog";
+
+export function getStaticPaths() {
+  return getCategorias().map((c) => ({
+    params: { categoria: c.slug },
+    props: { nombreCategoria: c.categoria, subcategorias: c.subcategorias },
+  }));
+}
+
+const { categoria } = Astro.params;
+const { nombreCategoria, subcategorias } = Astro.props;
+const productos = getProductosPorCategoria(categoria!);
+const Icono = iconoDeCategoria(nombreCategoria);
+const foto = getFotoCategoria(nombreCategoria);
+---
+
+<Layout title={nombreCategoria}>
+  <div class="border-b border-neutral-200 bg-gradient-to-r from-brand-blue/10 to-brand-green/10 dark:border-neutral-800 dark:from-brand-blue/5 dark:to-brand-green/5">
+    <div class="mx-auto max-w-7xl px-4 py-10">
+      <nav class="text-sm text-neutral-500 dark:text-neutral-400">
+        <a href="/catalogo" class="hover:underline">Catálogo</a> / {nombreCategoria}
+      </nav>
+      <div class="mt-2 flex items-center gap-3">
+        {foto ? (
+          <img src={foto} alt="" aria-hidden="true" class="h-11 w-11 flex-none rounded-full object-cover ring-1 ring-black/5" />
+        ) : (
+          <span class="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-brand-blue text-white">
+            <Icono class="h-6 w-6" />
+          </span>
+        )}
+        <h1 class="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white sm:text-4xl lg:text-5xl">{nombreCategoria}</h1>
+      </div>
+
+      {
+        subcategorias.length > 0 && (
+          <div class="mt-4 flex flex-wrap gap-2">
+            {subcategorias.map((s: string) => (
+              <span class="rounded-full bg-white px-3 py-1 text-xs font-medium text-neutral-700 shadow-sm dark:bg-neutral-800 dark:text-neutral-300">
+                {s}
+              </span>
+            ))}
+          </div>
+        )
+      }
+    </div>
+  </div>
+
+  <section class="mx-auto max-w-7xl px-4 py-10 sm:py-12">
+    <CatalogoInteractivo client:load productos={productos} />
+  </section>
+</Layout>

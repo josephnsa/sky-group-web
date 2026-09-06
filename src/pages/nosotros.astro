@@ -1,0 +1,128 @@
+---
+import Layout from "../layouts/Layout.astro";
+import MarcasSection from "../components/MarcasSection.astro";
+import { NEGOCIO, SITE, SUCURSALES } from "../consts";
+
+// Misión, Visión, Valores e Historia: texto real de "PRESENTACION SKY
+// GROUP 2026.pptx" (diapositivas 5, 6 y 7), no un borrador genérico.
+const VALORES = [
+  { titulo: "Compromiso", desc: "Nos involucramos con las necesidades de nuestros clientes." },
+  { titulo: "Calidad", desc: "Buscamos ofrecer productos confiables, prácticos y funcionales." },
+  { titulo: "Servicio", desc: "Brindamos atención cercana y personalizada." },
+  { titulo: "Innovación", desc: "Buscamos nuevas soluciones y productos para el mercado automotriz." },
+  { titulo: "Confianza", desc: "Construimos relaciones basadas en transparencia y responsabilidad." },
+];
+
+// "¿Por qué SKY?" — los 6 bloques visuales que pide la presentación
+// (diapositiva 17), con descripciones tal cual las trae la fuente donde
+// las hay.
+const RAZONES = [
+  { titulo: "Amplio portafolio de productos", desc: "Productos y soluciones para diferentes tipos de vehículos." },
+  { titulo: "Atención personalizada", desc: "Asesoría para ayudarte a encontrar el producto adecuado." },
+  { titulo: "Calidad y funcionalidad", desc: "Productos seleccionados para responder a diferentes necesidades." },
+  { titulo: "Venta mayorista y minorista", desc: "Atendemos tanto a clientes particulares como a negocios y distribuidores." },
+  { titulo: "Distribución nacional", desc: "Distribuimos nuestros productos a todo el Perú y fronteras." },
+  { titulo: "Experiencia en el sector automotriz", desc: "Trayectoria dedicada al mercado automotriz peruano." },
+];
+---
+
+<Layout title="Nosotros">
+  <section class="bg-gradient-to-br from-brand-blue to-brand-green">
+    <div class="mx-auto max-w-3xl px-4 py-16 text-center text-white sm:py-24">
+      <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl">Nosotros</h1>
+      <p class="mt-3 text-white/90">
+        {SITE.nombre} es una empresa peruana líder en la importación,
+        comercialización y distribución de accesorios y equipamiento para
+        vehículos, con atención directa y personalizada por WhatsApp para
+        clientes mayoristas y minoristas.
+      </p>
+    </div>
+  </section>
+
+  <section class="mx-auto grid max-w-5xl gap-6 px-4 py-12 sm:grid-cols-2 sm:py-16">
+    <div data-reveal class="rounded-lg border-t-4 border-t-brand-blue border-x border-b border-x-neutral-200 border-b-neutral-200 p-6 dark:border-x-neutral-800 dark:border-b-neutral-800 dark:bg-neutral-900">
+      <h2 class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">Misión</h2>
+      <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+        Nuestra principal misión es brindar soluciones integrales para
+        vehículos a través de productos de calidad, variedad y
+        funcionalidad, acompañados de una atención personalizada y
+        eficiente. Trabajamos para satisfacer las necesidades de nuestros
+        clientes, ofreciendo asesoría, confianza y soluciones que aporten
+        valor a cada vehículo.
+      </p>
+    </div>
+    <div data-reveal style="transition-delay: 120ms" class="rounded-lg border-t-4 border-t-brand-green border-x border-b border-x-neutral-200 border-b-neutral-200 p-6 dark:border-x-neutral-800 dark:border-b-neutral-800 dark:bg-neutral-900">
+      <h2 class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">Visión</h2>
+      <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+        Ser una empresa referente en el mercado automotriz nacional e
+        internacional, reconocida por la calidad y variedad de nuestros
+        productos, la excelencia de nuestro servicio y nuestra capacidad
+        para brindar soluciones innovadoras para todo tipo de vehículos.
+      </p>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-5xl px-4 pb-12 sm:pb-16">
+    <h2 class="border-l-4 border-brand-green pl-3 text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">Nuestra historia</h2>
+    <p data-reveal class="mt-4 max-w-3xl text-sm text-neutral-600 dark:text-neutral-400">
+      SKY Group nació con el objetivo de brindar soluciones y accesorios
+      para el mercado automotriz peruano. A lo largo de los años, hemos
+      ampliado nuestro portafolio y desarrollado nuevas líneas de
+      productos, atendiendo las necesidades tanto de clientes particulares
+      como de negocios y distribuidores. Hoy continuamos creciendo,
+      incorporando nuevos productos y fortaleciendo nuestra atención y
+      distribución para ofrecer cada vez más alternativas para diferentes
+      tipos de vehículos y necesidades.
+    </p>
+  </section>
+
+  <section class="mx-auto max-w-5xl px-4 pb-12 sm:pb-16">
+    <h2 class="border-l-4 border-brand-blue pl-3 text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">Valores</h2>
+    <div class="mt-4 grid gap-4 sm:grid-cols-3">
+      {
+        VALORES.map((v, i) => (
+          <div data-reveal style={`transition-delay: ${i * 100}ms`} class="rounded-lg bg-neutral-50 p-5 dark:bg-neutral-900">
+            <span
+              class={`mb-2 block h-1.5 w-8 rounded-full ${
+                i % 3 === 0 ? "bg-brand-blue" : i % 3 === 1 ? "bg-brand-green" : "bg-brand-gray"
+              }`}
+            />
+            <p class="font-semibold text-neutral-900 dark:text-white">{v.titulo}</p>
+            <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{v.desc}</p>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-5xl px-4 pb-12 sm:pb-16">
+    <h2 class="border-l-4 border-brand-green pl-3 text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">¿Por qué SKY?</h2>
+    <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        RAZONES.map((r, i) => (
+          <div data-reveal style={`transition-delay: ${i * 90}ms`} class="flex gap-3 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
+            <span class={`mt-1 h-2 w-2 flex-none rounded-full ${i % 2 === 0 ? "bg-brand-blue" : "bg-brand-green"}`} />
+            <div>
+              <p class="font-semibold text-neutral-900 dark:text-white">{r.titulo}</p>
+              <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{r.desc}</p>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <MarcasSection />
+
+  <section class="mx-auto max-w-5xl px-4 pb-16 sm:pb-24">
+    <h2 class="border-l-4 border-brand-blue pl-3 text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">Nuestra ubicación</h2>
+    <div class="mt-4 space-y-2 text-sm text-neutral-600 dark:text-neutral-400">
+      {SUCURSALES.map((s) => <p>{s.nombre}: {s.direccion} ({s.horario})</p>)}
+      {NEGOCIO.mapsUrl && (
+        <a href={NEGOCIO.mapsUrl} target="_blank" rel="noopener noreferrer" class="inline-block font-medium text-brand-blue-dark hover:underline dark:text-brand-blue">
+          Ver en Google Maps →
+        </a>
+      )}
+    </div>
+  </section>
+</Layout>

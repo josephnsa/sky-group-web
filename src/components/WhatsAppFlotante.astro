@@ -1,0 +1,20 @@
+---
+import { NEGOCIO } from "../consts";
+
+const mensaje = encodeURIComponent(
+  `Hola ${NEGOCIO.razonSocial}, quisiera hacer una consulta.`,
+);
+---
+
+<a
+  href={`https://wa.me/${NEGOCIO.whatsappNumero}?text=${mensaje}`}
+  target="_blank"
+  rel="noopener noreferrer"
+  aria-label="Escribir por WhatsApp"
+  class="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-green-600 text-white shadow-lg transition-transform duration-300 hover:scale-110 hover:bg-green-700 active:scale-95"
+>
+  <span class="absolute inset-0 -z-10 animate-ping rounded-full bg-green-500 opacity-75"></span>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" class="h-8 w-8" fill="currentColor">
+    <path d="M16.001 3C9.11 3 3.5 8.611 3.5 15.5c0 2.316.63 4.484 1.727 6.345L3 29l7.328-2.19A12.44 12.44 0 0 0 16 28.5C22.89 28.5 28.5 22.889 28.5 16S22.891 3 16.001 3Zm0 22.75c-1.998 0-3.86-.55-5.457-1.503l-.39-.232-4.35 1.3 1.318-4.24-.254-.402a10.2 10.2 0 0 1-1.618-5.523c0-5.68 4.62-10.3 10.751-10.3 5.68 0 10.3 4.62 10.3 10.3s-4.62 10.3-10.3 10.3ZM21.6 18.9c-.31-.155-1.837-.907-2.122-1.011-.285-.104-.492-.155-.699.155-.207.31-.803 1.01-.984 1.218-.181.207-.362.233-.672.078-.31-.155-1.31-.483-2.495-1.539-.923-.823-1.547-1.84-1.728-2.15-.181-.31-.02-.478.136-.633.14-.14.31-.362.465-.543.155-.181.207-.31.31-.517.104-.207.052-.388-.026-.543-.078-.155-.699-1.686-.958-2.31-.252-.606-.508-.524-.699-.534l-.595-.01a1.14 1.14 0 0 0-.828.388c-.285.31-1.088 1.063-1.088 2.594 0 1.53 1.114 3.01 1.269 3.218.155.207 2.192 3.348 5.313 4.694.742.32 1.322.512 1.774.655.746.237 1.424.204 1.961.124.598-.09 1.837-.751 2.096-1.476.259-.725.259-1.347.181-1.476-.078-.13-.284-.207-.594-.362Z"/>
+  </svg>
+</a>

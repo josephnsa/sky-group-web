@@ -1,0 +1,72 @@
+---
+import {
+  MEDIOS_DE_PAGO,
+  NEGOCIO,
+  REDES_SOCIALES,
+  SITE,
+  SUCURSALES,
+} from "../consts";
+
+const anio = new Date().getFullYear();
+const redesActivas = Object.entries(REDES_SOCIALES).filter(([, url]) => url);
+---
+
+<footer class="bg-neutral-900 text-neutral-300">
+  <div class="h-1 w-full bg-gradient-to-r from-brand-blue to-brand-green"></div>
+  <div class="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:grid-cols-2 sm:py-16 lg:grid-cols-4">
+    <div>
+      <img src="/images/brand/logo-blanco.png" alt={SITE.nombre} class="h-9 w-auto" />
+      <p class="mt-3 text-sm text-neutral-400">{SITE.descripcion}</p>
+    </div>
+
+    <div>
+      <p class="font-semibold text-white">Contacto</p>
+      <ul class="mt-2 space-y-1 text-sm text-neutral-400">
+        <li>Tel: {NEGOCIO.telefono}</li>
+        <li>Correo: {NEGOCIO.correo}</li>
+        {SUCURSALES.map((s) => (
+          <li>{s.nombre}: {s.direccion}</li>
+        ))}
+      </ul>
+    </div>
+
+    <div>
+      <p class="font-semibold text-white">Medios de pago</p>
+      <ul class="mt-2 space-y-1 text-sm text-neutral-400">
+        {MEDIOS_DE_PAGO.map((m) => <li>{m}</li>)}
+      </ul>
+    </div>
+
+    <div>
+      <p class="font-semibold text-white">Enlaces</p>
+      <ul class="mt-2 space-y-1 text-sm">
+        <li><a class="text-neutral-400 transition-colors duration-200 hover:text-brand-blue hover:underline" href="/nosotros">Nosotros</a></li>
+        <li><a class="text-neutral-400 transition-colors duration-200 hover:text-brand-blue hover:underline" href="/contacto">Contacto</a></li>
+        <li><a class="text-neutral-400 transition-colors duration-200 hover:text-brand-blue hover:underline" href="/medios-de-pago">Medios de pago</a></li>
+        <li>
+          <a class="font-medium text-white transition-colors duration-200 hover:text-brand-blue hover:underline" href="/libro-de-reclamaciones">
+            Libro de Reclamaciones Virtual
+          </a>
+        </li>
+      </ul>
+      {redesActivas.length > 0 && (
+        <div class="mt-4 flex gap-3">
+          {redesActivas.map(([nombre, url]) => (
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-sm text-neutral-400 transition-colors duration-200 hover:text-brand-blue hover:underline capitalize"
+            >
+              {nombre}
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+
+  <div class="border-t border-neutral-800 px-4 py-4 text-center text-xs text-neutral-500">
+    © {anio} {NEGOCIO.razonSocial}. Todos los derechos reservados.
+  </div>
+</footer>

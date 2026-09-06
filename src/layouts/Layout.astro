@@ -1,0 +1,156 @@
+---
+import "../styles/global.css";
+import { ClientRouter } from "astro:transitions";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import WhatsAppFlotante from "../components/WhatsAppFlotante.astro";
+import { NEGOCIO, SITE } from "../consts";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title, description = SITE.descripcion } = Astro.props;
+const tituloCompleto = title ? `${title} | ${SITE.nombre}` : SITE.nombre;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <script is:inline>
+      // Se ejecuta lo antes posible para evitar el "flash" de tema incorrecto.
+      function aplicarTema() {
+        var stored = localStorage.getItem('theme');
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var isDark = stored ? stored === 'dark' : prefersDark;
+        document.documentElement.classList.toggle('dark', isDark);
+      }
+      aplicarTema();
+      // Astro (ClientRouter) reemplaza los atributos de <html> con los de la
+      // página recién cargada en cada transición, perdiendo la clase "dark"
+      // aplicada por JS — hay que reaplicarla después de cada swap.
+      document.addEventListener('astro:after-swap', aplicarTema);
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/icons/favicon-64.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="theme-color" content="#00afef" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    {
+      /* @vite-pwa/astro no inyecta automáticamente el registro del service
+      worker en esta versión de Astro, así que se hace manualmente. En build
+      de producción el propio plugin genera /registerSW.js; en `astro dev`
+      (con devOptions.enabled) el service worker vive en /dev-sw.js?dev-sw. */
+    }
+    {
+      import.meta.env.DEV ? (
+        <script is:inline type="module">
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/dev-sw.js?dev-sw', { type: 'module' });
+          }
+        </script>
+      ) : (
+        <script src="/registerSW.js" is:inline></script>
+      )
+    }
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <title>{tituloCompleto}</title>
+    <ClientRouter />
+    <script is:inline>
+      // Delegado en document para que sobreviva a las transiciones de página
+      // de Astro (el botón se reemplaza en el DOM en cada navegación, pero
+      // un listener delegado en document no se pierde).
+      document.addEventListener('click', (e) => {
+        const btn = e.target instanceof Element ? e.target.closest('#theme-toggle') : null;
+        if (!btn) return;
+        const isDark = document.documentElement.classList.toggle('dark');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      });
+    </script>
+    <script is:inline>
+      // Mega-menu "Categorías" de escritorio: al pasar el mouse/foco por una
+      // fila de la columna izquierda, se muestra el panel de subcategorías
+      // correspondiente a la derecha (referencia: tirerack.com "Shop
+      // Products"). Sin dependencias — solo togglear [hidden] por delegación,
+      // igual que el resto de scripts de este layout.
+      function activarCategoriaMega(slug) {
+        var menu = document.getElementById('mega-menu-categorias');
+        if (!menu) return;
+        menu.querySelectorAll('[data-mega-trigger]').forEach(function (el) {
+          el.setAttribute('aria-current', el.getAttribute('data-mega-trigger') === slug ? 'true' : 'false');
+        });
+        menu.querySelectorAll('[data-mega-panel]').forEach(function (el) {
+          el.hidden = el.getAttribute('data-mega-panel') !== slug;
+        });
+      }
+      document.addEventListener('mouseover', (e) => {
+        const trigger = e.target instanceof Element ? e.target.closest('[data-mega-trigger]') : null;
+        if (trigger) activarCategoriaMega(trigger.getAttribute('data-mega-trigger'));
+      });
+      document.addEventListener('focusin', (e) => {
+        const trigger = e.target instanceof Element ? e.target.closest('[data-mega-trigger]') : null;
+        if (trigger) activarCategoriaMega(trigger.getAttribute('data-mega-trigger'));
+      });
+    </script>
+    <script is:inline>
+      // Menú "Categorías" de escritorio (<details>): cerrarlo al hacer clic
+      // afuera o al presionar Escape — el navegador no lo hace solo.
+      document.addEventListener('click', (e) => {
+        const detalle = document.getElementById('menu-categorias-desktop');
+        if (!detalle || !detalle.open) return;
+        if (e.target instanceof Element && detalle.contains(e.target)) return;
+        detalle.open = false;
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        const detalle = document.getElementById('menu-categorias-desktop');
+        if (detalle) detalle.open = false;
+      });
+    </script>
+    <script is:inline>
+      // Revelado al hacer scroll: observa cualquier [data-reveal] y agrega
+      // .revealed cuando entra en pantalla. "astro:page-load" corre tanto en
+      // la carga inicial como después de cada transición de página, así que
+      // los elementos de la página nueva también quedan observados.
+      function iniciarScrollReveal() {
+        var elementos = document.querySelectorAll('[data-reveal]:not(.revealed)');
+        if (!elementos.length) return;
+        var obs = new IntersectionObserver(
+          function (entradas) {
+            entradas.forEach(function (entrada) {
+              if (entrada.isIntersecting) {
+                entrada.target.classList.add('revealed');
+                obs.unobserve(entrada.target);
+              }
+            });
+          },
+          { threshold: 0.15 },
+        );
+        elementos.forEach(function (el) {
+          obs.observe(el);
+        });
+      }
+      document.addEventListener('astro:page-load', iniciarScrollReveal);
+    </script>
+  </head>
+  <body class="flex min-h-screen flex-col bg-white text-neutral-900 transition-colors duration-300 dark:bg-neutral-950 dark:text-neutral-100">
+    {
+      /* Franja de anuncio arriba de todo (referencia: gpc.pe) — mensajes
+      reales confirmados en "PRESENTACION SKY GROUP 2026.pptx" (diapositiva
+      17: "distribución al nivel nacional", "atención personalizada"), no
+      un texto inventado tipo "envíos gratis" que el negocio no confirmó. */
+    }
+    <div class="bg-brand-blue-dark py-1.5 text-center text-xs font-semibold uppercase tracking-wide text-white">
+      Distribución a nivel nacional · Atención personalizada por WhatsApp: {NEGOCIO.telefono}
+    </div>
+    <Header />
+    <main class="flex-1">
+      <slot />
+    </main>
+    <Footer />
+    <WhatsAppFlotante />
+  </body>
+</html>

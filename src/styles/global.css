@@ -1,0 +1,67 @@
+@import "tailwindcss";
+/* Fuente propia self-hosted (sin depender de Google Fonts en runtime — sigue
+   funcionando offline con el PWA), variable así que un solo archivo cubre
+   todos los pesos. */
+@import "@fontsource-variable/manrope";
+
+/* Modo oscuro activado por clase (.dark en <html>), no solo por preferencia
+   del sistema, para que el botón de tema en el header pueda controlarlo. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* Valores exactos del manual de marca oficial ("PRESENTACION SKY GROUP
+     2026.pptx", diapositiva 12) — antes eran un muestreo aproximado del
+     logo en PNG, muy cercano pero no idéntico. */
+  --color-brand-blue: #00afef;
+  --color-brand-blue-dark: #0088ba;
+  --color-brand-green: #8fc74a;
+  --color-brand-green-dark: #6d9839;
+  --color-brand-gray: #888888;
+  --font-sans: "Manrope Variable", ui-sans-serif, system-ui, sans-serif;
+
+  /* Elevación: sombra tintada de marca para CTAs, distinta de la escala
+     neutra por defecto de Tailwind que ya se usa en tarjetas. */
+  --shadow-brand: 0 10px 30px -10px rgb(0 175 239 / 0.35);
+  --shadow-brand-green: 0 10px 30px -10px rgb(143 199 74 / 0.35);
+
+  /* Vocabulario de movimiento compartido entre CSS y framer-motion (ver
+     src/lib/motion.ts, mismos valores en JS) para que ambos sistemas se
+     muevan al mismo ritmo en vez de divergir componente por componente. */
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 450ms;
+  --ease-brand: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Revelado al hacer scroll: cualquier elemento con [data-reveal] arranca
+   invisible/desplazado y un IntersectionObserver (ver Layout.astro) agrega
+   .revealed cuando entra en pantalla. */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+[data-reveal].revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@keyframes pop {
+  0% { scale: 1; }
+  50% { scale: 1.35; }
+  100% { scale: 1; }
+}
+.animate-pop {
+  animation: pop 0.35s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .animate-pop {
+    animation: none;
+  }
+}
