@@ -1,0 +1,424 @@
+---
+// Auto 3D real (glTF) armándose por piezas, renderizado con Three.js.
+// Reemplaza el intento anterior con una foto 2D: el usuario pidió
+// explícitamente que la animación fuera en 3D de verdad, porque una imagen
+// plana no puede mostrar piezas acercándose con profundidad real desde
+// distintos ángulos — eso es justo lo que sí permite un modelo 3D.
+//
+// Modelo: "sedan-sports.glb" del Car Kit de Kenney (kenney.nl/assets/car-kit),
+// licencia CC0 (uso comercial libre, sin atribución obligatoria). El modelo
+// ya trae la carrocería, el alerón y las 4 ruedas como nodos separados. Las
+// puertas vienen fundidas al cuerpo (normal en un kit low-poly de juego) —
+// se agregan a mano como dos paneles de geometría Three.js reusando el
+// material real de la carrocería, en vez de depender de otro asset externo.
+---
+
+<div class="auto-armado-wrap relative mx-auto w-full max-w-lg sm:max-w-xl" aria-hidden="true">
+  <div class="auto3d-lienzo relative aspect-[16/10] w-full overflow-hidden rounded-2xl">
+    <canvas class="auto3d-canvas block h-full w-full"></canvas>
+  </div>
+  <div class="sombra-piso-foto"></div>
+</div>
+
+<style>
+  .auto-armado-wrap {
+    transition: opacity 0.4s ease;
+  }
+  .auto-armado-wrap.desvanecer {
+    opacity: 0;
+  }
+
+  .sombra-piso-foto {
+    position: absolute;
+    left: 14%;
+    right: 14%;
+    bottom: 6%;
+    height: 20px;
+    border-radius: 999px;
+    background: radial-gradient(ellipse, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0) 72%);
+    filter: blur(2px);
+    opacity: 0;
+    animation: fade-sombra-foto 1s ease-out 0.5s forwards;
+  }
+  @keyframes fade-sombra-foto {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sombra-piso-foto {
+      animation: none !important;
+      opacity: 1 !important;
+    }
+  }
+</style>
+
+<script>
+  import * as THREE from "three";
+  import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+  import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+
+  const NOMBRES_PIEZAS = [
+    "body",
+    "door-left",
+    "door-right",
+    "spoiler",
+    "wheel-front-left",
+    "wheel-front-right",
+    "wheel-back-left",
+    "wheel-back-right",
+  ];
+  const INTERVALO_MS = 12000;
+
+  function easeOutExpo(t: number) {
+    return t >= 1 ? 1 : 1 - Math.pow(2, -10 * t);
+  }
+  function easeOutBack(t: number) {
+    const c1 = 1.7;
+    const c3 = c1 + 1;
+    const x = Math.min(Math.max(t, 0), 1);
+    return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
+  }
+
+  interface Pieza {
+    obj: THREE.Object3D;
+    posFinal: THREE.Vector3;
+    rotFinalY: number;
+    desde: THREE.Vector3;
+    giroExtra: number;
+    retraso: number;
+    duracion: number;
+  }
+
+  let limpiarAnterior: (() => void) | undefined;
+
+  async function iniciarAuto3D() {
+    limpiarAnterior?.();
+
+    const contenedor = document.querySelector<HTMLElement>(".auto-armado-wrap");
+    const lienzo = document.querySelector<HTMLDivElement>(".auto3d-lienzo");
+    const canvas = document.querySelector<HTMLCanvasElement>(".auto3d-canvas");
+    if (!contenedor || !lienzo || !canvas) return;
+
+    const reducirMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    // Tone mapping "de cine" (el mismo que usa la mayoría de escenas Three.js
+    // que se ven pulidas) en vez del render plano por defecto — sube el
+    // contraste y satura los brillos de forma más natural.
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+    // Arranca la descarga del modelo YA, en paralelo con la generación del
+    // mapa de entorno (más abajo, después de enganchar el observer) — ver
+    // nota más abajo sobre por qué el orden importa para el arranque del
+    // intervalo de 12s.
+    const cargaModelo = new GLTFLoader().loadAsync("/models/sedan-sports.glb");
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+    // El near/far se recalcula según el tamaño real del modelo una vez
+    // cargado (más abajo) — un valor fijo asume una escala de unidades que
+    // no todos los modelos comparten (bug real encontrado con un modelo
+    // FBX ~1000x más grande de lo esperado: quedaba fuera del far plane y
+    // no se veía nada, pantalla negra).
+
+    // Iluminación de "estudio" (una luz dramática marcando el filo del
+    // techo/capó, ambiente bajo para que haya contraste real).
+    scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+    const luzBorde = new THREE.DirectionalLight(0xcfe6ff, 3.4);
+    luzBorde.position.set(-4, 6, -5); // detrás/arriba, del lado opuesto a la cámara
+    scene.add(luzBorde);
+    const luzRelleno = new THREE.DirectionalLight(0xffffff, 0.55);
+    luzRelleno.position.set(3, 2, 4); // del lado de la cámara, apenas para que no quede negro
+    scene.add(luzRelleno);
+    // Luz de acento (color de marca) — es un PointLight, sensible a la
+    // escala real del modelo (a diferencia de las direccionales de
+    // arriba), así que se posiciona más abajo una vez que se conoce
+    // `radio`/`centro` reales del auto cargado.
+    const luzAcento = new THREE.PointLight(0x8ee089, 0, 0, 2);
+    scene.add(luzAcento);
+
+    function ajustarTamano() {
+      const w = lienzo!.clientWidth || 1;
+      const h = lienzo!.clientHeight || 1;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+    const resizeObs = new ResizeObserver(ajustarTamano);
+    resizeObs.observe(lienzo);
+    ajustarTamano();
+
+    let piezas: Pieza[] = [];
+    let auto: THREE.Object3D | undefined;
+    let radio = 1;
+    let corriendo = false;
+    let renderizando = false;
+    let inicioAnimacion = 0;
+    const DURACION_ARMADO = 2.4; // s
+
+    function colocar(t: number) {
+      for (const p of piezas) {
+        const local = Math.min(Math.max((t - p.retraso) / p.duracion, 0), 1);
+        const curva = p.obj.name === "body" ? easeOutExpo(local) : easeOutBack(local);
+        p.obj.position.lerpVectors(p.desde, p.posFinal, curva);
+        if (p.giroExtra) {
+          p.obj.rotation.y = p.rotFinalY + p.giroExtra * (1 - local);
+        }
+      }
+    }
+
+    // Cap a ~30fps (en vez del máximo que dé el navegador): la rotación de
+    // "vitrina" es sutil y no necesita 60fps, y cada render() de verdad le
+    // quita tiempo al hilo principal — en el hardware real de un celular de
+    // gama media esto es la diferencia entre que un clic de navegación se
+    // sienta instantáneo o se sienta atascado mientras el loop sigue activo.
+    const INTERVALO_FRAME_MS = 1000 / 30;
+    let ultimoFrame = 0;
+    function cuadro(ahora: number) {
+      if (!renderizando) return;
+      requestAnimationFrame(cuadro);
+      if (ahora - ultimoFrame < INTERVALO_FRAME_MS) return;
+      ultimoFrame = ahora;
+      const t = (ahora - inicioAnimacion) / 1000;
+      colocar(t);
+      if (auto && t > DURACION_ARMADO + 0.3) {
+        auto.rotation.y += 0.007;
+      }
+      renderer.render(scene, camera);
+    }
+
+    function iniciarRender() {
+      if (renderizando) return;
+      renderizando = true;
+      requestAnimationFrame(cuadro);
+    }
+    function detenerRender() {
+      renderizando = false;
+    }
+
+    function armar() {
+      inicioAnimacion = performance.now();
+      if (auto) auto.rotation.y = 0;
+      colocar(0);
+    }
+
+    let intervalo: ReturnType<typeof setInterval> | undefined;
+    function reiniciarCiclo() {
+      contenedor!.classList.add("desvanecer");
+      setTimeout(() => {
+        armar();
+        contenedor!.classList.remove("desvanecer");
+      }, 400);
+    }
+
+    let observador: IntersectionObserver | undefined;
+    if (!reducirMovimiento) {
+      observador = new IntersectionObserver(
+        (entradas) => {
+          const visible = entradas[0]?.isIntersecting;
+          if (visible) {
+            iniciarRender();
+            if (!intervalo) intervalo = setInterval(reiniciarCiclo, INTERVALO_MS);
+          } else {
+            detenerRender();
+            if (intervalo) {
+              clearInterval(intervalo);
+              intervalo = undefined;
+            }
+          }
+        },
+        { threshold: 0.3 },
+      );
+      observador.observe(contenedor);
+    }
+
+    // El mapa de entorno se genera recién acá — a propósito, DESPUÉS de
+    // enganchar el observer/intervalo de arriba. `PMREMGenerator.fromScene`
+    // bloquea el hilo principal de forma sincrónica un buen rato (~1-1.5s
+    // en las pruebas); si corría antes, retrasaba todo lo que viene
+    // después en esta función por igual — incluido el arranque del
+    // intervalo de 12s, un bug de rendimiento real que se notó porque el
+    // test del bucle empezó a fallar de forma consistente.
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+    corriendo = true;
+    limpiarAnterior = () => {
+      corriendo = false;
+      detenerRender();
+      observador?.disconnect();
+      if (intervalo) clearInterval(intervalo);
+      resizeObs.disconnect();
+      renderer.dispose();
+    };
+
+    const gltf = await cargaModelo;
+    if (!corriendo) return; // se navegó fuera de la página mientras cargaba
+
+    auto = gltf.scene;
+    scene.add(auto);
+
+    // El material del kit viene con rugosidad al máximo (mate total, sin
+    // reflejo) para TODAS las piezas por igual (comparten un solo atlas de
+    // color). En vez de un ajuste uniforme, se le da a las ruedas su propio
+    // material clonado (más metálico, como un rin de aleación) y se deja
+    // la carrocería/puertas/alerón con un acabado de pintura satinada.
+    auto.traverse((nodo) => {
+      const malla = nodo as THREE.Mesh;
+      if (!malla.isMesh || !malla.material) return;
+      const esRueda = malla.name.startsWith("wheel");
+      const matOriginal = malla.material as THREE.MeshStandardMaterial;
+      const mat = esRueda ? matOriginal.clone() : matOriginal;
+      if (esRueda) {
+        mat.roughness = 0.22;
+        mat.metalness = 0.6;
+        mat.envMapIntensity = 1.6;
+        malla.material = mat;
+      } else {
+        mat.roughness = 0.35;
+        mat.metalness = 0.15;
+        mat.envMapIntensity = 1.3;
+      }
+    });
+
+    const caja = new THREE.Box3().setFromObject(auto);
+    const centro = caja.getCenter(new THREE.Vector3());
+    const tamano = caja.getSize(new THREE.Vector3());
+    auto.position.sub(centro);
+    radio = Math.max(tamano.x, tamano.y, tamano.z);
+
+    luzAcento.position.set(-radio * 0.9, -radio * 0.1, radio * 0.5);
+    luzAcento.intensity = radio * 2.2;
+    luzAcento.distance = radio * 4;
+
+    camera.near = Math.max(radio * 0.005, 0.001);
+    camera.far = radio * 20;
+    camera.position.set(radio * 1.1, radio * 0.68, radio * 1.5);
+    camera.lookAt(0, tamano.y * 0.05, 0);
+    camera.updateProjectionMatrix();
+
+    // El modelo (Kenney Car Kit) trae la carrocería, el alerón y las 4
+    // ruedas como piezas separadas, pero las puertas vienen fundidas al
+    // cuerpo. Se construyen a mano con geometría de Three.js, reusando el
+    // material real de la carrocería, en vez de depender de otro asset.
+    const cuerpo = auto.getObjectByName("body") as THREE.Mesh | undefined;
+    const materialPuerta = cuerpo?.material;
+    if (materialPuerta && cuerpo) {
+      const grosorPuerta = tamano.x * 0.05;
+      const altoPuerta = tamano.y * 0.42;
+      const largoPuerta = tamano.z * 0.34;
+      const geometriaPuerta = new THREE.BoxGeometry(grosorPuerta, altoPuerta, largoPuerta);
+
+      // La textura del kit es un atlas de franjas de color: cada malla usa
+      // sus propias UV para "apuntar" a una franja sólida específica. Se
+      // toma la UV del vértice más alto del cuerpo (techo/capó, zona que
+      // siempre se ve del color de la pintura) y se la asigna a todos los
+      // vértices de la puerta, para que sea exactamente el mismo color.
+      const uvCuerpo = cuerpo.geometry.getAttribute("uv");
+      const posCuerpo = cuerpo.geometry.getAttribute("position");
+      if (uvCuerpo && posCuerpo) {
+        let indiceAlto = 0;
+        let yMax = -Infinity;
+        for (let i = 0; i < posCuerpo.count; i++) {
+          const y = posCuerpo.getY(i);
+          if (y > yMax) {
+            yMax = y;
+            indiceAlto = i;
+          }
+        }
+        const u = uvCuerpo.getX(indiceAlto);
+        const v = uvCuerpo.getY(indiceAlto);
+        const uvPuerta = geometriaPuerta.getAttribute("uv");
+        for (let i = 0; i < uvPuerta.count; i++) {
+          uvPuerta.setXY(i, u, v);
+        }
+        uvPuerta.needsUpdate = true;
+      }
+
+      const yPuerta = centro.y - tamano.y * 0.06;
+      const zPuerta = centro.z + tamano.z * 0.06;
+
+      const puertaDerecha = new THREE.Mesh(geometriaPuerta, materialPuerta);
+      puertaDerecha.name = "door-right";
+      puertaDerecha.position.set(centro.x + tamano.x * 0.485, yPuerta, zPuerta);
+      auto.add(puertaDerecha);
+
+      const puertaIzquierda = new THREE.Mesh(geometriaPuerta, materialPuerta);
+      puertaIzquierda.name = "door-left";
+      puertaIzquierda.position.set(centro.x - tamano.x * 0.485, yPuerta, zPuerta);
+      auto.add(puertaIzquierda);
+    }
+
+    piezas = NOMBRES_PIEZAS.map((nombre) => auto!.getObjectByName(nombre))
+      .filter((o): o is THREE.Object3D => !!o)
+      .map((obj) => {
+        const posFinal = obj.position.clone();
+        const rotFinalY = obj.rotation.y;
+        const esRueda = obj.name.startsWith("wheel");
+        const esSpoiler = obj.name === "spoiler";
+        const esPuerta = obj.name.startsWith("door");
+        let desde: THREE.Vector3;
+        let retraso = 0;
+        let duracion = 0.85;
+        let giroExtra = 0;
+        if (esPuerta) {
+          // Las puertas llegan justo después de la carrocería, antes que
+          // las ruedas — mismo patrón de "cae desde arriba" por seguridad
+          // (ver nota del bug de la rueda gigante más abajo).
+          desde = posFinal.clone().add(new THREE.Vector3(0, radio * 0.8, 0));
+          retraso = 0.3;
+          duracion = 0.6;
+        } else if (esRueda) {
+          // Cae desde arriba (como si se bajara la llanta sobre el eje) en
+          // vez de "volar" desde un costado: un offset lateral/hacia la
+          // cámara sacaba la pieza casi encima del lente y se veía
+          // gigantesca por la distorsión de perspectiva (bug real
+          // encontrado y corregido tras ver la primera captura).
+          desde = posFinal.clone().add(new THREE.Vector3(0, radio * 0.95, 0));
+          retraso = 0.55;
+          duracion = 0.65;
+          giroExtra = Math.PI * 2.4 * (obj.name.includes("right") ? 1 : -1);
+        } else if (esSpoiler) {
+          desde = posFinal.clone().add(new THREE.Vector3(0, radio * 0.6, 0));
+          retraso = 1.15;
+          duracion = 0.5;
+        } else {
+          desde = posFinal.clone().add(new THREE.Vector3(0, radio * 1.15, 0));
+          retraso = 0;
+          duracion = 0.85;
+        }
+        return { obj, posFinal, rotFinalY, desde, giroExtra, retraso, duracion };
+      });
+
+    if (reducirMovimiento) {
+      colocar(DURACION_ARMADO + 1);
+      renderer.render(scene, camera);
+    } else {
+      armar();
+      iniciarRender();
+    }
+  }
+
+  document.addEventListener("astro:page-load", iniciarAuto3D);
+  // Antes, el loop de render (requestAnimationFrame + renderer.render en
+  // cada cuadro) solo se detenía cuando llegaba el astro:page-load de la
+  // PRÓXIMA página — es decir, seguía compitiendo por el hilo principal
+  // durante toda la transición (fetch + parseo + swap del DOM), justo
+  // cuando más libre se necesita el hilo principal para que la navegación
+  // se sienta rápida. Bug real medido con Playwright: navegar afuera del
+  // home tardaba ~2s (vs. ~100ms entre dos páginas que nunca cargaron el
+  // auto 3D) porque el clic quedaba en cola detrás de fotogramas de Three.js
+  // que seguían renderizando. "astro:before-preparation" dispara apenas
+  // arranca la navegación (antes del fetch), así que cortar el loop ahí
+  // libera el hilo principal de inmediato en vez de esperar a que termine
+  // toda la transición.
+  document.addEventListener("astro:before-preparation", () => limpiarAnterior?.());
+</script>

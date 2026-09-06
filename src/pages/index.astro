@@ -1,0 +1,153 @@
+---
+import Layout from "../layouts/Layout.astro";
+import ProductGrid from "../components/ProductGrid";
+import MarcasSection from "../components/MarcasSection.astro";
+import FranjaConfianza from "../components/FranjaConfianza.astro";
+import AutoAnimado from "../components/AutoAnimado.astro";
+import PromoCarousel from "../components/PromoCarousel";
+import { IconArrowRight, IconWhatsapp, IconChat } from "../components/icons/ui";
+import { iconoDeCategoria } from "../components/icons/categorias";
+import { getCategorias, getDestacados, getFotoCategoria } from "../data/catalog";
+import { NEGOCIO, SITE } from "../consts";
+
+const destacados = getDestacados();
+const categorias = getCategorias();
+const mensajeWa = encodeURIComponent(`Hola ${NEGOCIO.razonSocial}, quisiera hacer una consulta.`);
+---
+
+<Layout>
+  {
+    /* El carrusel va primero, pegado al header — como en gpc.pe, donde el
+    carrusel ES el hero (no hay una sección estática separada antes). El
+    hero con el auto 3D se mantiene, pero ahora es la sección siguiente. */
+  }
+  <PromoCarousel client:visible />
+
+  {
+    /* Ocultado a pedido del usuario (2026-09-05) — "esa sección de momento
+    ocúltalo". Código intacto, solo no se renderiza, para poder reactivarlo
+    fácil si se necesita más adelante. No borrar AutoAnimado.astro ni su
+    lógica: representa varias rondas de trabajo ya validadas. */
+  }
+  {false && (
+  <section class="relative overflow-hidden bg-gradient-to-br from-[#0090d8] via-brand-blue to-brand-green text-white [clip-path:polygon(0_0,100%_0,100%_92%,0_100%)]">
+    {
+      /* Textura: líneas diagonales tipo "velocidad" (más propio del rubro
+      automotriz que una grilla de puntos genérica) + dos manchas de brillo
+      difuminadas (una azul, una verde) para dar profundidad — un degradado
+      plano de dos colores se sentía sin vida, esto rompe la uniformidad. */
+    }
+    <div
+      class="pointer-events-none absolute inset-0 opacity-[0.35] mix-blend-overlay"
+      style="background-image: repeating-linear-gradient(115deg, rgba(255,255,255,0.35) 0px, rgba(255,255,255,0.35) 2px, transparent 2px, transparent 34px);"
+      aria-hidden="true"
+    >
+    </div>
+    <div
+      class="pointer-events-none absolute -left-24 -top-24 h-96 w-96 rounded-full bg-brand-green opacity-40 blur-3xl"
+      aria-hidden="true"
+    >
+    </div>
+    <div
+      class="pointer-events-none absolute -bottom-32 right-0 h-[28rem] w-[28rem] rounded-full bg-[#00e0c6] opacity-30 blur-3xl"
+      aria-hidden="true"
+    >
+    </div>
+
+    <div class="relative mx-auto grid max-w-7xl items-center gap-8 px-4 pb-20 pt-16 sm:pt-24 lg:grid-cols-2 lg:pb-28 lg:text-left">
+      <div class="text-center lg:text-left">
+        <span class="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide backdrop-blur-sm">
+          <IconChat class="h-4 w-4" />
+          Atención directa por WhatsApp
+        </span>
+        <h1 class="mt-5 text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">{SITE.nombre}</h1>
+        <p class="mx-auto mt-4 max-w-xl text-lg text-white/90 lg:mx-0">{SITE.descripcion}</p>
+        <div class="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start">
+          <a
+            href="/catalogo"
+            class="group inline-flex items-center gap-2 rounded-md bg-white px-6 py-3.5 text-sm font-semibold text-neutral-900 shadow-lg shadow-black/10 transition-[transform,background-color] duration-200 hover:scale-105 hover:bg-neutral-100 active:scale-95"
+          >
+            Ver catálogo completo
+            <IconArrowRight class="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+          </a>
+          <a
+            href={`https://wa.me/${NEGOCIO.whatsappNumero}?text=${mensajeWa}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-2 rounded-md bg-green-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-black/10 transition-[transform,background-color] duration-200 hover:scale-105 hover:bg-green-700 active:scale-95"
+          >
+            <IconWhatsapp class="h-4 w-4" />
+            Cotizar por WhatsApp
+          </a>
+        </div>
+      </div>
+      <AutoAnimado />
+    </div>
+  </section>
+  )}
+
+  <FranjaConfianza />
+
+  <section class="bg-gradient-to-b from-brand-blue/[0.06] to-transparent py-12 sm:py-16 dark:from-brand-blue/[0.04]">
+  <div class="mx-auto max-w-7xl px-4">
+    <div class="flex items-baseline justify-between">
+      <h2 data-reveal class="text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl dark:text-white">Categorías</h2>
+      <a href="/catalogo" class="hidden text-sm font-medium text-brand-blue-dark transition-colors duration-200 hover:underline sm:inline dark:text-brand-blue">Ver todo</a>
+    </div>
+    <div class="mt-6 grid grid-cols-3 gap-3 sm:grid-cols-4 sm:gap-4 lg:grid-cols-6">
+      {
+        categorias.map((c, i) => {
+          const Icono = iconoDeCategoria(c.categoria);
+          const foto = getFotoCategoria(c.categoria);
+          const azul = i % 2 === 0;
+          return (
+            <a
+              href={`/catalogo/${c.slug}`}
+              data-reveal
+              style={`transition-delay: ${(i % 6) * 60}ms`}
+              class="group flex flex-col items-center gap-2 rounded-lg p-2 text-center transition-colors duration-200 hover:bg-neutral-50 dark:hover:bg-neutral-900"
+            >
+              {foto ? (
+                <div class="aspect-square w-full max-w-[110px] overflow-hidden rounded-full ring-1 ring-neutral-200 dark:ring-neutral-700">
+                  <img
+                    src={foto}
+                    alt=""
+                    aria-hidden="true"
+                    loading="lazy"
+                    class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+                  />
+                </div>
+              ) : (
+                <div
+                  class={`flex aspect-square w-full max-w-[110px] items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110 ${
+                    azul ? "bg-brand-blue/10 text-brand-blue-dark dark:text-brand-blue" : "bg-brand-green/10 text-brand-green-dark dark:text-brand-green"
+                  }`}
+                >
+                  <Icono class="h-9 w-9 sm:h-10 sm:w-10" />
+                </div>
+              )}
+              <span class="text-xs font-medium text-neutral-800 sm:text-sm dark:text-neutral-100">{c.categoria}</span>
+            </a>
+          );
+        })
+      }
+    </div>
+  </div>
+  </section>
+
+  {
+    destacados.length > 0 && (
+      <section class="mx-auto max-w-7xl px-4 py-12 sm:py-16">
+        <div class="flex items-baseline justify-between">
+          <h2 data-reveal class="text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl dark:text-white">Productos destacados</h2>
+          <a href="/catalogo" class="hidden text-sm font-medium text-brand-blue-dark transition-colors duration-200 hover:underline sm:inline dark:text-brand-blue">Ver todo</a>
+        </div>
+        <div class="mt-6">
+          <ProductGrid client:visible productos={destacados} />
+        </div>
+      </section>
+    )
+  }
+
+  <MarcasSection />
+</Layout>

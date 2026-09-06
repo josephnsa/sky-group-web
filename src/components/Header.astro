@@ -1,0 +1,211 @@
+---
+import CartIcon from "./CartIcon";
+import AuthButton from "./AuthButton";
+import ThemeToggle from "./ThemeToggle.astro";
+import { IconMenu, IconChevronDown, IconSearch } from "./icons/ui";
+import { iconoDeCategoria } from "./icons/categorias";
+import { getCategorias, getFotoCategoria } from "../data/catalog";
+import { SITE } from "../consts";
+
+const categorias = getCategorias();
+---
+
+<header id="site-header" class="sticky top-0 z-40 transition-colors duration-300">
+  {
+    /* Franja de color de marca (referencia: gpc.pe, banda amarilla con
+    logo+buscador+iconos) — antes esta fila era blanca/translúcida igual
+    que el resto del header, y el sitio no tenía ningún bloque de color
+    sólido de marca acá arriba, solo la franja de anuncio angosta.
+    Degradado azul→verde (no azul plano): el logo real de SKY Group usa
+    ambos colores de marca, y una franja de un solo tono no reflejaba eso.
+    Mismo degradado exacto que ya usa la línea de acento del footer
+    (from-brand-blue to-brand-green), para que sea el mismo "verde de
+    marca" reconocible en todo el sitio, no un tono nuevo inventado. */
+  }
+  <div class="bg-gradient-to-r from-brand-blue to-brand-green">
+    <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
+      <a href="/" class="flex items-center gap-2 shrink-0">
+        <img src="/images/brand/logo-blanco.png" alt={SITE.nombre} class="h-9 w-auto" />
+      </a>
+
+      {
+        /* Formulario real (GET, sin JS) — al enviar navega a
+        /catalogo?q=<texto>, que CatalogoInteractivo lee del lado del cliente
+        (el sitio es 100% estático, no hay query string en tiempo de build)
+        para dejar el catálogo ya filtrado. Antes esto era solo un <a> que
+        llevaba a /catalogo sin buscar nada — no era un buscador de verdad.
+        Botón de lupa a la derecha del input (en vez de icono a la izquierda)
+        para acercarse al patrón real de gpc.pe: campo claro + botón sólido. */
+      }
+      <form
+        action="/catalogo"
+        method="GET"
+        role="search"
+        class="hidden flex-1 max-w-md items-center overflow-hidden rounded-md bg-white shadow-sm transition-shadow duration-200 focus-within:ring-2 focus-within:ring-white/70 sm:flex"
+      >
+        <input
+          type="search"
+          name="q"
+          placeholder="Buscar productos..."
+          aria-label="Buscar productos"
+          class="w-full bg-transparent px-4 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-500 focus:outline-none"
+        />
+        <button
+          type="submit"
+          aria-label="Buscar"
+          class="flex shrink-0 items-center justify-center self-stretch bg-brand-blue-dark px-3.5 text-white transition-colors duration-200 hover:bg-brand-green-dark"
+        >
+          <IconSearch class="h-4 w-4" />
+        </button>
+      </form>
+
+      <div class="flex items-center gap-1">
+        <ThemeToggle />
+        <AuthButton client:idle />
+        <CartIcon client:only="preact" />
+        <label
+          for="menu-toggle"
+          class="cursor-pointer rounded-md p-2.5 text-white/90 transition-colors duration-200 hover:bg-white/15 hover:text-white sm:hidden"
+          aria-label="Abrir menú"
+        >
+          <IconMenu class="h-6 w-6" />
+        </label>
+      </div>
+    </div>
+  </div>
+
+  {
+    /* Barra de categorías/navegación (referencia: gpc.pe, fila blanca debajo
+    de la banda amarilla) — mismo contenido de siempre (mega-menu, mobile,
+    Nosotros/Contacto), solo separada de la franja de marca. */
+  }
+  <div class="border-b border-neutral-200/80 bg-white/90 backdrop-blur transition-colors duration-300 dark:border-neutral-800/80 dark:bg-neutral-900/90">
+    <input type="checkbox" id="menu-toggle" class="peer hidden" />
+
+    <nav
+      class="mx-auto flex max-h-0 max-w-7xl flex-col gap-1 overflow-hidden px-4 py-0 transition-[max-height,padding] duration-300 ease-out peer-checked:max-h-[520px] peer-checked:py-2 sm:max-h-none sm:flex-row sm:items-center sm:justify-between sm:overflow-visible sm:py-2"
+      aria-label="Menú principal"
+    >
+    {
+      /* Mobile (menú hamburguesa ya existente): lista plana de categorías,
+      igual que antes. Desktop: se reemplaza por el menú tipo "sandwich" de
+      abajo — con 11 categorías reales, la lista horizontal quedaba
+      desbordando y con scroll lateral, se veía mal. */
+    }
+    <div class="flex flex-col gap-1 sm:hidden">
+      {
+        categorias.map((c) => {
+          const Icono = iconoDeCategoria(c.categoria);
+          return (
+            <a
+              href={`/catalogo/${c.slug}`}
+              class="flex items-center gap-2.5 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium text-neutral-700 transition-colors duration-200 hover:bg-brand-blue/10 hover:text-brand-blue-dark dark:text-neutral-300 dark:hover:bg-brand-blue/20 dark:hover:text-brand-blue"
+            >
+              <Icono class="h-4 w-4 shrink-0 text-brand-blue-dark dark:text-brand-blue" />
+              {c.categoria}
+            </a>
+          );
+        })
+      }
+    </div>
+
+    <details id="menu-categorias-desktop" class="group relative hidden sm:block">
+      <summary
+        class="flex cursor-pointer list-none items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-neutral-700 transition-colors duration-200 hover:bg-brand-blue/10 hover:text-brand-blue-dark [&::-webkit-details-marker]:hidden dark:text-neutral-300 dark:hover:bg-brand-blue/20 dark:hover:text-brand-blue"
+      >
+        <IconMenu class="h-5 w-5" />
+        Categorías
+        <IconChevronDown class="h-3.5 w-3.5 transition-transform duration-200 group-open:rotate-180" />
+      </summary>
+      {
+        /* Menú tipo mega-menu (referencia: tirerack.com "Shop Products") —
+        columna izquierda con lista de categorías (foto + nombre), columna
+        derecha con las subcategorías de la categoría activa. Sin JS de
+        framework: un pequeño script delegado en Layout.astro alterna
+        [data-mega-panel] al pasar el mouse/foco por [data-mega-trigger]. */
+      }
+      <div
+        id="mega-menu-categorias"
+        class="absolute left-0 top-full z-50 mt-2 flex w-[50rem] overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-lg dark:border-neutral-800 dark:bg-neutral-900"
+      >
+        <div class="max-h-[28rem] w-72 flex-none space-y-1 overflow-y-auto border-r border-neutral-100 p-2 dark:border-neutral-800">
+          {
+            categorias.map((c, i) => {
+              const Icono = iconoDeCategoria(c.categoria);
+              const foto = getFotoCategoria(c.categoria);
+              const azul = i % 2 === 0;
+              return (
+                <a
+                  href={`/catalogo/${c.slug}`}
+                  data-mega-trigger={c.slug}
+                  class="mega-trigger flex items-center gap-3 rounded-lg p-2 text-sm font-medium text-neutral-700 transition-colors duration-150 hover:bg-brand-blue/10 hover:text-brand-blue-dark aria-[current=true]:bg-brand-blue/10 aria-[current=true]:text-brand-blue-dark dark:text-neutral-300 dark:hover:bg-brand-blue/20 dark:hover:text-brand-blue dark:aria-[current=true]:bg-brand-blue/20"
+                  aria-current={i === 0 ? "true" : "false"}
+                >
+                  {foto ? (
+                    <img
+                      src={foto}
+                      alt=""
+                      aria-hidden="true"
+                      loading="lazy"
+                      class="h-14 w-14 flex-none rounded-lg object-cover ring-1 ring-black/5"
+                    />
+                  ) : (
+                    <span
+                      class={`flex h-14 w-14 flex-none items-center justify-center rounded-lg ${
+                        azul ? "bg-brand-blue/10 text-brand-blue-dark dark:text-brand-blue" : "bg-brand-green/10 text-brand-green-dark dark:text-brand-green"
+                      }`}
+                    >
+                      <Icono class="h-7 w-7" />
+                    </span>
+                  )}
+                  {c.categoria}
+                </a>
+              );
+            })
+          }
+        </div>
+        <div class="flex-1 p-4">
+          {
+            categorias.map((c, i) => {
+              const Icono = iconoDeCategoria(c.categoria);
+              return (
+                <div data-mega-panel={c.slug} hidden={i !== 0}>
+                  <div class="flex items-center gap-2 text-sm font-semibold text-neutral-900 dark:text-white">
+                    <Icono class="h-4 w-4 text-brand-blue-dark dark:text-brand-blue" />
+                    {c.categoria}
+                  </div>
+                  <div class="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5">
+                    {c.subcategorias.map((s: string) => (
+                      <a
+                        href={`/catalogo/${c.slug}`}
+                        class="whitespace-nowrap text-sm text-neutral-600 transition-colors duration-150 hover:text-brand-blue-dark hover:underline dark:text-neutral-400 dark:hover:text-brand-blue"
+                      >
+                        {s}
+                      </a>
+                    ))}
+                  </div>
+                  <a
+                    href={`/catalogo/${c.slug}`}
+                    class="mt-4 inline-flex items-center gap-1 text-sm font-medium text-brand-blue-dark hover:underline dark:text-brand-blue"
+                  >
+                    Ver todo en {c.categoria}
+                  </a>
+                </div>
+              );
+            })
+          }
+        </div>
+      </div>
+    </details>
+
+    <div class="mt-1 flex flex-col gap-1 border-t border-neutral-100 pt-1 sm:mt-0 sm:flex-row sm:border-t-0 sm:border-l sm:border-neutral-200 sm:pl-3 sm:pt-0 dark:border-neutral-800">
+      <a href="/nosotros" class="whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium text-neutral-600 transition-colors duration-200 hover:bg-brand-blue/10 hover:text-brand-blue-dark dark:text-neutral-400 dark:hover:bg-brand-blue/20 dark:hover:text-brand-blue">
+        Nosotros
+      </a>
+      <a href="/contacto" class="whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium text-neutral-600 transition-colors duration-200 hover:bg-brand-blue/10 hover:text-brand-blue-dark dark:text-neutral-400 dark:hover:bg-brand-blue/20 dark:hover:text-brand-blue">
+        Contacto
+      </a>
+    </div>
+  </nav>
+  </div>
+</header>

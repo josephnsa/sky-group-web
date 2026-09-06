@@ -1,0 +1,32 @@
+---
+import { IconChat, IconBox, IconShield, IconTruck } from "./icons/ui";
+
+const ITEMS = [
+  { icono: IconChat, titulo: "Atención por WhatsApp", desc: "Cotiza y compra directo, sin formularios largos." },
+  { icono: IconBox, titulo: "Catálogo amplio", desc: "Accesorios y equipamiento para múltiples marcas y modelos." },
+  { icono: IconShield, titulo: "Garantía en productos", desc: "Todo lo que vendemos tiene respaldo del negocio." },
+  { icono: IconTruck, titulo: "Envíos a todo el Perú", desc: "Coordinamos el envío según tu ubicación." },
+];
+---
+
+<section class="border-y border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900">
+  <div class="mx-auto grid max-w-7xl grid-cols-2 gap-4 px-4 py-10 sm:grid-cols-4 sm:gap-6">
+    {
+      ITEMS.map((item, i) => (
+        <div data-reveal style={`transition-delay: ${i * 90}ms`} class="flex flex-col items-center gap-2 text-center sm:flex-row sm:items-start sm:gap-3 sm:text-left">
+          <span
+            class={`flex h-10 w-10 flex-none items-center justify-center rounded-full ${
+              i % 2 === 0 ? "bg-brand-blue/10 text-brand-blue-dark dark:text-brand-blue" : "bg-brand-green/10 text-brand-green-dark dark:text-brand-green"
+            }`}
+          >
+            <item.icono class="h-5 w-5" />
+          </span>
+          <div>
+            <p class="font-semibold text-neutral-900 dark:text-white">{item.titulo}</p>
+            <p class="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">{item.desc}</p>
+          </div>
+        </div>
+      ))
+    }
+  </div>
+</section>

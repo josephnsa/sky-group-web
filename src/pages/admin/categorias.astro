@@ -1,0 +1,16 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import AdminCategorias from "../../components/admin/AdminCategorias";
+---
+
+<Layout title="Admin · Categorías">
+  <section class="mx-auto max-w-3xl px-4 py-12 sm:py-16">
+    <a href="/admin" class="text-sm text-brand-blue-dark hover:underline dark:text-brand-blue">← Panel de administración</a>
+    <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white sm:text-4xl">
+      Categorías
+    </h1>
+    <div class="mt-8">
+      <AdminCategorias client:only="preact" />
+    </div>
+  </section>
+</Layout>

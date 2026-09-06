@@ -1,0 +1,13 @@
+---
+import Layout from "../layouts/Layout.astro";
+import CartView from "../components/CartView";
+---
+
+<Layout title="Carrito">
+  <section class="mx-auto max-w-3xl px-4 py-12 sm:py-16">
+    <h1 class="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white sm:text-4xl lg:text-5xl">Tu carrito</h1>
+    <div class="mt-6">
+      <CartView client:only="preact" />
+    </div>
+  </section>
+</Layout>
