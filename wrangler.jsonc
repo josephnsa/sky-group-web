@@ -10,5 +10,13 @@
   "compatibility_date": "2026-09-01",
   "assets": {
     "directory": "./dist"
+  },
+  // El deploy de Cloudflare para este proyecto no corre un paso de "build"
+  // separado por su cuenta — solo instala dependencias y ejecuta el deploy
+  // command. Este bloque es la forma en que Wrangler mismo sabe que tiene
+  // que generar dist/ (con `astro build`) antes de intentar subirlo como
+  // assets estáticos.
+  "build": {
+    "command": "npm run build"
   }
 }
