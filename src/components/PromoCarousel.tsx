@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { motion, useMotionValue, animate } from "framer-motion";
-import { supabase } from "../lib/supabase";
 import { IconArrowRight, IconWhatsapp } from "./icons/ui";
 import { NEGOCIO } from "../consts";
+import type { DiapositivaCarrusel } from "../data/catalog";
 
-interface BannerSlide {
-  id: string;
-  imagen_url: string;
-  titulo: string | null;
-  enlace: string | null;
+type BannerSlide = DiapositivaCarrusel;
+
+interface Props {
+  slidesIniciales: BannerSlide[];
 }
 
 const INTERVALO_MS = 5000;
@@ -27,8 +26,19 @@ const mensajeWa = encodeURIComponent(`Hola ${NEGOCIO.razonSocial}, quisiera hace
 // se superpone un botón "Ver todo" hacia esa página (ej. subir una foto de
 // la categoría Iluminación + enlace "/catalogo/iluminacion" → aparece un
 // botón "Ver todo" que lleva ahí); sin enlace, la imagen se muestra sola.
-export default function PromoCarousel() {
-  const [diapositivas, setDiapositivas] = useState<BannerSlide[]>([]);
+//
+// Las diapositivas llegan como prop (`slidesIniciales`), ya traídas en
+// build-time por catalog.ts (mismo mecanismo que categorías/productos) —
+// antes este componente las pedía a Supabase recién al montar en el
+// navegador, así que la sección más visible de Home (el carrusel, que
+// funciona como el hero) se veía completamente en blanco hasta que
+// terminaban de descargarse Supabase+framer-motion Y volvía la respuesta de
+// red — varios cientos de ms hasta más de un segundo en una conexión real.
+// Con la imagen ya en el HTML inicial, se ve al instante. La contrapartida
+// (igual que con categorías/productos) es que un cambio del admin necesita
+// un rebuild del sitio para publicarse, no aparece solo al recargar.
+export default function PromoCarousel({ slidesIniciales }: Props) {
+  const [diapositivas] = useState<BannerSlide[]>(slidesIniciales);
   const [indice, setIndice] = useState(0);
   const [enPausa, setEnPausa] = useState(false);
   const [arrastrando, setArrastrando] = useState(false);
@@ -42,15 +52,6 @@ export default function PromoCarousel() {
   const reducirMovimiento = useRef(
     typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
   );
-
-  useEffect(() => {
-    supabase
-      .from("carousel_slides")
-      .select("id, imagen_url, titulo, enlace")
-      .eq("activo", true)
-      .order("orden")
-      .then(({ data }) => setDiapositivas(data ?? []));
-  }, []);
 
   // Mueve el carril a la posición de reposo de `i`. Se llama explícitamente
   // (no solo vía el `useEffect` de abajo) porque un arrastre corto que NO
@@ -97,15 +98,11 @@ export default function PromoCarousel() {
     setIndice(((i % diapositivas.length) + diapositivas.length) % diapositivas.length);
   }
 
-  // El contenedor se renderiza SIEMPRE, incluso sin diapositivas todavía
-  // (recién montado, antes de que responda Supabase) — bug real encontrado:
-  // devolver `null` acá dejaba el island sin ningún elemento con tamaño que
-  // observar, y como este componente usa `client:visible` (se hidrata
-  // cuando el elemento entra en pantalla), nunca llegaba a hidratarse en
-  // absoluto — ni siquiera se disparaba el pedido a Supabase. Antes esto no
-  // pasaba porque siempre había diapositivas de categoría disponibles de
-  // entrada (sin esperar ningún fetch); al sacarlas, el estado "0
-  // diapositivas todavía" pasó a ser el estado inicial real y expuso el bug.
+  // El contenedor se renderiza SIEMPRE, incluso con 0 diapositivas (el admin
+  // todavía no subió ninguna) — bug real encontrado en su momento: devolver
+  // `null` acá dejaba el island sin ningún elemento con tamaño que observar,
+  // y como este componente usa `client:visible` (se hidrata cuando el
+  // elemento entra en pantalla), nunca llegaba a hidratarse en absoluto.
   return (
     <div
       data-testid="promo-carousel"

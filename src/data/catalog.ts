@@ -29,17 +29,37 @@ interface CategoriaFila {
   orden: number;
 }
 
+export interface DiapositivaCarrusel {
+  id: string;
+  imagen_url: string;
+  titulo: string | null;
+  enlace: string | null;
+}
+
 const IMAGEN_PLACEHOLDER = "/images/placeholder-producto.svg";
 
 async function cargarDatos() {
-  const [{ data: filasCategorias, error: errorCategorias }, { data: filasProductos, error: errorProductos }] =
-    await Promise.all([
-      // El sitio público solo muestra categorías/productos activos — algo
-      // "inactivado" desde el panel de admin sigue existiendo (no se borra),
-      // solo deja de listarse/ser visible para los clientes.
-      supabase.from("categorias").select("*").eq("activo", true).order("orden"),
-      supabase.from("productos").select("*").eq("activo", true),
-    ]);
+  const [
+    { data: filasCategorias, error: errorCategorias },
+    { data: filasProductos, error: errorProductos },
+    { data: filasCarrusel, error: errorCarrusel },
+  ] = await Promise.all([
+    // El sitio público solo muestra categorías/productos activos — algo
+    // "inactivado" desde el panel de admin sigue existiendo (no se borra),
+    // solo deja de listarse/ser visible para los clientes.
+    supabase.from("categorias").select("*").eq("activo", true).order("orden"),
+    supabase.from("productos").select("*").eq("activo", true),
+    // El carrusel se trae acá (build-time), igual que categorías/productos,
+    // en vez de con un fetch del lado del cliente dentro de PromoCarousel:
+    // antes el carrusel viajaba vacío en el HTML y recién mostraba una
+    // imagen real después de descargar JS (Supabase + framer-motion, ~95KB
+    // gzip) y esperar una ida y vuelta de red al montar — la sección más
+    // visible de Home se veía en blanco varios cientos de ms/segundos. Con
+    // esto el carrusel ya sale con su primera imagen en el HTML inicial. La
+    // contrapartida (igual que ya pasa con categorías/productos) es que un
+    // cambio del admin necesita un rebuild del sitio para publicarse.
+    supabase.from("carousel_slides").select("id, imagen_url, titulo, enlace").eq("activo", true).order("orden"),
+  ]);
 
   // No se usa `throw` acá a propósito: si Supabase todavía no tiene las
   // tablas creadas (o hay un problema pasajero de red), el sitio entero
@@ -47,6 +67,7 @@ async function cargarDatos() {
   // catálogo vacío temporalmente. Se degrada, no se rompe.
   if (errorCategorias) console.error("Error cargando categorías desde Supabase:", errorCategorias.message);
   if (errorProductos) console.error("Error cargando productos desde Supabase:", errorProductos.message);
+  if (errorCarrusel) console.error("Error cargando carrusel desde Supabase:", errorCarrusel.message);
 
   const categorias = (filasCategorias ?? []) as CategoriaFila[];
   const nombrePorSlug = new Map(categorias.map((c) => [c.slug, c.nombre] as const));
@@ -71,12 +92,14 @@ async function cargarDatos() {
       especificaciones: f.especificaciones ?? undefined,
     }));
 
-  return { categorias, productos };
+  const carrusel = (filasCarrusel ?? []) as DiapositivaCarrusel[];
+
+  return { categorias, productos, carrusel };
 }
 
-const { categorias: categoriasCache, productos } = await cargarDatos();
+const { categorias: categoriasCache, productos, carrusel: carruselSlides } = await cargarDatos();
 
-export { productos };
+export { productos, carruselSlides };
 
 export function getCategorias() {
   return categoriasCache.map((cat) => ({
