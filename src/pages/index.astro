@@ -7,7 +7,7 @@ import AutoAnimado from "../components/AutoAnimado.astro";
 import PromoCarousel from "../components/PromoCarousel";
 import { IconArrowRight, IconWhatsapp, IconChat } from "../components/icons/ui";
 import { iconoDeCategoria } from "../components/icons/categorias";
-import { getCategorias, getDestacados, getFotoCategoria } from "../data/catalog";
+import { getCategorias, getDestacados, getFotoCategoria, carruselSlides } from "../data/catalog";
 import { NEGOCIO, SITE } from "../consts";
 
 const destacados = getDestacados();
@@ -21,7 +21,7 @@ const mensajeWa = encodeURIComponent(`Hola ${NEGOCIO.razonSocial}, quisiera hace
     carrusel ES el hero (no hay una sección estática separada antes). El
     hero con el auto 3D se mantiene, pero ahora es la sección siguiente. */
   }
-  <PromoCarousel client:visible />
+  <PromoCarousel client:visible slidesIniciales={carruselSlides} />
 
   {
     /* Ocultado a pedido del usuario (2026-09-05) — "esa sección de momento
