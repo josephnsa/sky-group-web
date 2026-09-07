@@ -1,16 +1,19 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import AdminNav from "../../components/admin/AdminNav.astro";
 import AdminProductos from "../../components/admin/AdminProductos";
 ---
 
 <Layout title="Admin · Productos">
-  <section class="mx-auto max-w-3xl px-4 py-12 sm:py-16">
-    <a href="/admin" class="text-sm text-brand-blue-dark hover:underline dark:text-brand-blue">← Panel de administración</a>
-    <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white sm:text-4xl">
-      Productos
-    </h1>
-    <div class="mt-8">
-      <AdminProductos client:only="preact" />
+  <section class="flex flex-col gap-8 px-4 py-12 sm:flex-row sm:py-16">
+    <AdminNav activo="productos" />
+    <div class="min-w-0 max-w-3xl flex-1">
+      <h1 class="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white sm:text-4xl">
+        Productos
+      </h1>
+      <div class="mt-8">
+        <AdminProductos client:only="preact" />
+      </div>
     </div>
   </section>
 </Layout>
