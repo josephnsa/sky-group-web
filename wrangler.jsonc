@@ -1,0 +1,14 @@
+{
+  // Sitio 100% estático (Astro output: "static", sin adaptador de servidor)
+  // — este archivo le dice a Cloudflare que solo sirva los archivos ya
+  // generados en dist/, sin intentar correr Astro con SSR en un Worker.
+  // Sin esto, el deploy de Cloudflare detecta el framework Astro y corre
+  // "astro add cloudflare" solo, instalando @astrojs/cloudflare — un
+  // adaptador SSR que este proyecto no necesita y que además falló por
+  // incompatibilidad de versiones con Astro 7.2.10.
+  "name": "sky-group-web",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./dist"
+  }
+}
