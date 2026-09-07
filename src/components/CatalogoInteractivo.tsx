@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "preact/hooks";
 import { motion } from "framer-motion";
 import type { Producto } from "../data/catalog";
+import { coincideProducto } from "../lib/busqueda";
 import { IconChevronDown } from "./icons/ui";
 import { DURATION } from "../lib/motion";
 import ProductGrid from "./ProductGrid";
@@ -84,16 +85,11 @@ export default function CatalogoInteractivo({ productos, categorias }: Props) {
   }
 
   const filtrados = useMemo(() => {
-    const texto = busqueda.trim().toLowerCase();
     const min = precioMin ? Number(precioMin) : null;
     const max = precioMax ? Number(precioMax) : null;
 
     let lista = productos.filter((p) => {
-      const coincideTexto =
-        !texto ||
-        p.nombre.toLowerCase().includes(texto) ||
-        p.marca.toLowerCase().includes(texto) ||
-        p.sku.toLowerCase().includes(texto);
+      const coincideTexto = coincideProducto(p, busqueda);
       const coincideCategoria = !categoria || p.categoria === categoria;
       const coincideSubcategoria = !subcategoria || p.subcategoria === subcategoria;
       const coincideMarca = marcas.length === 0 || marcas.includes(p.marca);
