@@ -68,6 +68,9 @@ async function cargarDatos() {
   if (errorCategorias) console.error("Error cargando categorías desde Supabase:", errorCategorias.message);
   if (errorProductos) console.error("Error cargando productos desde Supabase:", errorProductos.message);
   if (errorCarrusel) console.error("Error cargando carrusel desde Supabase:", errorCarrusel.message);
+  console.log(
+    `[debug catalog] categorias=${filasCategorias?.length ?? "null"} productos=${filasProductos?.length ?? "null"} carrusel=${filasCarrusel?.length ?? "null"} url=${import.meta.env.PUBLIC_SUPABASE_URL}`,
+  );
 
   const categorias = (filasCategorias ?? []) as CategoriaFila[];
   const nombrePorSlug = new Map(categorias.map((c) => [c.slug, c.nombre] as const));
