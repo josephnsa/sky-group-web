@@ -123,39 +123,19 @@ export function getDestacados() {
   return productos.filter((p) => p.destacado);
 }
 
-// Palabras clave por categoría para que la imagen temporal (mientras un
-// producto no tiene foto propia subida desde el panel de admin) sea del
-// rubro correcto, no una foto genérica de cualquier cosa.
-const PALABRAS_CLAVE_POR_CATEGORIA: Record<string, string> = {
-  Iluminación: "car,led",
-  "Accesorios Tuning y Decoración": "car,tuning",
-  "Auxilio Vehicular": "car,emergency",
-  Remolque: "car,towing",
-  "Limpieza y Pulido": "car,detailing",
-  "Cintas y Adhesivos": "tape,tool",
-  "Equipamiento Exterior": "car,roofrack",
-  "Para Trabajo y Negocio": "mechanic,tools",
-  "Molduras y Protectores": "car,door",
-  Seguros: "car,wheel",
-  "Interior y Confort": "car,interior",
-};
-
-function hashSimple(texto: string) {
-  let hash = 0;
-  for (let i = 0; i < texto.length; i++) {
-    hash = (hash * 31 + texto.charCodeAt(i)) >>> 0;
-  }
-  return hash;
-}
-
 // Mientras un producto no tenga foto propia (campo `imagen` vacío desde el
-// panel de admin), se usa una imagen temporal orientada al rubro según la
-// categoría, consistente por SKU (mismo producto = misma imagen siempre).
+// panel de admin), se muestra la foto de su categoría (la misma que ya usa
+// la grilla de Home/mega-menú, un archivo local en public/images/categorias/)
+// en vez de pedir una imagen a un servicio externo (LoremFlickr) en cada
+// visita — eso agregaba ~900ms reales a cada carga de una ficha de producto
+// (medido: 981ms con la imagen externa vs. 71ms con un asset local), y
+// afecta hoy al 100% del catálogo porque todavía no hay fotos reales
+// subidas. Se pierde la variedad "una foto distinta por SKU", pero se gana
+// velocidad real y no depender de un tercero (que además a veces devolvía
+// fotos con marcas de agua o gente real, nada ideal para un sitio real).
 export function getImagenProducto(p: Producto) {
   if (p.imagen && p.imagen !== IMAGEN_PLACEHOLDER) return p.imagen;
-  const palabras = PALABRAS_CLAVE_POR_CATEGORIA[p.categoria] ?? "car,parts";
-  const lock = hashSimple(p.sku);
-  return `https://loremflickr.com/600/600/${palabras}?lock=${lock}`;
+  return getFotoCategoria(p.categoria) ?? IMAGEN_PLACEHOLDER;
 }
 
 export function getFotoCategoria(categoria: string): string | null {
