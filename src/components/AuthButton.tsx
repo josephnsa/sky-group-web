@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { iniciarSincronizacionCarrito } from "../lib/cart-sync";
+import { estadoDeAcceso } from "../lib/supabase-admin";
 import { IconUser, IconChevronDown } from "./icons/ui";
 
 export default function AuthButton() {
@@ -27,18 +28,16 @@ export default function AuthButton() {
   }, []);
 
   // Se consulta aparte (no en el mismo efecto de arriba) porque depende de
-  // `user.id`, que recién existe después del primer chequeo de sesión.
+  // `user`, que recién existe después del primer chequeo de sesión. Usa el
+  // mismo `estadoDeAcceso()` compartido con el panel de admin (en vez de una
+  // consulta propia) para no tener dos lugares que puedan quedar
+  // desincronizados si el esquema de `admins` vuelve a cambiar.
   useEffect(() => {
     if (!user) {
       setEsAdmin(false);
       return;
     }
-    supabase
-      .from("admins")
-      .select("user_id")
-      .eq("user_id", user.id)
-      .maybeSingle()
-      .then(({ data }) => setEsAdmin(!!data));
+    estadoDeAcceso().then((estado) => setEsAdmin(estado === "admin"));
   }, [user]);
 
   // Cierra el menú al hacer clic afuera — mismo patrón que el mega-menu de
