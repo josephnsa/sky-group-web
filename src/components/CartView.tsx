@@ -122,7 +122,7 @@ export default function CartView() {
             class="rounded-lg border border-brand-blue/30 bg-brand-blue/5 p-4 dark:border-brand-blue/40 dark:bg-brand-blue/10"
           >
             <p class="text-sm font-medium text-neutral-900 dark:text-white">
-              ¿Ya enviaste tu pedido? ¿Querés vaciar el carrito o mantenerlo para revisarlo después?
+              ¿Ya enviaste tu pedido? ¿Quieres vaciar el carrito o mantenerlo para revisarlo después?
             </p>
             <div class="mt-3 flex gap-3">
               <button

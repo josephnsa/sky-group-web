@@ -160,7 +160,7 @@ function Panel() {
   }
 
   async function borrar(p: ProductoAdmin) {
-    if (!confirm(`¿Borrar "${p.nombre}" (${p.sku})? Esto no se puede deshacer — si solo querés ocultarlo, usá "Desactivar".`)) return;
+    if (!confirm(`¿Borrar "${p.nombre}" (${p.sku})? Esto no se puede deshacer — si solo quieres ocultarlo, usa "Desactivar".`)) return;
     await productosAdmin.borrar(p.sku);
     await cargar();
   }
