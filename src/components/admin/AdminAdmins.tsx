@@ -111,7 +111,7 @@ function Panel() {
                 >
                   <div class="min-w-0 flex-1">
                     <p class="truncate font-medium text-neutral-900 dark:text-neutral-100">
-                      {a.email} {esUnoMismo && <span class="text-neutral-500 dark:text-neutral-400">(vos)</span>}
+                      {a.email} {esUnoMismo && <span class="text-neutral-500 dark:text-neutral-400">(tú)</span>}
                     </p>
                     <p class="text-sm text-neutral-500 dark:text-neutral-400">
                       Agregado el {formatearFecha(a.creado_en)}
@@ -121,7 +121,7 @@ function Panel() {
                     type="button"
                     onClick={() => quitar(a)}
                     disabled={esUnoMismo}
-                    title={esUnoMismo ? "No podés quitarte a vos mismo — pedile a otro admin que lo haga" : undefined}
+                    title={esUnoMismo ? "No puedes quitarte a ti mismo — pídele a otro admin que lo haga" : undefined}
                     class="shrink-0 text-sm text-red-600 transition-colors duration-200 hover:underline disabled:cursor-not-allowed disabled:text-neutral-400 disabled:no-underline dark:text-red-400 dark:disabled:text-neutral-600"
                   >
                     Quitar
