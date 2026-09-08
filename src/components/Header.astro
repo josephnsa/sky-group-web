@@ -61,7 +61,20 @@ const categorias = getCategorias();
 
       <div class="flex items-center gap-1">
         <ThemeToggle />
-        <AuthButton client:idle />
+        {
+          /* `client:idle` sin timeout espera a que el navegador considere
+          el hilo principal "libre" (requestIdleCallback), lo que en un
+          dispositivo real con más carga (imágenes, el carrusel, otros
+          islands) puede demorar bastante — el botón se ve pero no responde
+          al primer clic (o al segundo, o al tercero), sin ningún indicio
+          visual de por qué. El timeout fuerza la hidratación dentro de
+          300ms sí o sí, aunque el navegador no lo considere "idle" — sigue
+          siendo diferido (no bloquea la carga inicial como client:load),
+          pero con un techo real de espera. Verificado leyendo el propio
+          runtime de Astro: `client:idle` sin este valor llama a
+          requestIdleCallback(cb, {timeout: undefined}), sin límite. */
+        }
+        <AuthButton client:idle={{ timeout: 300 }} />
         <CartIcon client:only="preact" />
         <label
           for="menu-toggle"
