@@ -33,17 +33,38 @@ export interface CarouselSlideAdmin {
   activo: boolean;
 }
 
+export interface AdminUsuario {
+  id: string;
+  email: string;
+  creado_en: string;
+}
+
 // Verifica sesión + pertenencia a `admins` en un solo lugar, reusado por las
-// 3 islas del panel — cada una lo llama al montar para decidir qué mostrar
+// islas del panel — cada una lo llama al montar para decidir qué mostrar
 // (login / sin acceso / formulario real). La seguridad de verdad la hacen
 // las políticas RLS de Supabase, esto es solo para la experiencia visual.
+//
+// Se compara por correo (no por user_id) para poder pre-autorizar a alguien
+// como admin ANTES de que haya iniciado sesión alguna vez — ver
+// docs/migracion-admins-por-email.sql.
 export async function estadoDeAcceso(): Promise<"sin-sesion" | "sin-acceso" | "admin"> {
   const { data: sesion } = await supabase.auth.getSession();
   const usuario = sesion.session?.user;
-  if (!usuario) return "sin-sesion";
+  if (!usuario?.email) return "sin-sesion";
 
-  const { data } = await supabase.from("admins").select("user_id").eq("user_id", usuario.id).maybeSingle();
+  const { data } = await supabase
+    .from("admins")
+    .select("id")
+    .ilike("email", usuario.email)
+    .maybeSingle();
   return data ? "admin" : "sin-acceso";
+}
+
+// Correo de la persona actualmente logueada — lo usa el panel de gestión de
+// admins para no dejar que alguien se quite el acceso a sí mismo por error.
+export async function correoActual(): Promise<string | null> {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.user.email ?? null;
 }
 
 // Sube un archivo al bucket público "imagenes" y devuelve su URL pública.
@@ -114,6 +135,25 @@ export const carruselAdmin = {
   },
   async borrar(id: string) {
     const { error } = await supabase.from("carousel_slides").delete().eq("id", id);
+    if (error) throw error;
+  },
+};
+
+export const adminsGestion = {
+  async listar(): Promise<AdminUsuario[]> {
+    const { data, error } = await supabase.from("admins").select("*").order("creado_en");
+    if (error) throw error;
+    return data;
+  },
+  // Agrega un correo a la lista de admins — no hace falta que esa persona
+  // ya haya iniciado sesión antes: en cuanto entre con Google usando este
+  // mismo correo, va a tener acceso automáticamente.
+  async agregar(email: string) {
+    const { error } = await supabase.from("admins").insert({ email: email.trim().toLowerCase() });
+    if (error) throw error;
+  },
+  async quitar(id: string) {
+    const { error } = await supabase.from("admins").delete().eq("id", id);
     if (error) throw error;
   },
 };

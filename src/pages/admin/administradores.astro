@@ -1,0 +1,19 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import AdminNav from "../../components/admin/AdminNav.astro";
+import AdminAdmins from "../../components/admin/AdminAdmins";
+---
+
+<Layout title="Admin · Administradores">
+  <section class="flex flex-col gap-8 px-4 py-12 sm:flex-row sm:py-16">
+    <AdminNav activo="administradores" />
+    <div class="min-w-0 max-w-3xl flex-1">
+      <h1 class="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white sm:text-4xl">
+        Administradores
+      </h1>
+      <div class="mt-8">
+        <AdminAdmins client:only="preact" />
+      </div>
+    </div>
+  </section>
+</Layout>
