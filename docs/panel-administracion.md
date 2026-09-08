@@ -41,8 +41,15 @@ create table carousel_slides (
   activo boolean not null default true
 );
 
+-- admins se maneja por CORREO, no por user_id — así se puede pre-autorizar
+-- a alguien como admin antes de que haya iniciado sesión alguna vez (con
+-- user_id era imposible, esa fila recién existe después del primer login).
+-- El panel /admin/administradores permite agregar/quitar admins sin tocar
+-- SQL una vez que ya existe el primer admin (ver paso 3 más abajo).
 create table admins (
-  user_id uuid primary key references auth.users(id) on delete cascade
+  id uuid primary key default gen_random_uuid(),
+  email text not null unique,
+  creado_en timestamptz not null default now()
 );
 
 alter table categorias enable row level security;
@@ -55,16 +62,21 @@ create policy "lectura publica de productos" on productos for select using (true
 create policy "lectura publica de carousel_slides" on carousel_slides for select using (true);
 
 create policy "admins escriben categorias" on categorias for all
-  using (exists (select 1 from admins where user_id = auth.uid()))
-  with check (exists (select 1 from admins where user_id = auth.uid()));
+  using (exists (select 1 from admins where lower(email) = lower(auth.email())))
+  with check (exists (select 1 from admins where lower(email) = lower(auth.email())));
 create policy "admins escriben productos" on productos for all
-  using (exists (select 1 from admins where user_id = auth.uid()))
-  with check (exists (select 1 from admins where user_id = auth.uid()));
+  using (exists (select 1 from admins where lower(email) = lower(auth.email())))
+  with check (exists (select 1 from admins where lower(email) = lower(auth.email())));
 create policy "admins escriben carousel_slides" on carousel_slides for all
-  using (exists (select 1 from admins where user_id = auth.uid()))
-  with check (exists (select 1 from admins where user_id = auth.uid()));
+  using (exists (select 1 from admins where lower(email) = lower(auth.email())))
+  with check (exists (select 1 from admins where lower(email) = lower(auth.email())));
 
-create policy "un admin ve su propia fila" on admins for select using (auth.uid() = user_id);
+create policy "admins ven la lista de admins" on admins for select
+  using (exists (select 1 from admins a2 where lower(a2.email) = lower(auth.email())));
+create policy "admins agregan admins" on admins for insert
+  with check (exists (select 1 from admins a2 where lower(a2.email) = lower(auth.email())));
+create policy "admins quitan admins" on admins for delete
+  using (exists (select 1 from admins a2 where lower(a2.email) = lower(auth.email())));
 ```
 
 ## 2. Crear el bucket de imágenes
@@ -85,26 +97,29 @@ create policy "admins suben imagenes"
   on storage.objects for insert
   with check (
     bucket_id = 'imagenes'
-    and exists (select 1 from admins where user_id = auth.uid())
+    and exists (select 1 from admins where lower(email) = lower(auth.email()))
   );
 
 create policy "admins borran imagenes"
   on storage.objects for delete
   using (
     bucket_id = 'imagenes'
-    and exists (select 1 from admins where user_id = auth.uid())
+    and exists (select 1 from admins where lower(email) = lower(auth.email()))
   );
 ```
 
 ## 3. Marcarte como el primer administrador
 
-Iniciá sesión con Google en el sitio al menos una vez (para que exista tu usuario), y
-después corré en el SQL Editor, reemplazando el correo:
+Una sola vez, por SQL Editor (reemplazando el correo):
 
 ```sql
-insert into admins (user_id)
-select id from auth.users where email = 'TU-CORREO-DE-GOOGLE@gmail.com';
+insert into admins (email) values ('TU-CORREO-DE-GOOGLE@gmail.com');
 ```
+
+Cualquier admin agregado *después* de este ya no necesita SQL — se hace desde el
+propio panel, en **/admin/administradores** (agregar por correo, no hace falta que esa
+persona haya iniciado sesión antes; en cuanto entre con Google usando ese correo, ya
+tiene acceso).
 
 ## 4. Migrar el catálogo actual (una sola vez)
 
