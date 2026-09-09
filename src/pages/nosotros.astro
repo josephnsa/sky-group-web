@@ -116,13 +116,36 @@ const RAZONES = [
 
   <section class="mx-auto max-w-5xl px-4 pb-16 sm:pb-24">
     <h2 class="border-l-4 border-brand-blue pl-3 text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">Nuestra ubicación</h2>
-    <div class="mt-4 space-y-2 text-sm text-neutral-600 dark:text-neutral-400">
-      {SUCURSALES.map((s) => <p>{s.nombre}: {s.direccion} ({s.horario})</p>)}
-      {NEGOCIO.mapsUrl && (
-        <a href={NEGOCIO.mapsUrl} target="_blank" rel="noopener noreferrer" class="inline-block font-medium text-brand-blue-dark hover:underline dark:text-brand-blue">
-          Ver en Google Maps →
-        </a>
-      )}
+    <div class="mt-6 grid gap-6 sm:grid-cols-2 sm:items-center">
+      <img
+        src="/images/nosotros/fachada.webp"
+        alt={`Fachada de ${SITE.nombre} en ${SUCURSALES[0].direccion}`}
+        class="aspect-[3/4] w-full rounded-xl border border-neutral-200 object-cover shadow-sm dark:border-neutral-800 sm:aspect-square"
+        loading="lazy"
+      />
+      <div>
+        {
+          SUCURSALES.map((s) => (
+            <div class="mb-4">
+              <p class="font-semibold text-neutral-900 dark:text-white">{s.nombre}</p>
+              <p class="text-neutral-600 dark:text-neutral-400">{s.direccion}</p>
+            </div>
+          ))
+        }
+        {NEGOCIO.mapsUrl && (
+          <a
+            href={NEGOCIO.mapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-1 font-medium text-brand-blue-dark transition-colors duration-200 hover:underline dark:text-brand-blue"
+          >
+            Ver en Google Maps →
+          </a>
+        )}
+        <p class="mt-4 text-xs text-neutral-500 dark:text-neutral-500">
+          {SUCURSALES.map((s) => s.horario).join(" · ")}
+        </p>
+      </div>
     </div>
   </section>
 </Layout>
