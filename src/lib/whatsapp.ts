@@ -8,11 +8,19 @@ export function formatearSoles(monto: number) {
 export function construirMensajePedido(lineas: CartLine[], total: number) {
   const encabezado = "Hola, quiero hacer el siguiente pedido:";
   const items = lineas
-    .map(
-      (l, i) =>
+    .map((l, i) => {
+      // Un producto sin precio cargado no debería poder agregarse al
+      // carrito (ver ProductCard/VistaRapidaModal/[sku].astro), pero se
+      // deja este caso cubierto por si quedó un ítem viejo en el carrito
+      // de alguien de antes de que el admin le sacara el precio.
+      if (l.producto.precio == null) {
+        return `${i + 1}. ${l.producto.nombre} (${l.producto.marca}) - Cant: ${l.cantidad} (precio a confirmar)`;
+      }
+      return (
         `${i + 1}. ${l.producto.nombre} (${l.producto.marca}) - ` +
-        `Cant: ${l.cantidad} x ${formatearSoles(l.producto.precio)} = ${formatearSoles(l.subtotal)}`,
-    )
+        `Cant: ${l.cantidad} x ${formatearSoles(l.producto.precio)} = ${formatearSoles(l.subtotal)}`
+      );
+    })
     .join("\n");
   const pie = `\n\nTotal estimado: ${formatearSoles(total)}\n\n(Precios sujetos a confirmación de stock)`;
   return `${encabezado}\n\n${items}${pie}`;

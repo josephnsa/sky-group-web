@@ -59,7 +59,7 @@ export default function CartView() {
               </p>
               <p class="text-sm text-neutral-500 dark:text-neutral-400">{l.producto.marca}</p>
               <p class="text-sm text-neutral-700 dark:text-neutral-300">
-                {formatearSoles(l.producto.precio)} c/u
+                {l.producto.precio != null ? `${formatearSoles(l.producto.precio)} c/u` : "Precio a confirmar"}
               </p>
             </div>
             <div class="flex items-center gap-2">

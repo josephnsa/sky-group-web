@@ -22,7 +22,7 @@ create table productos (
   subcategoria text not null,
   nombre text not null,
   marca text not null,
-  precio numeric not null,
+  precio numeric, -- opcional: la mayoría de productos se cotiza por WhatsApp, sin precio cargado
   precio_anterior numeric,
   imagen text,
   descripcion text not null,
