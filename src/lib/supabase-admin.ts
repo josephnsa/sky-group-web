@@ -14,7 +14,7 @@ export interface ProductoAdmin {
   subcategoria: string;
   nombre: string;
   marca: string;
-  precio: number;
+  precio: number | null;
   precio_anterior: number | null;
   imagen: string | null;
   descripcion: string;

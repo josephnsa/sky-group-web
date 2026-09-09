@@ -13,8 +13,11 @@ export interface Producto {
   subcategoria: string;
   nombre: string;
   marca: string;
-  precio: number; // soles, sin símbolo
-  precioAnterior?: number; // si hay descuento
+  // La mayoría de productos no tiene precio cargado (se cotiza por
+  // WhatsApp) — opcional a propósito, no es un dato obligatorio del
+  // catálogo.
+  precio?: number; // soles, sin símbolo
+  precioAnterior?: number; // si hay descuento (solo tiene sentido si hay precio)
   imagen: string; // ruta dentro de /public, URL de Supabase Storage, o el placeholder
   descripcion: string;
   destacado?: boolean;
@@ -83,7 +86,7 @@ async function cargarDatos() {
       subcategoria: f.subcategoria,
       nombre: f.nombre,
       marca: f.marca,
-      precio: Number(f.precio),
+      precio: f.precio != null ? Number(f.precio) : undefined,
       precioAnterior: f.precio_anterior != null ? Number(f.precio_anterior) : undefined,
       imagen: f.imagen ?? IMAGEN_PLACEHOLDER,
       descripcion: f.descripcion,

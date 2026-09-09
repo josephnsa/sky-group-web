@@ -29,7 +29,7 @@ function aFormulario(p: ProductoAdmin) {
     subcategoria: p.subcategoria,
     nombre: p.nombre,
     marca: p.marca,
-    precio: String(p.precio),
+    precio: p.precio != null ? String(p.precio) : "",
     precioAnterior: p.precio_anterior != null ? String(p.precio_anterior) : "",
     descripcion: p.descripcion,
     destacado: p.destacado,
@@ -116,7 +116,7 @@ function Panel() {
         subcategoria: form.subcategoria.trim(),
         nombre: form.nombre.trim(),
         marca: form.marca.trim(),
-        precio: Number(form.precio),
+        precio: form.precio ? Number(form.precio) : null,
         precio_anterior: form.precioAnterior ? Number(form.precioAnterior) : null,
         descripcion: form.descripcion.trim(),
         destacado: form.destacado,
@@ -203,7 +203,12 @@ function Panel() {
           <Campo label="Subcategoría" value={form.subcategoria} onInput={(v) => campo("subcategoria", v)} required />
           <Campo label="Nombre" value={form.nombre} onInput={(v) => campo("nombre", v)} required />
           <Campo label="Marca" value={form.marca} onInput={(v) => campo("marca", v)} required />
-          <Campo label="Precio (S/)" type="number" value={form.precio} onInput={(v) => campo("precio", v)} required />
+          <Campo
+            label="Precio (S/, opcional — si no se carga, se muestra 'Cotiza por WhatsApp')"
+            type="number"
+            value={form.precio}
+            onInput={(v) => campo("precio", v)}
+          />
           <Campo
             label="Precio anterior (S/, opcional — si hay descuento)"
             type="number"
@@ -312,7 +317,7 @@ function Panel() {
                 <div class="min-w-0 flex-1">
                   <p class="truncate font-medium text-neutral-900 dark:text-neutral-100">{p.nombre}</p>
                   <p class="truncate text-sm text-neutral-500 dark:text-neutral-400">
-                    {p.sku} · {p.marca} · S/ {p.precio}
+                    {p.sku} · {p.marca} · {p.precio != null ? `S/ ${p.precio}` : "Sin precio (cotizar)"}
                   </p>
                 </div>
                 <button

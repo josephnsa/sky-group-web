@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { getImagenProducto, type Producto } from "../data/catalog";
-import { IconSearch } from "./icons/ui";
+import { IconSearch, IconWhatsapp } from "./icons/ui";
 import AddToCartButton from "./AddToCartButton";
+import { NEGOCIO } from "../consts";
 
 interface Props {
   producto: Producto;
@@ -10,6 +11,11 @@ interface Props {
 
 function formatearSoles(monto: number) {
   return `S/ ${monto.toFixed(2)}`;
+}
+
+function enlaceCotizar(producto: Producto) {
+  const mensaje = encodeURIComponent(`Hola, quisiera cotizar: ${producto.nombre} (${producto.sku})`);
+  return `https://wa.me/${NEGOCIO.whatsappNumero}?text=${mensaje}`;
 }
 
 export default function ProductCard({ producto, onVistaRapida }: Props) {
@@ -23,10 +29,10 @@ export default function ProductCard({ producto, onVistaRapida }: Props) {
     if (imgRef.current?.complete) setCargada(true);
   }, []);
   const tieneDescuento =
-    producto.precioAnterior && producto.precioAnterior > producto.precio;
+    producto.precio != null && producto.precioAnterior != null && producto.precioAnterior > producto.precio;
   const porcentajeDescuento = tieneDescuento
     ? Math.round(
-        ((producto.precioAnterior! - producto.precio) /
+        ((producto.precioAnterior! - producto.precio!) /
           producto.precioAnterior!) *
           100,
       )
@@ -81,18 +87,32 @@ export default function ProductCard({ producto, onVistaRapida }: Props) {
         >
           {producto.nombre}
         </a>
-        <div class="flex items-baseline gap-2">
-          <span class="text-lg font-bold text-neutral-900 dark:text-white">
-            {formatearSoles(producto.precio)}
-          </span>
-          {tieneDescuento && (
-            <span class="text-sm text-neutral-400 line-through dark:text-neutral-500">
-              {formatearSoles(producto.precioAnterior!)}
+        {producto.precio != null && (
+          <div class="flex items-baseline gap-2">
+            <span class="text-lg font-bold text-neutral-900 dark:text-white">
+              {formatearSoles(producto.precio)}
             </span>
-          )}
-        </div>
+            {tieneDescuento && (
+              <span class="text-sm text-neutral-400 line-through dark:text-neutral-500">
+                {formatearSoles(producto.precioAnterior!)}
+              </span>
+            )}
+          </div>
+        )}
         <div class="mt-auto pt-2">
-          <AddToCartButton sku={producto.sku} />
+          {producto.precio != null ? (
+            <AddToCartButton sku={producto.sku} />
+          ) : (
+            <a
+              href={enlaceCotizar(producto)}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex w-full items-center justify-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-green-700 active:scale-[0.98]"
+            >
+              <IconWhatsapp class="h-4 w-4" />
+              Cotiza por WhatsApp
+            </a>
+          )}
         </div>
       </div>
     </div>

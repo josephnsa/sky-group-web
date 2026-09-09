@@ -48,7 +48,7 @@ export const cartLines = computed(cartMap, (map): CartLine[] => {
     const producto = productos.find((p) => p.sku === sku);
     const cantidad = Number(cantidadStr);
     if (!producto || cantidad <= 0) continue;
-    lineas.push({ producto, cantidad, subtotal: producto.precio * cantidad });
+    lineas.push({ producto, cantidad, subtotal: (producto.precio ?? 0) * cantidad });
   }
   return lineas;
 });

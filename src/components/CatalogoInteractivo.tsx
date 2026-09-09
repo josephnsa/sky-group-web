@@ -93,9 +93,11 @@ export default function CatalogoInteractivo({ productos, categorias }: Props) {
       const coincideCategoria = !categoria || p.categoria === categoria;
       const coincideSubcategoria = !subcategoria || p.subcategoria === subcategoria;
       const coincideMarca = marcas.length === 0 || marcas.includes(p.marca);
-      const coincideMin = min === null || p.precio >= min;
-      const coincideMax = max === null || p.precio <= max;
-      const coincideOferta = !soloOfertas || (p.precioAnterior && p.precioAnterior > p.precio);
+      // Un producto sin precio cargado no se puede confirmar que esté "dentro"
+      // de un rango de precio — se excluye en vez de asumir que sí entra.
+      const coincideMin = min === null || (p.precio != null && p.precio >= min);
+      const coincideMax = max === null || (p.precio != null && p.precio <= max);
+      const coincideOferta = !soloOfertas || (p.precio != null && p.precioAnterior != null && p.precioAnterior > p.precio);
       return (
         coincideTexto &&
         coincideCategoria &&
@@ -108,8 +110,14 @@ export default function CatalogoInteractivo({ productos, categorias }: Props) {
     });
 
     lista = [...lista].sort((a, b) => {
-      if (orden === "precio-asc") return a.precio - b.precio;
-      if (orden === "precio-desc") return b.precio - a.precio;
+      // Sin precio siempre al final, sea "menor a mayor" o "mayor a menor"
+      // — no hay un valor real con el que ordenarlos.
+      if (orden === "precio-asc" || orden === "precio-desc") {
+        if (a.precio == null && b.precio == null) return 0;
+        if (a.precio == null) return 1;
+        if (b.precio == null) return -1;
+        return orden === "precio-asc" ? a.precio - b.precio : b.precio - a.precio;
+      }
       if (orden === "nombre-asc") return a.nombre.localeCompare(b.nombre);
       return 0;
     });
