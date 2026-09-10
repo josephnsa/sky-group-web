@@ -1,9 +1,7 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import AddToCartButton from "../../components/AddToCartButton";
-import { IconWhatsapp } from "../../components/icons/ui";
 import { getImagenProducto, productos, slugify } from "../../data/catalog";
-import { NEGOCIO } from "../../consts";
 
 export function getStaticPaths() {
   return productos.map((p) => ({
@@ -15,9 +13,6 @@ export function getStaticPaths() {
 const { producto } = Astro.props;
 const tieneDescuento =
   producto.precio != null && producto.precioAnterior != null && producto.precioAnterior > producto.precio;
-const enlaceCotizar = `https://wa.me/${NEGOCIO.whatsappNumero}?text=${encodeURIComponent(
-  `Hola, quisiera cotizar: ${producto.nombre} (${producto.sku})`,
-)}`;
 ---
 
 <Layout title={producto.nombre} description={producto.descripcion}>
@@ -64,21 +59,7 @@ const enlaceCotizar = `https://wa.me/${NEGOCIO.whatsappNumero}?text=${encodeURIC
         <p class="mt-4 text-neutral-700 dark:text-neutral-300">{producto.descripcion}</p>
 
         <div class="mt-6 max-w-xs">
-          {
-            producto.precio != null ? (
-              <AddToCartButton client:load sku={producto.sku} />
-            ) : (
-              <a
-                href={enlaceCotizar}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="flex w-full items-center justify-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-green-700 active:scale-[0.98]"
-              >
-                <IconWhatsapp class="h-4 w-4" />
-                Cotiza por WhatsApp
-              </a>
-            )
-          }
+          <AddToCartButton client:load sku={producto.sku} />
         </div>
 
         {
