@@ -14,6 +14,13 @@ import { getImagenProducto } from "../data/catalog";
 export default function CartView() {
   const lineas = useStore(cartLines);
   const total = useStore(cartTotal);
+  // Un producto sin precio suma 0 al total (ver cart-store.ts) — mostrar
+  // "Total: S/ 0.00" cuando en realidad nada tiene precio confirmado da la
+  // idea equivocada de que el pedido es gratis. Se distingue entre "nada
+  // tiene precio todavía" (no se muestra ningún monto) y "una mezcla"
+  // (se muestra el total solo de lo que sí tiene precio, con un aviso).
+  const itemsSinPrecio = lineas.filter((l) => l.producto.precio == null).length;
+  const hayItemsConPrecio = lineas.some((l) => l.producto.precio != null);
   // Tras enviar el pedido por WhatsApp (que abre en pestaña nueva, sin
   // recargar esta página) se pregunta si vaciar el carrito o mantenerlo por
   // si el cliente quiere revisarlo de nuevo antes de que le confirmen stock.
@@ -86,23 +93,32 @@ export default function CartView() {
               </button>
             </div>
             <p class="w-24 flex-none text-right font-semibold text-neutral-900 dark:text-neutral-100">
-              {formatearSoles(l.subtotal)}
+              {l.producto.precio != null ? formatearSoles(l.subtotal) : "A cotizar"}
             </p>
           </motion.li>
         ))}
         </AnimatePresence>
       </ul>
 
-      <div class="flex flex-col items-end gap-3 border-t border-neutral-200 pt-4 dark:border-neutral-800">
-        <p class="text-lg font-bold text-neutral-900 dark:text-white">
-          Total: <span>{formatearSoles(total)}</span>
-        </p>
+      <div class="flex flex-col items-end gap-1 border-t border-neutral-200 pt-4 dark:border-neutral-800">
+        {hayItemsConPrecio ? (
+          <p class="text-lg font-bold text-neutral-900 dark:text-white">
+            Total: <span>{formatearSoles(total)}</span>
+          </p>
+        ) : (
+          <p class="text-lg font-bold text-neutral-900 dark:text-white">Total: A cotizar por WhatsApp</p>
+        )}
+        {itemsSinPrecio > 0 && hayItemsConPrecio && (
+          <p class="text-sm text-neutral-500 dark:text-neutral-400">
+            + {itemsSinPrecio} producto{itemsSinPrecio > 1 ? "s" : ""} a cotizar por WhatsApp
+          </p>
+        )}
         <a
           href={construirEnlaceWhatsApp(lineas, total)}
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => setPreguntarVaciar(true)}
-          class="inline-flex items-center gap-2 rounded-md bg-green-600 px-6 py-3 text-sm font-semibold text-white shadow-brand-green transition-colors duration-200 hover:bg-green-700"
+          class="mt-2 inline-flex items-center gap-2 rounded-md bg-green-600 px-6 py-3 text-sm font-semibold text-white shadow-brand-green transition-colors duration-200 hover:bg-green-700"
         >
           Enviar pedido por WhatsApp
         </a>
