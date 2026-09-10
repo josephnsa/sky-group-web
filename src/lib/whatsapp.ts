@@ -7,22 +7,19 @@ export function formatearSoles(monto: number) {
 
 export function construirMensajePedido(lineas: CartLine[], total: number) {
   const encabezado = "Hola, quiero hacer el siguiente pedido:";
+  // Cada producto en su propio bloque (nombre en negrita + una línea de
+  // datos abajo, no todo apretado en un solo renglón largo) — más fácil de
+  // leer de un vistazo para quien recibe el pedido del lado de la empresa.
+  // *texto* es la negrita nativa de WhatsApp, no una convención inventada.
   const items = lineas
     .map((l, i) => {
-      // Código del producto siempre incluido — la empresa lo necesita para
-      // ubicarlo en su propio inventario, el nombre solo no alcanza.
-      // Muchos productos del catálogo todavía no tienen precio cargado (se
-      // cotizan por WhatsApp) — se marcan así en vez de mostrar "x S/0.00 =
-      // S/0.00", que daría la idea equivocada de que el producto es gratis.
-      if (l.producto.precio == null) {
-        return `${i + 1}. ${l.producto.nombre} (${l.producto.marca}) - Código: ${l.producto.sku} - Cant: ${l.cantidad} (precio a confirmar)`;
-      }
-      return (
-        `${i + 1}. ${l.producto.nombre} (${l.producto.marca}) - Código: ${l.producto.sku} - ` +
-        `Cant: ${l.cantidad} x ${formatearSoles(l.producto.precio)} = ${formatearSoles(l.subtotal)}`
-      );
+      const precioLinea =
+        l.producto.precio != null
+          ? `Cant: ${l.cantidad}  ·  Precio: ${formatearSoles(l.producto.precio)}  ·  Subtotal: ${formatearSoles(l.subtotal)}`
+          : `Cant: ${l.cantidad}  ·  Precio: por confirmar`;
+      return `${i + 1}. *${l.producto.nombre}*\nCódigo: ${l.producto.sku}  ·  Marca: ${l.producto.marca}\n${precioLinea}`;
     })
-    .join("\n");
+    .join("\n\n");
 
   // El mensaje lo escribe el cliente hacia la empresa — el texto tiene que
   // sonar como algo que el cliente diría ("quedo atento/a"), no como si la
@@ -33,15 +30,15 @@ export function construirMensajePedido(lineas: CartLine[], total: number) {
   if (!hayConPrecio) {
     // Ningún producto tiene precio todavía: no se muestra ningún monto
     // (ni siquiera "S/0.00", que se leería como "gratis").
-    pie = `\n\nQuedo atento/a a la cotización y confirmación de stock de estos productos.`;
+    pie = `Quedo atento/a a la cotización y confirmación de stock de estos productos.`;
   } else if (hayConfirmar) {
     pie =
-      `\n\nTotal de productos con precio: ${formatearSoles(total)}\n` +
+      `*Total de productos con precio: ${formatearSoles(total)}*\n` +
       `Quedo atento/a a la cotización y confirmación de stock del resto.`;
   } else {
-    pie = `\n\nTotal estimado: ${formatearSoles(total)}\n\n(Precios sujetos a confirmación de stock)`;
+    pie = `*Total estimado: ${formatearSoles(total)}*\n(Precios sujetos a confirmación de stock)`;
   }
-  return `${encabezado}\n\n${items}${pie}`;
+  return `${encabezado}\n\n${items}\n\n${pie}`;
 }
 
 export function construirEnlaceWhatsApp(lineas: CartLine[], total: number) {
