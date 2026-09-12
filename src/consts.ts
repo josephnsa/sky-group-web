@@ -31,7 +31,7 @@ export const RECLAMOS = {
   // TODO PENDIENTE: crear el Apps Script (ver /docs/libro-de-reclamaciones.md) y pegar
   // aquí la URL de despliegue (termina en /exec).
   appsScriptUrl: "",
-  correoNotificacion: "reclamos@sky.com.pe", // TODO PENDIENTE: confirmar correo real
+  correoNotificacion: "administracion@sky.com.pe", // confirmado por el usuario — mismo correo general del negocio
 };
 
 // URLs confirmadas tal cual en "PRESENTACION SKY GROUP 2026.pptx" (diapositiva 9).

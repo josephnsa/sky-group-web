@@ -43,10 +43,8 @@ function doPost(e) {
     datos.pedido,
   ]);
 
-  // TODO PENDIENTE: reemplazar por el correo real donde el negocio quiere
-  // recibir la notificación de cada reclamo nuevo.
   MailApp.sendEmail(
-    'reclamos@tu-dominio.pe',
+    'administracion@sky.com.pe',
     'Nuevo reclamo: ' + codigo,
     JSON.stringify(datos, null, 2)
   );
