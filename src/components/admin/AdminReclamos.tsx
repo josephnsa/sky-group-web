@@ -20,6 +20,54 @@ function formatearFecha(iso: string) {
   });
 }
 
+const COLUMNAS: { encabezado: string; obtener: (r: Reclamo) => string }[] = [
+  { encabezado: "Código", obtener: (r) => r.codigo },
+  { encabezado: "Fecha", obtener: (r) => formatearFecha(r.creado_en) },
+  { encabezado: "Tipo", obtener: (r) => (r.tipo === "reclamo" ? "Reclamo" : "Queja") },
+  { encabezado: "Estado", obtener: (r) => (r.estado === "pendiente" ? "Pendiente" : "Atendido") },
+  { encabezado: "Nombre", obtener: (r) => r.nombre },
+  { encabezado: "Documento", obtener: (r) => r.documento },
+  { encabezado: "Domicilio", obtener: (r) => r.domicilio },
+  { encabezado: "Teléfono", obtener: (r) => r.telefono },
+  { encabezado: "Correo", obtener: (r) => r.correo },
+  { encabezado: "Apoderado", obtener: (r) => r.apoderado ?? "" },
+  { encabezado: "Tipo de bien", obtener: (r) => r.tipo_bien },
+  { encabezado: "Descripción del bien", obtener: (r) => r.descripcion_bien },
+  { encabezado: "Monto reclamado", obtener: (r) => (r.monto != null ? String(r.monto) : "") },
+  { encabezado: "Detalle", obtener: (r) => r.detalle },
+  { encabezado: "Pedido del consumidor", obtener: (r) => r.pedido },
+];
+
+// Una celda con coma, comilla o salto de línea rompe el CSV si no se
+// envuelve entre comillas (y las comillas internas se duplican) — regla
+// estándar del formato, no algo específico de Excel.
+function celdaCsv(valor: string) {
+  const necesitaComillas = /[";\n]/.test(valor);
+  const escapado = valor.replace(/"/g, '""');
+  return necesitaComillas ? `"${escapado}"` : escapado;
+}
+
+// Separador ";" (no ",") y BOM de UTF-8 al inicio — Excel en configuración
+// regional de Perú/Latinoamérica interpreta la coma como separador decimal,
+// así que un CSV con comas le entra todo en una sola columna; el BOM es
+// necesario para que las tildes/ñ no salgan corruptas al abrir el archivo.
+function descargarComoExcel(reclamos: Reclamo[]) {
+  const encabezados = COLUMNAS.map((c) => celdaCsv(c.encabezado)).join(";");
+  const filas = reclamos.map((r) => COLUMNAS.map((c) => celdaCsv(c.obtener(r))).join(";"));
+  const contenido = "﻿" + [encabezados, ...filas].join("\r\n");
+
+  const blob = new Blob([contenido], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const enlace = document.createElement("a");
+  const fecha = new Date().toISOString().slice(0, 10);
+  enlace.href = url;
+  enlace.download = `reclamos-sky-group-${fecha}.csv`;
+  document.body.appendChild(enlace);
+  enlace.click();
+  enlace.remove();
+  URL.revokeObjectURL(url);
+}
+
 function Panel() {
   const [reclamos, setReclamos] = useState<Reclamo[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -55,14 +103,24 @@ function Panel() {
             </span>
           )}
         </p>
-        <label class="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
-          <input
-            type="checkbox"
-            checked={soloPendientes}
-            onChange={(e) => setSoloPendientes((e.target as HTMLInputElement).checked)}
-          />
-          Solo pendientes
-        </label>
+        <div class="flex items-center gap-4">
+          <label class="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
+            <input
+              type="checkbox"
+              checked={soloPendientes}
+              onChange={(e) => setSoloPendientes((e.target as HTMLInputElement).checked)}
+            />
+            Solo pendientes
+          </label>
+          <button
+            type="button"
+            onClick={() => descargarComoExcel(lista)}
+            disabled={lista.length === 0}
+            class="rounded-md border border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-700 transition-colors duration-200 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          >
+            Descargar Excel
+          </button>
+        </div>
       </div>
 
       {cargando ? (
