@@ -15,7 +15,7 @@ export const SITE = {
 
 export const NEGOCIO = {
   razonSocial: "SKY GROUP SAC",
-  ruc: "PENDIENTE", // TODO PENDIENTE — no aparece en la presentación oficial
+  ruc: "20600872606",
   direccion: "Av. México #1028, La Victoria, Lima, Perú",
   // Confirmado en "PRESENTACION SKY GROUP 2026.pptx" (diapositiva 17)
   mapsUrl: "https://share.google/GidL8kB6py4NJiXB9",
