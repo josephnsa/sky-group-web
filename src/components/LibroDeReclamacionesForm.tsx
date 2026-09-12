@@ -1,33 +1,22 @@
 import { useState } from "preact/hooks";
-import { RECLAMOS } from "../consts";
+import { enviarReclamo, type DatosReclamo } from "../lib/reclamos";
 
 type Estado = "idle" | "enviando" | "ok" | "error";
 
 export default function LibroDeReclamacionesForm() {
   const [estado, setEstado] = useState<Estado>("idle");
   const [codigoReclamo, setCodigoReclamo] = useState<string | null>(null);
-  const configurado = Boolean(RECLAMOS.appsScriptUrl);
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
-    if (!configurado) return;
 
     const form = e.target as HTMLFormElement;
-    const datos = Object.fromEntries(new FormData(form).entries());
+    const datos = Object.fromEntries(new FormData(form).entries()) as unknown as DatosReclamo;
 
     setEstado("enviando");
     try {
-      // Content-Type "text/plain" evita el preflight CORS (OPTIONS) que Google
-      // Apps Script no maneja bien por defecto; el body sigue siendo JSON y se
-      // parsea igual en el Apps Script con JSON.parse(e.postData.contents).
-      const res = await fetch(RECLAMOS.appsScriptUrl, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(datos),
-      });
-      if (!res.ok) throw new Error("Respuesta no OK");
-      const data = await res.json();
-      setCodigoReclamo(data.codigo ?? "N/D");
+      const codigo = await enviarReclamo(datos);
+      setCodigoReclamo(codigo);
       setEstado("ok");
       form.reset();
     } catch (err) {
@@ -51,13 +40,6 @@ export default function LibroDeReclamacionesForm() {
 
   return (
     <form onSubmit={handleSubmit} class="space-y-6">
-      {!configurado && (
-        <p class="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
-          Este formulario todavía no está conectado a un backend (falta configurar
-          RECLAMOS.appsScriptUrl en src/consts.ts). Se muestra solo como vista previa.
-        </p>
-      )}
-
       <fieldset class="space-y-3">
         <legend class="font-semibold text-neutral-900 dark:text-white">Tipo</legend>
         <div class="flex gap-6">
@@ -147,7 +129,7 @@ export default function LibroDeReclamacionesForm() {
 
       <button
         type="submit"
-        disabled={!configurado || estado === "enviando"}
+        disabled={estado === "enviando"}
         class="rounded-md bg-brand-blue px-6 py-3 text-sm font-semibold text-white hover:bg-brand-blue-dark disabled:cursor-not-allowed disabled:opacity-50"
       >
         {estado === "enviando" ? "Enviando..." : "Enviar reclamo"}
