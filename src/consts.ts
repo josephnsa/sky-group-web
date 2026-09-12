@@ -26,13 +26,6 @@ export const NEGOCIO = {
   whatsappNumero: "51950486811",
 };
 
-export const RECLAMOS = {
-  // URL del Google Apps Script Web App que guarda los reclamos en la hoja "Reclamos".
-  // TODO PENDIENTE: crear el Apps Script (ver /docs/libro-de-reclamaciones.md) y pegar
-  // aquí la URL de despliegue (termina en /exec).
-  appsScriptUrl: "",
-  correoNotificacion: "administracion@sky.com.pe", // confirmado por el usuario — mismo correo general del negocio
-};
 
 // URLs confirmadas tal cual en "PRESENTACION SKY GROUP 2026.pptx" (diapositiva 9).
 // No se incluyó YouTube en la presentación oficial, así que se deja vacío en vez

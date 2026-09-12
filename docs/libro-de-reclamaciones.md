@@ -1,92 +1,35 @@
-# Backend gratuito del Libro de Reclamaciones Virtual (Google Apps Script)
+# Libro de Reclamaciones Virtual
 
-El formulario de `/libro-de-reclamaciones` necesita un lugar gratis donde guardar
-los reclamos. Se usa Google Apps Script (gratis, sin tarjeta) atado a una hoja de
-cálculo. Pasos:
+El formulario de `/libro-de-reclamaciones` guarda los reclamos directamente en
+Supabase (tabla `reclamos`) — no depende de ningún servicio externo (Google
+Apps Script, correo, etc.).
 
-## 1. Crear la hoja de cálculo
+## Cómo funciona (y qué exige realmente la ley)
 
-1. Crea un Google Sheet nuevo (puede ser el mismo que usarás para el catálogo, en
-   una pestaña separada, o uno dedicado).
-2. Crea una pestaña llamada exactamente `Reclamos`.
-3. En la fila 1, agrega estos encabezados (uno por columna):
+Por la Ley N° 29571 y el D.S. N° 011-2011-PCM, el negocio tiene que:
 
-```
-Fecha | Codigo | Tipo | Nombre | Documento | Domicilio | Telefono | Correo | Apoderado | TipoBien | DescripcionBien | Monto | Detalle | Pedido
-```
+1. Dejar que el consumidor registre un reclamo o queja con los datos obligatorios.
+2. Entregarle un **código de seguimiento** en el momento.
+3. Responderle dentro del plazo (30 días, norma general de protección al consumidor).
 
-## 2. Crear el Apps Script
+**No hay ninguna obligación de avisar a INDECOPI ni a otra entidad al momento
+del registro** — eso solo pasa después, y por iniciativa propia del cliente,
+si no queda conforme con la respuesta del negocio. Por eso alcanza con
+guardar el reclamo en una base de datos propia (Supabase, en este caso).
 
-1. En el Sheet, ve a **Extensiones → Apps Script**.
-2. Borra el contenido de `Code.gs` y pega esto:
+## Configuración (una sola vez)
 
-```javascript
-function doPost(e) {
-  const datos = JSON.parse(e.postData.contents);
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Reclamos');
-  const codigo = 'REC-' + Utilities.formatDate(new Date(), 'GMT-5', 'yyyyMMdd-HHmmss');
+Correr `docs/migracion-reclamos-supabase.sql` en el SQL Editor de Supabase —
+crea la tabla `reclamos` con sus permisos (cualquiera puede registrar un
+reclamo; solo un admin puede verlos y marcarlos como atendidos).
 
-  sheet.appendRow([
-    new Date(),
-    codigo,
-    datos.tipo,
-    datos.nombre,
-    datos.documento,
-    datos.domicilio,
-    datos.telefono,
-    datos.correo,
-    datos.apoderado || '',
-    datos.tipoBien,
-    datos.descripcionBien,
-    datos.monto || '',
-    datos.detalle,
-    datos.pedido,
-  ]);
+## Uso
 
-  MailApp.sendEmail(
-    'administracion@sky.com.pe',
-    'Nuevo reclamo: ' + codigo,
-    JSON.stringify(datos, null, 2)
-  );
-
-  if (datos.correo) {
-    MailApp.sendEmail(
-      datos.correo,
-      'Confirmación de reclamo ' + codigo,
-      'Hemos recibido tu ' + datos.tipo + '. Tu código de seguimiento es: ' + codigo
-    );
-  }
-
-  return ContentService
-    .createTextOutput(JSON.stringify({ codigo }))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-```
-
-3. Guarda el proyecto (ícono de disquete).
-
-## 3. Publicar como Web App
-
-1. Clic en **Implementar → Nueva implementación**.
-2. Tipo: **Aplicación web**.
-3. "Ejecutar como": tu cuenta.
-4. "Quién tiene acceso": **Cualquier usuario** (necesario para que el formulario
-   público pueda enviar datos).
-5. Clic en **Implementar**, autoriza los permisos que pida Google (envío de
-   correo y acceso a la hoja).
-6. Copia la URL que termina en `/exec`.
-
-## 4. Conectar con el sitio
-
-Pega esa URL en [src/consts.ts](../src/consts.ts), en `RECLAMOS.appsScriptUrl`.
-Mientras ese campo esté vacío, el formulario se muestra pero no permite enviar
-(se ve un aviso de "vista previa" en su lugar).
-
-## Notas
-
-- Es 100% gratis: no requiere activar facturación en Google Cloud ni tarjeta.
-- Los límites de envío de correo de una cuenta Gmail normal (100/día) son
-  generosos para el volumen esperado de reclamos de una tienda chica/mediana.
-- Cada vez que se edite el código del Apps Script hay que crear una **nueva
-  implementación** (o editar la existente) para que los cambios se reflejen en
-  la URL publicada.
+- El formulario público (`/libro-de-reclamaciones`) siempre está activo, no
+  hay ningún paso de configuración pendiente del lado del código.
+- Los reclamos se revisan en **`/admin/reclamos`** — se pueden ver todos los
+  detalles y marcar cada uno como "Atendido" una vez resuelto.
+- No hay aviso automático por correo cuando llega un reclamo nuevo — hay que
+  entrar al panel a revisar. Si más adelante se quiere un aviso automático,
+  se puede agregar con un servicio de correo transaccional (tiene un costo o
+  configuración extra, no es tan directo como con una cuenta de Gmail).
