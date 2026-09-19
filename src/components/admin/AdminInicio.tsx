@@ -29,6 +29,12 @@ export default function AdminInicio() {
           Reclamos
         </a>
         <a
+          href="/admin/configuracion"
+          class="rounded-lg border border-neutral-200 p-5 text-center font-semibold text-neutral-900 transition-colors duration-200 hover:border-brand-blue hover:bg-brand-blue/5 dark:border-neutral-800 dark:text-white dark:hover:bg-brand-blue/10"
+        >
+          Configuración
+        </a>
+        <a
           href="/admin/administradores"
           class="rounded-lg border border-neutral-200 p-5 text-center font-semibold text-neutral-900 transition-colors duration-200 hover:border-brand-blue hover:bg-brand-blue/5 dark:border-neutral-800 dark:text-white dark:hover:bg-brand-blue/10"
         >

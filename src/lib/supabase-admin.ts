@@ -141,6 +141,33 @@ export const carruselAdmin = {
   },
 };
 
+export interface ConfiguracionSitio {
+  id: number;
+  telefono: string | null;
+  correo: string | null;
+  direccion: string | null;
+  horario: string | null;
+  whatsapp_numero: string | null;
+  facebook: string | null;
+  instagram: string | null;
+  tiktok: string | null;
+  youtube: string | null;
+  logo_url: string | null;
+  foto_fachada_url: string | null;
+}
+
+export const configuracionAdmin = {
+  async obtener(): Promise<ConfiguracionSitio | null> {
+    const { data, error } = await supabase.from("configuracion_sitio").select("*").eq("id", 1).maybeSingle();
+    if (error) throw error;
+    return data;
+  },
+  async actualizar(cambios: Partial<ConfiguracionSitio>) {
+    const { error } = await supabase.from("configuracion_sitio").update(cambios).eq("id", 1);
+    if (error) throw error;
+  },
+};
+
 export const adminsGestion = {
   async listar(): Promise<AdminUsuario[]> {
     const { data, error } = await supabase.from("admins").select("*").order("creado_en");
