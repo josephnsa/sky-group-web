@@ -17,6 +17,8 @@ export interface ProductoAdmin {
   precio: number | null;
   precio_anterior: number | null;
   imagen: string | null;
+  imagenes: string[] | null;
+  video_url: string | null;
   descripcion: string;
   destacado: boolean;
   activo: boolean;

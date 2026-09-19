@@ -52,7 +52,11 @@ function Panel() {
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [archivo, setArchivo] = useState<File | null>(null);
+  // Varias fotos (la primera queda como `imagen` principal, el resto como
+  // galería `imagenes`) + un video opcional — mismo patrón "solo se
+  // reemplaza si se elige algo nuevo" que ya tenía la foto única.
+  const [archivos, setArchivos] = useState<File[]>([]);
+  const [archivoVideo, setArchivoVideo] = useState<File | null>(null);
   const [form, setForm] = useState(VACIO);
   // sku !== null mientras se edita un producto existente (en vez de crear
   // uno nuevo) — el mismo formulario de abajo se reusa para ambos casos.
@@ -77,14 +81,16 @@ function Panel() {
   function editar(p: ProductoAdmin) {
     setEditandoSku(p.sku);
     setForm(aFormulario(p));
-    setArchivo(null);
+    setArchivos([]);
+    setArchivoVideo(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function cancelarEdicion() {
     setEditandoSku(null);
     setForm(VACIO);
-    setArchivo(null);
+    setArchivos([]);
+    setArchivoVideo(null);
     (document.getElementById("form-producto") as HTMLFormElement)?.reset();
   }
 
@@ -124,22 +130,33 @@ function Panel() {
         especificaciones: parsearEspecificaciones(form.especificaciones),
       };
 
+      // Todas las fotos elegidas se suben en paralelo; la primera queda
+      // como `imagen` principal (la que se ve en tarjetas/listados) y el
+      // resto como galería (`imagenes`, la que muestra GaleriaProducto).
+      const urlsFotos = archivos.length > 0 ? await Promise.all(archivos.map((a) => subirImagen(a, "productos"))) : null;
+      const urlVideo = archivoVideo ? await subirImagen(archivoVideo, "productos") : null;
+
       if (editandoSku) {
-        // La imagen solo se reemplaza si se eligió un archivo nuevo — si no,
-        // se deja la que ya tenía (no se pisa con null). El SKU sí se puede
-        // renombrar: se busca la fila por el SKU viejo (`editandoSku`) y se
-        // guarda el nuevo valor de `form.sku` en el cambio.
+        // Las fotos/video solo se reemplazan si se eligió algo nuevo — si
+        // no, se deja lo que ya tenía (no se pisa con null). El SKU sí se
+        // puede renombrar: se busca la fila por el SKU viejo (`editandoSku`)
+        // y se guarda el nuevo valor de `form.sku` en el cambio.
         const cambios: Partial<ProductoAdmin> = {
           ...datosComunes,
           sku: form.sku.trim().toUpperCase(),
         };
-        if (archivo) cambios.imagen = await subirImagen(archivo, "productos");
+        if (urlsFotos) {
+          cambios.imagen = urlsFotos[0];
+          cambios.imagenes = urlsFotos.slice(1);
+        }
+        if (urlVideo) cambios.video_url = urlVideo;
         await productosAdmin.actualizar(editandoSku, cambios);
       } else {
-        const imagen = archivo ? await subirImagen(archivo, "productos") : null;
         await productosAdmin.crear({
           sku: form.sku.trim().toUpperCase(),
-          imagen,
+          imagen: urlsFotos ? urlsFotos[0] : null,
+          imagenes: urlsFotos ? urlsFotos.slice(1) : null,
+          video_url: urlVideo,
           activo: true,
           ...datosComunes,
         });
@@ -260,19 +277,41 @@ function Panel() {
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300" htmlFor="imagen-producto">
-            Foto del producto {editandoSku && "(opcional — dejá vacío para mantener la actual)"}
+          <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300" htmlFor="imagenes-producto">
+            Fotos del producto (podés elegir varias) {editandoSku && "— opcional, dejá vacío para mantener las actuales"}
           </label>
           <input
-            id="imagen-producto"
+            id="imagenes-producto"
             type="file"
             accept="image/*"
-            onChange={(e) => setArchivo((e.target as HTMLInputElement).files?.[0] ?? null)}
+            multiple
+            onChange={(e) => setArchivos(Array.from((e.target as HTMLInputElement).files ?? []))}
             class="mt-1 block w-full text-sm text-neutral-700 dark:text-neutral-300"
           />
           <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-            Recomendado: cuadrada, mínimo 600×600px, fondo blanco o transparente. Si no
-            subís una, se muestra una imagen genérica del rubro mientras tanto.
+            Recomendado: cuadradas, mínimo 600×600px, fondo blanco o transparente. La
+            primera foto elegida es la principal (la que se ve en el catálogo); el resto
+            arma la galería de la ficha del producto. Si no subís ninguna, se muestra una
+            imagen genérica del rubro mientras tanto.
+            {archivos.length > 0 && ` (${archivos.length} foto${archivos.length !== 1 ? "s" : ""} elegida${archivos.length !== 1 ? "s" : ""})`}
+          </p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300" htmlFor="video-producto">
+            Video del producto (opcional) {editandoSku && "— dejá vacío para mantener el actual"}
+          </label>
+          <input
+            id="video-producto"
+            type="file"
+            accept="video/*"
+            onChange={(e) => setArchivoVideo((e.target as HTMLInputElement).files?.[0] ?? null)}
+            class="mt-1 block w-full text-sm text-neutral-700 dark:text-neutral-300"
+          />
+          <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+            Formato MP4, lo más liviano posible (idealmente menos de 20 MB) para que cargue
+            rápido en celular. Aparece junto a las fotos en la ficha del producto.
+            {archivoVideo && ` (video elegido: ${archivoVideo.name})`}
           </p>
         </div>
 
