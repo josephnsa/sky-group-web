@@ -1,6 +1,7 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import AddToCartButton from "../../components/AddToCartButton";
+import GaleriaProducto from "../../components/GaleriaProducto";
 import { getImagenProducto, productos, slugify } from "../../data/catalog";
 
 export function getStaticPaths() {
@@ -13,6 +14,7 @@ export function getStaticPaths() {
 const { producto } = Astro.props;
 const tieneDescuento =
   producto.precio != null && producto.precioAnterior != null && producto.precioAnterior > producto.precio;
+const galeria = [getImagenProducto(producto), ...(producto.imagenes ?? [])];
 ---
 
 <Layout title={producto.nombre} description={producto.descripcion}>
@@ -26,11 +28,7 @@ const tieneDescuento =
     </nav>
 
     <div class="mt-6 grid gap-8 sm:grid-cols-2">
-      <img
-        src={getImagenProducto(producto)}
-        alt={producto.nombre}
-        class="w-full rounded-lg border border-neutral-200 object-cover dark:border-neutral-800"
-      />
+      <GaleriaProducto nombre={producto.nombre} imagenes={galeria} client:load />
 
       <div>
         <p class="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
