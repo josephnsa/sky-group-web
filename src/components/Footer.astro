@@ -1,42 +1,38 @@
 ---
-import {
-  MEDIOS_DE_PAGO,
-  NEGOCIO,
-  REDES_SOCIALES,
-  SITE,
-  SUCURSALES,
-} from "../consts";
+import { MEDIOS_DE_PAGO, NEGOCIO, SITE } from "../consts";
+import { configuracionSitio as c } from "../data/configuracion";
 
 const anio = new Date().getFullYear();
-const redesActivas = Object.entries(REDES_SOCIALES).filter(([, url]) => url);
+const redesActivas = Object.entries({
+  facebook: c.facebook,
+  instagram: c.instagram,
+  tiktok: c.tiktok,
+  youtube: c.youtube,
+}).filter(([, url]) => url);
 ---
 
 <footer class="bg-neutral-900 text-neutral-300">
   <div class="h-1 w-full bg-gradient-to-r from-brand-blue to-brand-green"></div>
   <div class="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:grid-cols-2 sm:py-16 lg:grid-cols-4">
     <div>
-      <img src="/images/brand/logo-blanco.png" alt={SITE.nombre} class="h-9 w-auto" />
+      <img src={c.logoUrl} alt={SITE.nombre} class="h-9 w-auto" />
       <p class="mt-3 text-sm text-neutral-400">{SITE.descripcion}</p>
     </div>
 
     <div>
       <p class="font-semibold text-white">Contacto</p>
       <img
-        src="/images/nosotros/fachada.webp"
+        src={c.fotoFachadaUrl}
         alt={`Fachada de ${SITE.nombre}`}
         class="mt-2 h-24 w-full rounded-lg object-cover"
         loading="lazy"
       />
       <ul class="mt-3 space-y-1 text-sm text-neutral-400">
-        <li>Tel: {NEGOCIO.telefono}</li>
-        <li>Correo: {NEGOCIO.correo}</li>
-        {SUCURSALES.map((s) => (
-          <li>{s.nombre}: {s.direccion}</li>
-        ))}
+        <li>Tel: {c.telefono}</li>
+        <li>Correo: {c.correo}</li>
+        <li>{c.direccion}</li>
       </ul>
-      <p class="mt-2 text-xs text-neutral-500">
-        {SUCURSALES.map((s) => s.horario).join(" · ")}
-      </p>
+      <p class="mt-2 text-xs text-neutral-500">{c.horario}</p>
     </div>
 
     <div>

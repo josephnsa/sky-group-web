@@ -1,6 +1,6 @@
 ---
 interface Props {
-  activo: "inicio" | "carrusel" | "categorias" | "productos" | "reclamos" | "administradores";
+  activo: "inicio" | "carrusel" | "categorias" | "productos" | "reclamos" | "configuracion" | "administradores";
 }
 const { activo } = Astro.props;
 
@@ -9,6 +9,7 @@ const enlaces = [
   { id: "categorias", href: "/admin/categorias", etiqueta: "Categorías" },
   { id: "productos", href: "/admin/productos", etiqueta: "Productos" },
   { id: "reclamos", href: "/admin/reclamos", etiqueta: "Reclamos" },
+  { id: "configuracion", href: "/admin/configuracion", etiqueta: "Configuración" },
   { id: "administradores", href: "/admin/administradores", etiqueta: "Administradores" },
 ] as const;
 ---
