@@ -26,6 +26,13 @@ function busquedaDesdeUrl() {
   return new URLSearchParams(window.location.search).get("q") ?? "";
 }
 
+// Mismo mecanismo que busquedaDesdeUrl() — permite que "Marcas que trabajamos"
+// (Home) enlace directo a /catalogo?marca=<nombre> con el filtro ya aplicado.
+function marcaDesdeUrl() {
+  if (typeof window === "undefined") return "";
+  return new URLSearchParams(window.location.search).get("marca") ?? "";
+}
+
 export default function CatalogoInteractivo({ productos, categorias }: Props) {
   const [busqueda, setBusqueda] = useState("");
 
@@ -39,6 +46,8 @@ export default function CatalogoInteractivo({ productos, categorias }: Props) {
   useEffect(() => {
     const q = busquedaDesdeUrl();
     if (q) setBusqueda(q);
+    const marca = marcaDesdeUrl();
+    if (marca) setMarcas([marca]);
   }, []);
   const [categoria, setCategoria] = useState("");
   const [subcategoria, setSubcategoria] = useState("");

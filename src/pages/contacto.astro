@@ -9,6 +9,9 @@ import { NEGOCIO, SUCURSALES } from "../consts";
 // como enlace "Abrir en Google Maps", no como iframe embebible.
 const direccionMapa = `${SUCURSALES[0].direccion}, Perú`;
 const mapaEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(direccionMapa)}&output=embed`;
+// Deep link de Waze sin API key — mismo criterio que el embed de Maps de
+// arriba: un formato público que no depende de ningún servicio pago.
+const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(direccionMapa)}&navigate=yes`;
 ---
 
 <Layout title="Contacto">
@@ -56,6 +59,24 @@ const mapaEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(direcci
           referrerpolicy="no-referrer-when-downgrade"
           title="Ubicación de SKY Group en el mapa"
         />
+      </div>
+      <div class="mt-3 flex flex-wrap gap-3">
+        <a
+          href={NEGOCIO.mapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-2 rounded-md border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition-colors duration-200 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+        >
+          Abrir en Google Maps
+        </a>
+        <a
+          href={wazeUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-2 rounded-md border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition-colors duration-200 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+        >
+          Abrir en Waze
+        </a>
       </div>
     </div>
   </section>

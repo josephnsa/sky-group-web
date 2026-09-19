@@ -15,6 +15,9 @@ const { producto } = Astro.props;
 const tieneDescuento =
   producto.precio != null && producto.precioAnterior != null && producto.precioAnterior > producto.precio;
 const galeria = [getImagenProducto(producto), ...(producto.imagenes ?? [])];
+const tieneDetalleTecnico =
+  (producto.compatibilidad && producto.compatibilidad.length > 0) ||
+  (producto.especificaciones && producto.especificaciones.length > 0);
 ---
 
 <Layout title={producto.nombre} description={producto.descripcion}>
@@ -56,10 +59,23 @@ const galeria = [getImagenProducto(producto), ...(producto.imagenes ?? [])];
 
         <p class="mt-4 text-neutral-700 dark:text-neutral-300">{producto.descripcion}</p>
 
-        <div class="mt-6 max-w-xs">
-          <AddToCartButton client:load sku={producto.sku} />
+        <div class="mt-6 flex flex-wrap items-center gap-3">
+          <div class="max-w-xs flex-1">
+            <AddToCartButton client:load sku={producto.sku} />
+          </div>
+          {
+            tieneDetalleTecnico && (
+              <a
+                href="#detalle-tecnico"
+                class="inline-flex items-center gap-1 rounded-md border border-brand-blue px-4 py-2 text-sm font-semibold text-brand-blue transition-colors duration-200 hover:bg-brand-blue/10"
+              >
+                ¡Conoce más!
+              </a>
+            )
+          }
         </div>
 
+        <div id="detalle-tecnico">
         {
           producto.compatibilidad && producto.compatibilidad.length > 0 && (
             <div class="mt-8">
@@ -90,6 +106,7 @@ const galeria = [getImagenProducto(producto), ...(producto.imagenes ?? [])];
             </div>
           )
         }
+        </div>
       </div>
     </div>
   </section>
