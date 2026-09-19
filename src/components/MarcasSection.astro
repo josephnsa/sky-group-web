@@ -13,7 +13,8 @@ const { titulo = "Marcas que trabajamos" } = Astro.props;
   <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
     {
       MARCAS.map((m, i) => (
-        <div
+        <a
+          href={`/catalogo?marca=${encodeURIComponent(m.nombre)}`}
           data-reveal
           style={`transition-delay: ${i * 100}ms`}
           class="group flex flex-col items-center gap-3 rounded-lg border border-neutral-200 bg-white p-6 text-center transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-neutral-800"
@@ -25,7 +26,7 @@ const { titulo = "Marcas que trabajamos" } = Astro.props;
             loading="lazy"
           />
           <p class="text-sm text-neutral-500 dark:text-neutral-400">{m.desc}</p>
-        </div>
+        </a>
       ))
     }
   </div>

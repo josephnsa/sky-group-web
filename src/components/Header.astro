@@ -2,7 +2,8 @@
 import CartIcon from "./CartIcon";
 import AuthButton from "./AuthButton";
 import ThemeToggle from "./ThemeToggle.astro";
-import { IconMenu, IconChevronDown, IconSearch } from "./icons/ui";
+import BuscadorConSugerencias from "./BuscadorConSugerencias";
+import { IconMenu, IconChevronDown } from "./icons/ui";
 import { iconoDeCategoria } from "./icons/categorias";
 import { getCategorias, getFotoCategoria } from "../data/catalog";
 import { SITE } from "../consts";
@@ -29,35 +30,15 @@ const categorias = getCategorias();
       </a>
 
       {
-        /* Formulario real (GET, sin JS) — al enviar navega a
-        /catalogo?q=<texto>, que CatalogoInteractivo lee del lado del cliente
-        (el sitio es 100% estático, no hay query string en tiempo de build)
-        para dejar el catálogo ya filtrado. Antes esto era solo un <a> que
-        llevaba a /catalogo sin buscar nada — no era un buscador de verdad.
-        Botón de lupa a la derecha del input (en vez de icono a la izquierda)
-        para acercarse al patrón real de gpc.pe: campo claro + botón sólido. */
+        /* Isla Preact: mismo <form action="/catalogo" method="GET"> real de
+        antes (funciona igual si JS falla) más un desplegable de hasta 6
+        sugerencias en vivo mientras se escribe (fuzzy, vía
+        coincideProducto() de src/lib/busqueda.ts) que llevan directo a la
+        ficha del producto. client:idle con timeout — mismo fix ya aplicado
+        a AuthButton para no dejar la hidratación esperando indefinidamente
+        en dispositivos con el hilo principal ocupado. */
       }
-      <form
-        action="/catalogo"
-        method="GET"
-        role="search"
-        class="hidden flex-1 max-w-md items-center overflow-hidden rounded-md bg-white shadow-sm transition-shadow duration-200 focus-within:ring-2 focus-within:ring-white/70 sm:flex"
-      >
-        <input
-          type="search"
-          name="q"
-          placeholder="Buscar productos..."
-          aria-label="Buscar productos"
-          class="w-full bg-transparent px-4 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-500 focus:outline-none"
-        />
-        <button
-          type="submit"
-          aria-label="Buscar"
-          class="flex shrink-0 items-center justify-center self-stretch bg-brand-blue-dark px-3.5 text-white transition-colors duration-200 hover:bg-brand-green-dark"
-        >
-          <IconSearch class="h-4 w-4" />
-        </button>
-      </form>
+      <BuscadorConSugerencias client:idle={{ timeout: 300 }} />
 
       <div class="flex items-center gap-1">
         <ThemeToggle />
