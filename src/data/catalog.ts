@@ -19,6 +19,7 @@ export interface Producto {
   precio?: number; // soles, sin símbolo
   precioAnterior?: number; // si hay descuento (solo tiene sentido si hay precio)
   imagen: string; // ruta dentro de /public, URL de Supabase Storage, o el placeholder
+  imagenes?: string[]; // fotos adicionales (galería) — la primera de `imagen` no se repite acá
   descripcion: string;
   destacado?: boolean;
   compatibilidad?: string[]; // modelos/vehículos compatibles, ej. "Toyota Yaris 2015-2020"
@@ -89,6 +90,7 @@ async function cargarDatos() {
       precio: f.precio != null ? Number(f.precio) : undefined,
       precioAnterior: f.precio_anterior != null ? Number(f.precio_anterior) : undefined,
       imagen: f.imagen ?? IMAGEN_PLACEHOLDER,
+      imagenes: f.imagenes ?? undefined,
       descripcion: f.descripcion,
       destacado: f.destacado ?? false,
       compatibilidad: f.compatibilidad ?? undefined,
