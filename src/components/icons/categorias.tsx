@@ -125,14 +125,33 @@ export function IconWrench(p: IconProps) {
   );
 }
 
+export function IconMountain(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M3 19l6-10 4 6 2-3 6 7Z" stroke-linejoin="round" stroke-linecap="round" />
+      <circle cx="8" cy="6" r="2" />
+    </Svg>
+  );
+}
+
+export function IconChip(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <rect x="7" y="7" width="10" height="10" rx="1.5" />
+      <path d="M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3" stroke-linecap="round" />
+    </Svg>
+  );
+}
+
 export const ICONO_POR_CATEGORIA: Record<string, (p: IconProps) => ReturnType<typeof IconWrench>> = {
   "Iluminación": IconBulb,
   "Accesorios Tuning y Decoración": IconSparkle,
   "Auxilio Vehicular": IconBattery,
   "Remolque": IconTow,
-  "Limpieza y Pulido": IconSpray,
-  "Cintas y Adhesivos": IconTape,
-  "Equipamiento Exterior": IconRoofBox,
+  "Mantenimiento y Herramientas": IconSpray,
+  "Barras y Equipamiento Exterior": IconRoofBox,
+  "4x4 / Off Road": IconMountain,
+  "Electrónica y Tecnología Vehicular": IconChip,
   "Para Trabajo y Negocio": IconBriefcase,
   "Molduras y Protectores": IconTrim,
   "Seguros": IconShieldCheck,
