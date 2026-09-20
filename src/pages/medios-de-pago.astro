@@ -1,6 +1,9 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import { MEDIOS_DE_PAGO } from "../consts";
+import { configuracionSitio as c } from "../data/configuracion";
+
+const medios = c.mediosPago && c.mediosPago.length > 0 ? c.mediosPago : MEDIOS_DE_PAGO;
 ---
 
 <Layout title="Medios de pago">
@@ -12,7 +15,7 @@ import { MEDIOS_DE_PAGO } from "../consts";
     </p>
     <ul class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
       {
-        MEDIOS_DE_PAGO.map((m, i) => (
+        medios.map((m, i) => (
           <li
             class={`rounded-lg border-t-4 p-4 text-center text-sm font-medium text-neutral-800 dark:text-neutral-100 ${
               i % 2 === 0

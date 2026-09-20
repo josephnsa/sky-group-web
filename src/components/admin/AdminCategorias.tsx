@@ -2,8 +2,10 @@ import { useEffect, useState } from "preact/hooks";
 import AdminGate from "./AdminGate";
 import {
   categoriasAdmin,
+  subcategoriasAdmin,
   subirImagen,
   type CategoriaAdmin,
+  type SubcategoriaAdmin,
 } from "../../lib/supabase-admin";
 
 function slugify(texto: string) {
@@ -25,6 +27,7 @@ export default function AdminCategorias() {
 
 function Panel() {
   const [categorias, setCategorias] = useState<CategoriaAdmin[]>([]);
+  const [subcategorias, setSubcategorias] = useState<SubcategoriaAdmin[]>([]);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,11 +37,44 @@ function Panel() {
   // se puede cambiar en edición (cambiaría el slug y rompería los productos
   // que ya apuntan a él), solo la foto.
   const [editandoSlug, setEditandoSlug] = useState<string | null>(null);
+  // slug de la categoría cuyo árbol de subcategorías está desplegado
+  // (una a la vez, para no saturar la lista).
+  const [expandida, setExpandida] = useState<string | null>(null);
+  const [nuevaSub, setNuevaSub] = useState("");
 
   async function cargar() {
     setCargando(true);
-    setCategorias(await categoriasAdmin.listar());
+    const [c, s] = await Promise.all([categoriasAdmin.listar(), subcategoriasAdmin.listar()]);
+    setCategorias(c);
+    setSubcategorias(s);
     setCargando(false);
+  }
+
+  function alternarArbol(slug: string) {
+    setExpandida((actual) => (actual === slug ? null : slug));
+    setNuevaSub("");
+  }
+
+  async function agregarSubcategoria(categoriaSlug: string) {
+    const texto = nuevaSub.trim();
+    if (!texto) return;
+    try {
+      await subcategoriasAdmin.crear({
+        categoria_slug: categoriaSlug,
+        nombre: texto,
+        orden: subcategorias.filter((s) => s.categoria_slug === categoriaSlug).length,
+      });
+      setNuevaSub("");
+      await cargar();
+    } catch {
+      alert("No se pudo agregar — es probable que ya exista una subcategoría con ese nombre en esta categoría.");
+    }
+  }
+
+  async function borrarSubcategoria(sub: SubcategoriaAdmin) {
+    if (!confirm(`¿Borrar la subcategoría "${sub.nombre}"? Los productos que ya la tienen asignada no se modifican, solo deja de aparecer como opción para productos nuevos.`)) return;
+    await subcategoriasAdmin.borrar(sub.id);
+    await cargar();
   }
 
   useEffect(() => {
@@ -174,44 +210,97 @@ function Panel() {
           <p class="text-sm text-neutral-500">Cargando...</p>
         ) : (
           <ul class="space-y-3">
-            {categorias.map((c) => (
-              <li key={c.slug} class={`flex items-center gap-4 rounded-lg border border-neutral-200 p-3 dark:border-neutral-800 ${c.activo ? "" : "opacity-60"}`}>
-                {c.foto_url ? (
-                  <img src={c.foto_url} alt="" class="h-14 w-14 flex-none rounded-full object-cover" />
-                ) : (
-                  <div class="h-14 w-14 flex-none rounded-full bg-neutral-200 dark:bg-neutral-800" />
-                )}
-                <div class="min-w-0 flex-1">
-                  <p class="truncate font-medium text-neutral-900 dark:text-neutral-100">{c.nombre}</p>
-                  <p class="truncate text-sm text-neutral-500 dark:text-neutral-400">/{c.slug}</p>
+            {categorias.map((c) => {
+              const subsDeEsta = subcategorias.filter((s) => s.categoria_slug === c.slug);
+              return (
+              <li key={c.slug} class={`rounded-lg border border-neutral-200 p-3 dark:border-neutral-800 ${c.activo ? "" : "opacity-60"}`}>
+                <div class="flex items-center gap-4">
+                  {c.foto_url ? (
+                    <img src={c.foto_url} alt="" class="h-14 w-14 flex-none rounded-full object-cover" />
+                  ) : (
+                    <div class="h-14 w-14 flex-none rounded-full bg-neutral-200 dark:bg-neutral-800" />
+                  )}
+                  <div class="min-w-0 flex-1">
+                    <p class="truncate font-medium text-neutral-900 dark:text-neutral-100">{c.nombre}</p>
+                    <p class="truncate text-sm text-neutral-500 dark:text-neutral-400">/{c.slug}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => alternarArbol(c.slug)}
+                    class="shrink-0 text-sm text-neutral-500 transition-colors duration-200 hover:underline dark:text-neutral-400"
+                  >
+                    Subcategorías ({subsDeEsta.length}) {expandida === c.slug ? "▲" : "▼"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => alternarActivo(c)}
+                    class={`shrink-0 rounded-md px-3 py-1.5 text-xs font-semibold ${
+                      c.activo
+                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                        : "bg-neutral-200 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
+                    }`}
+                  >
+                    {c.activo ? "Activa" : "Inactiva"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => editar(c)}
+                    class="shrink-0 text-sm text-brand-blue-dark transition-colors duration-200 hover:underline dark:text-brand-blue"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => borrar(c)}
+                    class="shrink-0 text-sm text-red-600 transition-colors duration-200 hover:underline dark:text-red-400"
+                  >
+                    Borrar
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => alternarActivo(c)}
-                  class={`shrink-0 rounded-md px-3 py-1.5 text-xs font-semibold ${
-                    c.activo
-                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                      : "bg-neutral-200 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
-                  }`}
-                >
-                  {c.activo ? "Activa" : "Inactiva"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => editar(c)}
-                  class="shrink-0 text-sm text-brand-blue-dark transition-colors duration-200 hover:underline dark:text-brand-blue"
-                >
-                  Editar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => borrar(c)}
-                  class="shrink-0 text-sm text-red-600 transition-colors duration-200 hover:underline dark:text-red-400"
-                >
-                  Borrar
-                </button>
+
+                {expandida === c.slug && (
+                  <div class="mt-3 ml-[4.5rem] space-y-2 border-l-2 border-neutral-200 pl-4 dark:border-neutral-800">
+                    {subsDeEsta.length === 0 && (
+                      <p class="text-sm text-neutral-500 dark:text-neutral-400">Todavía no tiene subcategorías.</p>
+                    )}
+                    {subsDeEsta.map((s) => (
+                      <div key={s.id} class="flex items-center justify-between gap-2 text-sm">
+                        <span class="text-neutral-700 dark:text-neutral-300">{s.nombre}</span>
+                        <button
+                          type="button"
+                          onClick={() => borrarSubcategoria(s)}
+                          class="shrink-0 text-xs text-red-600 transition-colors duration-200 hover:underline dark:text-red-400"
+                        >
+                          Borrar
+                        </button>
+                      </div>
+                    ))}
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        agregarSubcategoria(c.slug);
+                      }}
+                      class="flex gap-2 pt-1"
+                    >
+                      <input
+                        type="text"
+                        placeholder="Nueva subcategoría..."
+                        value={nuevaSub}
+                        onInput={(e) => setNuevaSub((e.target as HTMLInputElement).value)}
+                        class="w-full rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                      />
+                      <button
+                        type="submit"
+                        class="shrink-0 rounded-md bg-brand-blue px-3 py-1.5 text-xs font-semibold text-white transition-colors duration-200 hover:bg-brand-blue-dark"
+                      >
+                        Agregar
+                      </button>
+                    </form>
+                  </div>
+                )}
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </div>
