@@ -1,0 +1,68 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { SITE } from "../consts";
+import { configuracionSitio as c } from "../data/configuracion";
+import { ICONO_POR_RED } from "../components/icons/redes";
+
+const NOMBRE_RED: Record<string, string> = {
+  facebook: "Facebook",
+  instagram: "Instagram",
+  tiktok: "TikTok",
+  youtube: "YouTube",
+};
+
+const DESCRIPCION_RED: Record<string, string> = {
+  facebook: "Novedades, promociones y contacto directo con nuestro equipo.",
+  instagram: "Fotos y videos de nuestros productos y trabajos instalados.",
+  tiktok: "Contenido corto: instalaciones, tips y productos en video.",
+  youtube: "Videos más largos de reseñas e instalaciones.",
+};
+
+const redes = [
+  ["facebook", c.facebook],
+  ["instagram", c.instagram],
+  ["tiktok", c.tiktok],
+  ["youtube", c.youtube],
+].filter(([, url]) => url) as [string, string][];
+---
+
+<Layout title="Redes sociales" description={`Encuentra a ${SITE.nombre} en redes sociales`}>
+  <section class="mx-auto max-w-4xl px-4 py-12 sm:py-16">
+    <h1 class="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white sm:text-4xl lg:text-5xl">
+      Redes sociales
+    </h1>
+    <p class="mt-4 text-neutral-700 dark:text-neutral-400">
+      Síguenos para ver nuestros productos, novedades y promociones.
+    </p>
+
+    {
+      redes.length > 0 ? (
+        <div class="mt-8 grid gap-5 sm:grid-cols-2">
+          {redes.map(([nombre, url], i) => {
+            const Icono = ICONO_POR_RED[nombre];
+            return (
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-reveal
+                style={`transition-delay: ${i * 80}ms`}
+                class="group flex items-center gap-4 rounded-lg border border-neutral-200 p-5 transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-neutral-800"
+              >
+                <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-blue to-brand-green text-white transition-transform duration-300 group-hover:scale-110">
+                  <Icono class="h-7 w-7" />
+                </span>
+                <span class="min-w-0">
+                  <span class="block font-semibold text-neutral-900 dark:text-white">{NOMBRE_RED[nombre]}</span>
+                  <span class="mt-0.5 block text-sm text-neutral-500 dark:text-neutral-400">{DESCRIPCION_RED[nombre]}</span>
+                </span>
+              </a>
+            );
+          })}
+        </div>
+      ) : (
+        <p class="mt-8 text-sm text-neutral-500 dark:text-neutral-400">Todavía no hay redes sociales configuradas.</p>
+      )
+    }
+  </section>
+</Layout>
