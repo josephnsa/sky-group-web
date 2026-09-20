@@ -1,6 +1,7 @@
 ---
 import { MEDIOS_DE_PAGO, NEGOCIO, SITE } from "../consts";
 import { configuracionSitio as c } from "../data/configuracion";
+import { ICONO_POR_RED } from "./icons/redes";
 
 const anio = new Date().getFullYear();
 const redesActivas = Object.entries({
@@ -55,17 +56,21 @@ const redesActivas = Object.entries({
         </li>
       </ul>
       {redesActivas.length > 0 && (
-        <div class="mt-4 flex gap-3">
-          {redesActivas.map(([nombre, url]) => (
-            <a
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-sm text-neutral-400 transition-colors duration-200 hover:text-brand-blue hover:underline capitalize"
-            >
-              {nombre}
-            </a>
-          ))}
+        <div class="mt-4 flex gap-4">
+          {redesActivas.map(([nombre, url]) => {
+            const Icono = ICONO_POR_RED[nombre];
+            return (
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={nombre}
+                class="text-neutral-400 transition-colors duration-200 hover:text-brand-blue"
+              >
+                <Icono class="h-5 w-5" />
+              </a>
+            );
+          })}
         </div>
       )}
     </div>
