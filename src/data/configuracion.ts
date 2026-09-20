@@ -8,7 +8,7 @@ import { supabase } from "../lib/supabase";
 import { NEGOCIO, REDES_SOCIALES, SUCURSALES } from "../consts";
 
 async function cargar() {
-  let fila: Record<string, string | null> | null = null;
+  let fila: Record<string, any> | null = null;
   try {
     const { data, error } = await supabase.from("configuracion_sitio").select("*").eq("id", 1).maybeSingle();
     if (!error) fila = data;
@@ -29,6 +29,13 @@ async function cargar() {
     youtube: fila?.youtube ?? REDES_SOCIALES.youtube,
     logoUrl: fila?.logo_url || "/images/brand/logo-blanco.png",
     fotoFachadaUrl: fila?.foto_fachada_url || "/images/nosotros/fachada.webp",
+    // string vacío/null → sin editar todavía, el que consume esto (nosotros.astro)
+    // se queda con su propio texto por defecto en ese caso.
+    mision: (fila?.mision as string) || null,
+    vision: (fila?.vision as string) || null,
+    historia: (fila?.historia as string) || null,
+    valores: (fila?.valores as { titulo: string; desc: string }[] | null) || null,
+    mediosPago: (fila?.medios_pago as string[] | null) || null,
   };
 }
 

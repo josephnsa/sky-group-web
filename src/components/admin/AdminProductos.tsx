@@ -3,10 +3,16 @@ import AdminGate from "./AdminGate";
 import {
   categoriasAdmin,
   productosAdmin,
+  subcategoriasAdmin,
   subirImagen,
   type CategoriaAdmin,
   type ProductoAdmin,
+  type SubcategoriaAdmin,
 } from "../../lib/supabase-admin";
+
+// Valor especial del <select> de subcategoría que activa el campo de texto
+// para escribir una nueva — no es una subcategoría real, solo una opción de UI.
+const NUEVA_SUBCATEGORIA = "__nueva__";
 
 const VACIO = {
   sku: "",
@@ -49,6 +55,10 @@ export default function AdminProductos() {
 function Panel() {
   const [productos, setProductos] = useState<ProductoAdmin[]>([]);
   const [categorias, setCategorias] = useState<CategoriaAdmin[]>([]);
+  const [subcategorias, setSubcategorias] = useState<SubcategoriaAdmin[]>([]);
+  // true mientras el <select> de subcategoría muestra la opción "+ Nueva..."
+  // y por lo tanto hay que mostrar el campo de texto libre debajo.
+  const [escribiendoNuevaSub, setEscribiendoNuevaSub] = useState(false);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,9 +74,10 @@ function Panel() {
 
   async function cargar() {
     setCargando(true);
-    const [p, c] = await Promise.all([productosAdmin.listar(), categoriasAdmin.listar()]);
+    const [p, c, s] = await Promise.all([productosAdmin.listar(), categoriasAdmin.listar(), subcategoriasAdmin.listar()]);
     setProductos(p);
     setCategorias(c);
+    setSubcategorias(s);
     setCargando(false);
   }
 
@@ -83,6 +94,7 @@ function Panel() {
     setForm(aFormulario(p));
     setArchivos([]);
     setArchivoVideo(null);
+    setEscribiendoNuevaSub(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -91,7 +103,25 @@ function Panel() {
     setForm(VACIO);
     setArchivos([]);
     setArchivoVideo(null);
+    setEscribiendoNuevaSub(false);
     (document.getElementById("form-producto") as HTMLFormElement)?.reset();
+  }
+
+  // Subcategorías de la categoría elegida en el formulario — mismo criterio
+  // ya usado en el catálogo público (CatalogoInteractivo) de acotar las
+  // opciones a lo que tiene sentido para la categoría actual.
+  function subcategoriasDe(categoriaSlug: string) {
+    return subcategorias.filter((s) => s.categoria_slug === categoriaSlug);
+  }
+
+  async function elegirSubcategoria(valor: string) {
+    if (valor === NUEVA_SUBCATEGORIA) {
+      setEscribiendoNuevaSub(true);
+      campo("subcategoria", "");
+    } else {
+      setEscribiendoNuevaSub(false);
+      campo("subcategoria", valor);
+    }
   }
 
   // "etiqueta: valor" por línea → [{etiqueta, valor}]. Formato simple a
@@ -117,6 +147,23 @@ function Panel() {
     setGuardando(true);
     setError(null);
     try {
+      // Si se escribió una subcategoría nueva (no elegida de la lista), se
+      // da de alta en la tabla `subcategorias` para que a partir de ahora
+      // aparezca como opción del desplegable — si ya existiera (typo repetido
+      // o dos admins agregando a la vez), la restricción `unique` de la
+      // tabla lo rechaza en silencio, no es un error real.
+      if (escribiendoNuevaSub && form.subcategoria.trim()) {
+        try {
+          await subcategoriasAdmin.crear({
+            categoria_slug: form.categoria_slug,
+            nombre: form.subcategoria.trim(),
+            orden: subcategoriasDe(form.categoria_slug).length,
+          });
+        } catch {
+          // Ya existía — no pasa nada, se sigue usando el texto tal cual.
+        }
+      }
+
       const datosComunes = {
         categoria_slug: form.categoria_slug,
         subcategoria: form.subcategoria.trim(),
@@ -206,7 +253,13 @@ function Panel() {
               id="categoria-producto"
               required
               value={form.categoria_slug}
-              onInput={(e) => campo("categoria_slug", (e.target as HTMLSelectElement).value)}
+              onInput={(e) => {
+                campo("categoria_slug", (e.target as HTMLSelectElement).value);
+                // Al cambiar de categoría, la subcategoría elegida ya no
+                // tiene sentido (pertenecía a la categoría anterior).
+                campo("subcategoria", "");
+                setEscribiendoNuevaSub(false);
+              }}
               class="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
             >
               <option value="" disabled>
@@ -217,7 +270,38 @@ function Panel() {
               ))}
             </select>
           </div>
-          <Campo label="Subcategoría" value={form.subcategoria} onInput={(v) => campo("subcategoria", v)} required />
+          <div>
+            <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300" htmlFor="subcategoria-producto">
+              Subcategoría
+            </label>
+            <select
+              id="subcategoria-producto"
+              required={!escribiendoNuevaSub}
+              disabled={!form.categoria_slug}
+              value={escribiendoNuevaSub ? NUEVA_SUBCATEGORIA : form.subcategoria}
+              onInput={(e) => elegirSubcategoria((e.target as HTMLSelectElement).value)}
+              class="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm disabled:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:disabled:bg-neutral-800"
+            >
+              <option value="" disabled>
+                {form.categoria_slug ? "Elegir subcategoría" : "Primero elegí una categoría"}
+              </option>
+              {subcategoriasDe(form.categoria_slug).map((s) => (
+                <option value={s.nombre}>{s.nombre}</option>
+              ))}
+              <option value={NUEVA_SUBCATEGORIA}>+ Nueva subcategoría...</option>
+            </select>
+            {escribiendoNuevaSub && (
+              <input
+                type="text"
+                required
+                autofocus
+                placeholder="Nombre de la nueva subcategoría"
+                value={form.subcategoria}
+                onInput={(e) => campo("subcategoria", (e.target as HTMLInputElement).value)}
+                class="mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+              />
+            )}
+          </div>
           <Campo label="Nombre" value={form.nombre} onInput={(v) => campo("nombre", v)} required />
           <Campo label="Marca" value={form.marca} onInput={(v) => campo("marca", v)} required />
           <Campo

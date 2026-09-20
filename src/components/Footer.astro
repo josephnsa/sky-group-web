@@ -4,6 +4,7 @@ import { configuracionSitio as c } from "../data/configuracion";
 import { ICONO_POR_RED } from "./icons/redes";
 
 const anio = new Date().getFullYear();
+const medios = c.mediosPago && c.mediosPago.length > 0 ? c.mediosPago : MEDIOS_DE_PAGO;
 const redesActivas = Object.entries({
   facebook: c.facebook,
   instagram: c.instagram,
@@ -39,7 +40,7 @@ const redesActivas = Object.entries({
     <div>
       <p class="font-semibold text-white">Medios de pago</p>
       <ul class="mt-2 space-y-1 text-sm text-neutral-400">
-        {MEDIOS_DE_PAGO.map((m) => <li>{m}</li>)}
+        {medios.map((m) => <li>{m}</li>)}
       </ul>
     </div>
 

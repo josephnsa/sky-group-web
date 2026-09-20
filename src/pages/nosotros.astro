@@ -2,16 +2,30 @@
 import Layout from "../layouts/Layout.astro";
 import MarcasSection from "../components/MarcasSection.astro";
 import { NEGOCIO, SITE, SUCURSALES } from "../consts";
+import { configuracionSitio as c } from "../data/configuracion";
 
 // Misión, Visión, Valores e Historia: texto real de "PRESENTACION SKY
-// GROUP 2026.pptx" (diapositivas 5, 6 y 7), no un borrador genérico.
-const VALORES = [
+// GROUP 2026.pptx" (diapositivas 5, 6 y 7) — usado como fallback si nadie
+// editó estos campos todavía desde /admin/configuracion.
+const MISION_DEFECTO =
+  "Nuestra principal misión es brindar soluciones integrales para vehículos a través de productos de calidad, variedad y funcionalidad, acompañados de una atención personalizada y eficiente. Trabajamos para satisfacer las necesidades de nuestros clientes, ofreciendo asesoría, confianza y soluciones que aporten valor a cada vehículo.";
+const VISION_DEFECTO =
+  "Ser una empresa referente en el mercado automotriz nacional e internacional, reconocida por la calidad y variedad de nuestros productos, la excelencia de nuestro servicio y nuestra capacidad para brindar soluciones innovadoras para todo tipo de vehículos.";
+const HISTORIA_DEFECTO =
+  "SKY Group nació con el objetivo de brindar soluciones y accesorios para el mercado automotriz peruano. A lo largo de los años, hemos ampliado nuestro portafolio y desarrollado nuevas líneas de productos, atendiendo las necesidades tanto de clientes particulares como de negocios y distribuidores. Hoy continuamos creciendo, incorporando nuevos productos y fortaleciendo nuestra atención y distribución para ofrecer cada vez más alternativas para diferentes tipos de vehículos y necesidades.";
+
+const mision = c.mision || MISION_DEFECTO;
+const vision = c.vision || VISION_DEFECTO;
+const historia = c.historia || HISTORIA_DEFECTO;
+
+const VALORES_DEFECTO = [
   { titulo: "Compromiso", desc: "Nos involucramos con las necesidades de nuestros clientes." },
   { titulo: "Calidad", desc: "Buscamos ofrecer productos confiables, prácticos y funcionales." },
   { titulo: "Servicio", desc: "Brindamos atención cercana y personalizada." },
   { titulo: "Innovación", desc: "Buscamos nuevas soluciones y productos para el mercado automotriz." },
   { titulo: "Confianza", desc: "Construimos relaciones basadas en transparencia y responsabilidad." },
 ];
+const VALORES = c.valores && c.valores.length > 0 ? c.valores : VALORES_DEFECTO;
 
 // "¿Por qué SKY?" — los 6 bloques visuales que pide la presentación
 // (diapositiva 17), con descripciones tal cual las trae la fuente donde
@@ -42,38 +56,17 @@ const RAZONES = [
   <section class="mx-auto grid max-w-5xl gap-6 px-4 py-12 sm:grid-cols-2 sm:py-16">
     <div data-reveal class="rounded-lg border-t-4 border-t-brand-blue border-x border-b border-x-neutral-200 border-b-neutral-200 p-6 dark:border-x-neutral-800 dark:border-b-neutral-800 dark:bg-neutral-900">
       <h2 class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">Misión</h2>
-      <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-        Nuestra principal misión es brindar soluciones integrales para
-        vehículos a través de productos de calidad, variedad y
-        funcionalidad, acompañados de una atención personalizada y
-        eficiente. Trabajamos para satisfacer las necesidades de nuestros
-        clientes, ofreciendo asesoría, confianza y soluciones que aporten
-        valor a cada vehículo.
-      </p>
+      <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400">{mision}</p>
     </div>
     <div data-reveal style="transition-delay: 120ms" class="rounded-lg border-t-4 border-t-brand-green border-x border-b border-x-neutral-200 border-b-neutral-200 p-6 dark:border-x-neutral-800 dark:border-b-neutral-800 dark:bg-neutral-900">
       <h2 class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">Visión</h2>
-      <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-        Ser una empresa referente en el mercado automotriz nacional e
-        internacional, reconocida por la calidad y variedad de nuestros
-        productos, la excelencia de nuestro servicio y nuestra capacidad
-        para brindar soluciones innovadoras para todo tipo de vehículos.
-      </p>
+      <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400">{vision}</p>
     </div>
   </section>
 
   <section class="mx-auto max-w-5xl px-4 pb-12 sm:pb-16">
     <h2 class="border-l-4 border-brand-green pl-3 text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">Nuestra historia</h2>
-    <p data-reveal class="mt-4 max-w-3xl text-sm text-neutral-600 dark:text-neutral-400">
-      SKY Group nació con el objetivo de brindar soluciones y accesorios
-      para el mercado automotriz peruano. A lo largo de los años, hemos
-      ampliado nuestro portafolio y desarrollado nuevas líneas de
-      productos, atendiendo las necesidades tanto de clientes particulares
-      como de negocios y distribuidores. Hoy continuamos creciendo,
-      incorporando nuevos productos y fortaleciendo nuestra atención y
-      distribución para ofrecer cada vez más alternativas para diferentes
-      tipos de vehículos y necesidades.
-    </p>
+    <p data-reveal class="mt-4 max-w-3xl text-sm text-neutral-600 dark:text-neutral-400">{historia}</p>
   </section>
 
   <section class="mx-auto max-w-5xl px-4 pb-12 sm:pb-16">

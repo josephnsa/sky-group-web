@@ -8,6 +8,13 @@ export interface CategoriaAdmin {
   activo: boolean;
 }
 
+export interface SubcategoriaAdmin {
+  id: string;
+  categoria_slug: string;
+  nombre: string;
+  orden: number;
+}
+
 export interface ProductoAdmin {
   sku: string;
   categoria_slug: string;
@@ -101,6 +108,26 @@ export const categoriasAdmin = {
   },
 };
 
+export const subcategoriasAdmin = {
+  async listar(): Promise<SubcategoriaAdmin[]> {
+    const { data, error } = await supabase.from("subcategorias").select("*").order("orden");
+    if (error) throw error;
+    return data;
+  },
+  async crear(subcategoria: Omit<SubcategoriaAdmin, "id">) {
+    const { error } = await supabase.from("subcategorias").insert(subcategoria);
+    if (error) throw error;
+  },
+  async renombrar(id: string, nombre: string) {
+    const { error } = await supabase.from("subcategorias").update({ nombre }).eq("id", id);
+    if (error) throw error;
+  },
+  async borrar(id: string) {
+    const { error } = await supabase.from("subcategorias").delete().eq("id", id);
+    if (error) throw error;
+  },
+};
+
 export const productosAdmin = {
   async listar(): Promise<ProductoAdmin[]> {
     const { data, error } = await supabase.from("productos").select("*").order("creado_en", { ascending: false });
@@ -154,6 +181,11 @@ export interface ConfiguracionSitio {
   youtube: string | null;
   logo_url: string | null;
   foto_fachada_url: string | null;
+  mision: string | null;
+  vision: string | null;
+  historia: string | null;
+  valores: { titulo: string; desc: string }[] | null;
+  medios_pago: string[] | null;
 }
 
 export const configuracionAdmin = {

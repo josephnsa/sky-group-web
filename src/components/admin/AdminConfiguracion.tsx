@@ -12,7 +12,26 @@ const VACIO = {
   instagram: "",
   tiktok: "",
   youtube: "",
+  mision: "",
+  vision: "",
+  historia: "",
+  valores: "",
+  medios_pago: "",
 };
+
+// [{titulo, desc}] <-> "Título: Descripción" por línea — mismo formato
+// simple ya usado para la ficha técnica de productos (AdminProductos.tsx).
+function valoresATexto(valores: { titulo: string; desc: string }[] | null) {
+  return (valores ?? []).map((v) => `${v.titulo}: ${v.desc}`).join("\n");
+}
+function textoAValores(texto: string) {
+  const lineas = texto.split("\n").map((l) => l.trim()).filter(Boolean);
+  if (lineas.length === 0) return null;
+  return lineas.map((linea) => {
+    const [titulo, ...resto] = linea.split(":");
+    return { titulo: titulo.trim(), desc: resto.join(":").trim() };
+  });
+}
 
 function aFormulario(c: ConfiguracionSitio) {
   return {
@@ -25,6 +44,11 @@ function aFormulario(c: ConfiguracionSitio) {
     instagram: c.instagram ?? "",
     tiktok: c.tiktok ?? "",
     youtube: c.youtube ?? "",
+    mision: c.mision ?? "",
+    vision: c.vision ?? "",
+    historia: c.historia ?? "",
+    valores: valoresATexto(c.valores),
+    medios_pago: (c.medios_pago ?? []).join("\n"),
   };
 }
 
@@ -90,6 +114,11 @@ function Panel() {
         instagram: form.instagram.trim() || null,
         tiktok: form.tiktok.trim() || null,
         youtube: form.youtube.trim() || null,
+        mision: form.mision.trim() || null,
+        vision: form.vision.trim() || null,
+        historia: form.historia.trim() || null,
+        valores: textoAValores(form.valores),
+        medios_pago: form.medios_pago.split("\n").map((m) => m.trim()).filter(Boolean) || null,
       };
       if (archivoLogo) cambios.logo_url = await subirImagen(archivoLogo, "configuracion");
       if (archivoFachada) cambios.foto_fachada_url = await subirImagen(archivoFachada, "configuracion");
@@ -143,6 +172,41 @@ function Panel() {
           <CampoTexto label="TikTok" value={form.tiktok} onInput={(v) => campo("tiktok", v)} />
           <CampoTexto label="YouTube" value={form.youtube} onInput={(v) => campo("youtube", v)} />
         </div>
+      </div>
+
+      <div>
+        <p class="text-sm font-semibold text-neutral-900 dark:text-white">Página "Nosotros"</p>
+        <p class="text-xs text-neutral-500 dark:text-neutral-400">Dejá un campo vacío para mantener el texto actual del sitio.</p>
+        <div class="mt-2 space-y-4">
+          <CampoTextarea label="Misión" value={form.mision} onInput={(v) => campo("mision", v)} />
+          <CampoTextarea label="Visión" value={form.vision} onInput={(v) => campo("vision", v)} />
+          <CampoTextarea label="Nuestra historia" value={form.historia} onInput={(v) => campo("historia", v)} />
+          <div>
+            <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              Valores (uno por línea, formato "Título: Descripción")
+            </label>
+            <textarea
+              rows={5}
+              placeholder={"Compromiso: Nos involucramos con las necesidades de nuestros clientes.\nCalidad: ..."}
+              value={form.valores}
+              onInput={(e) => campo("valores", (e.target as HTMLTextAreaElement).value)}
+              class="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+          Medios de pago (uno por línea)
+        </label>
+        <textarea
+          rows={4}
+          placeholder={"Yape\nPlin\nTransferencia bancaria"}
+          value={form.medios_pago}
+          onInput={(e) => campo("medios_pago", (e.target as HTMLTextAreaElement).value)}
+          class="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+        />
       </div>
 
       <div class="grid gap-6 sm:grid-cols-2">
@@ -200,6 +264,20 @@ interface CampoTextoProps {
   value: string;
   onInput: (valor: string) => void;
   type?: string;
+}
+
+function CampoTextarea({ label, value, onInput }: Omit<CampoTextoProps, "type">) {
+  return (
+    <div>
+      <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">{label}</label>
+      <textarea
+        rows={3}
+        value={value}
+        onInput={(e) => onInput((e.target as HTMLTextAreaElement).value)}
+        class="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+      />
+    </div>
+  );
 }
 
 function CampoTexto({ label, value, onInput, type = "text" }: CampoTextoProps) {
