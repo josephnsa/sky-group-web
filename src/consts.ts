@@ -9,7 +9,7 @@ export const SITE = {
   // filtros/frenos, que era la categoría genérica que se había asumido
   // antes de tener esta información real).
   descripcion:
-    "Accesorios y equipamiento para tu vehículo. Cotiza y compra por WhatsApp.",
+    "Líderes en innovación, importación y comercialización de accesorios y equipamiento vehicular.",
   url: "https://sky.com.pe",
 };
 
