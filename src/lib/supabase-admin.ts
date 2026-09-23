@@ -182,8 +182,11 @@ export interface ConfiguracionSitio {
   logo_url: string | null;
   foto_fachada_url: string | null;
   mision: string | null;
+  mision_imagen: string | null;
   vision: string | null;
+  vision_imagen: string | null;
   historia: string | null;
+  historia_imagen: string | null;
   valores: { titulo: string; desc: string; imagen?: string | null }[] | null;
   medios_pago: string[] | null;
 }
