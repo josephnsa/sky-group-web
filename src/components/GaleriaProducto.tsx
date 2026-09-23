@@ -11,10 +11,25 @@ interface Props {
 // sin sumar un segundo booleano que haya que mantener sincronizado.
 const VIDEO = -1;
 
+const ZOOM_FACTOR = 2.2;
+
 export default function GaleriaProducto({ nombre, imagenes, video }: Props) {
   const [activa, setActiva] = useState(0);
   const [zoom, setZoom] = useState(false);
+  // Zoom estilo Amazon: al pasar el mouse por encima (solo dispositivos con
+  // puntero real, no táctiles), se amplía la imagen siguiendo el cursor en
+  // el mismo lugar — en celular no hay "hover" de verdad, así que ahí se
+  // sigue usando el toque para abrir la vista de pantalla completa de abajo.
+  const [posicionMouse, setPosicionMouse] = useState({ x: 50, y: 50 });
+  const [conMouseEncima, setConMouseEncima] = useState(false);
   const hayMiniaturas = imagenes.length > 1 || !!video;
+
+  function alMoverMouse(e: MouseEvent) {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setPosicionMouse({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) });
+  }
 
   useEffect(() => {
     if (!zoom) return;
@@ -42,14 +57,23 @@ export default function GaleriaProducto({ nombre, imagenes, video }: Props) {
         <button
           type="button"
           onClick={() => setZoom(true)}
+          onMouseEnter={() => setConMouseEncima(true)}
+          onMouseLeave={() => setConMouseEncima(false)}
+          onMouseMove={alMoverMouse}
           aria-label="Ampliar imagen"
           class="group relative block w-full cursor-zoom-in overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-800"
         >
-          <img
-            src={imagenes[activa]}
-            alt={nombre}
-            class="w-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
+          <img src={imagenes[activa]} alt={nombre} class="w-full object-cover" />
+          {conMouseEncima && (
+            <span
+              class="pointer-events-none absolute inset-0 bg-no-repeat"
+              style={{
+                backgroundImage: `url(${imagenes[activa]})`,
+                backgroundSize: `${ZOOM_FACTOR * 100}%`,
+                backgroundPosition: `${posicionMouse.x}% ${posicionMouse.y}%`,
+              }}
+            />
+          )}
           <span class="absolute bottom-2 right-2 rounded-md bg-black/60 p-1.5 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4" aria-hidden="true">
               <circle cx="11" cy="11" r="7" />
