@@ -1,4 +1,4 @@
-import { useEffect, useState } from "preact/hooks";
+import { useState } from "preact/hooks";
 
 interface Props {
   nombre: string;
@@ -15,11 +15,9 @@ const ZOOM_FACTOR = 2.2;
 
 export default function GaleriaProducto({ nombre, imagenes, video }: Props) {
   const [activa, setActiva] = useState(0);
-  const [zoom, setZoom] = useState(false);
   // Zoom estilo Amazon: al pasar el mouse por encima (solo dispositivos con
-  // puntero real, no táctiles), se amplía la imagen siguiendo el cursor en
-  // el mismo lugar — en celular no hay "hover" de verdad, así que ahí se
-  // sigue usando el toque para abrir la vista de pantalla completa de abajo.
+  // puntero real, no táctiles) se amplía la imagen siguiendo el cursor en
+  // el mismo lugar. Sin modal de pantalla completa — solo este hover.
   const [posicionMouse, setPosicionMouse] = useState({ x: 50, y: 50 });
   const [conMouseEncima, setConMouseEncima] = useState(false);
   const hayMiniaturas = imagenes.length > 1 || !!video;
@@ -31,19 +29,6 @@ export default function GaleriaProducto({ nombre, imagenes, video }: Props) {
     setPosicionMouse({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) });
   }
 
-  useEffect(() => {
-    if (!zoom) return;
-    function alPresionarTecla(e: KeyboardEvent) {
-      if (e.key === "Escape") setZoom(false);
-    }
-    document.addEventListener("keydown", alPresionarTecla);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", alPresionarTecla);
-      document.body.style.overflow = "";
-    };
-  }, [zoom]);
-
   return (
     <div>
       {activa === VIDEO && video ? (
@@ -54,14 +39,11 @@ export default function GaleriaProducto({ nombre, imagenes, video }: Props) {
           class="w-full rounded-lg border border-neutral-200 dark:border-neutral-800"
         />
       ) : (
-        <button
-          type="button"
-          onClick={() => setZoom(true)}
+        <div
           onMouseEnter={() => setConMouseEncima(true)}
           onMouseLeave={() => setConMouseEncima(false)}
           onMouseMove={alMoverMouse}
-          aria-label="Ampliar imagen"
-          class="group relative block w-full cursor-zoom-in overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-800"
+          class="relative block w-full cursor-zoom-in overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-800"
         >
           <img src={imagenes[activa]} alt={nombre} class="w-full object-cover" />
           {conMouseEncima && (
@@ -74,13 +56,7 @@ export default function GaleriaProducto({ nombre, imagenes, video }: Props) {
               }}
             />
           )}
-          <span class="absolute bottom-2 right-2 rounded-md bg-black/60 p-1.5 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" />
-              <path d="M21 21l-4.3-4.3M11 8v6M8 11h6" stroke-linecap="round" />
-            </svg>
-          </span>
-        </button>
+        </div>
       )}
       <p class="mt-1.5 text-center text-xs text-neutral-400 dark:text-neutral-500">Imágenes referenciales</p>
       {hayMiniaturas && (
@@ -113,29 +89,6 @@ export default function GaleriaProducto({ nombre, imagenes, video }: Props) {
               </svg>
             </button>
           )}
-        </div>
-      )}
-
-      {zoom && activa !== VIDEO && (
-        <div
-          class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
-          onClick={() => setZoom(false)}
-        >
-          <img
-            src={imagenes[activa]}
-            alt={nombre}
-            class="max-h-full max-w-full cursor-zoom-out object-contain"
-          />
-          <button
-            type="button"
-            onClick={() => setZoom(false)}
-            aria-label="Cerrar"
-            class="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white transition-colors duration-200 hover:bg-white/20"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-6 w-6" aria-hidden="true">
-              <path d="M6 6l12 12M18 6L6 18" stroke-linecap="round" />
-            </svg>
-          </button>
         </div>
       )}
     </div>
