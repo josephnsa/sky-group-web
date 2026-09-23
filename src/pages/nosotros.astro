@@ -18,7 +18,7 @@ const mision = c.mision || MISION_DEFECTO;
 const vision = c.vision || VISION_DEFECTO;
 const historia = c.historia || HISTORIA_DEFECTO;
 
-const VALORES_DEFECTO = [
+const VALORES_DEFECTO: { titulo: string; desc: string; imagen?: string | null }[] = [
   { titulo: "Compromiso", desc: "Nos involucramos con las necesidades de nuestros clientes." },
   { titulo: "Calidad", desc: "Buscamos ofrecer productos confiables, prácticos y funcionales." },
   { titulo: "Servicio", desc: "Brindamos atención cercana y personalizada." },
@@ -74,14 +74,20 @@ const RAZONES = [
     <div class="mt-4 grid gap-4 sm:grid-cols-3">
       {
         VALORES.map((v, i) => (
-          <div data-reveal style={`transition-delay: ${i * 100}ms`} class="rounded-lg bg-neutral-50 p-5 dark:bg-neutral-900">
-            <span
-              class={`mb-2 block h-1.5 w-8 rounded-full ${
-                i % 3 === 0 ? "bg-brand-blue" : i % 3 === 1 ? "bg-brand-green" : "bg-brand-gray"
-              }`}
-            />
-            <p class="font-semibold text-neutral-900 dark:text-white">{v.titulo}</p>
-            <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{v.desc}</p>
+          <div data-reveal style={`transition-delay: ${i * 100}ms`} class="overflow-hidden rounded-lg bg-neutral-50 dark:bg-neutral-900">
+            {v.imagen ? (
+              <img src={v.imagen} alt="" class="h-32 w-full object-cover" loading="lazy" />
+            ) : (
+              <span
+                class={`mt-5 ml-5 block h-1.5 w-8 rounded-full ${
+                  i % 3 === 0 ? "bg-brand-blue" : i % 3 === 1 ? "bg-brand-green" : "bg-brand-gray"
+                }`}
+              />
+            )}
+            <div class="p-5 pt-3">
+              <p class="font-semibold text-neutral-900 dark:text-white">{v.titulo}</p>
+              <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{v.desc}</p>
+            </div>
           </div>
         ))
       }
