@@ -34,7 +34,7 @@ async function cargar() {
     mision: (fila?.mision as string) || null,
     vision: (fila?.vision as string) || null,
     historia: (fila?.historia as string) || null,
-    valores: (fila?.valores as { titulo: string; desc: string }[] | null) || null,
+    valores: (fila?.valores as { titulo: string; desc: string; imagen?: string | null }[] | null) || null,
     mediosPago: (fila?.medios_pago as string[] | null) || null,
   };
 }

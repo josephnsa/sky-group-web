@@ -184,7 +184,7 @@ export interface ConfiguracionSitio {
   mision: string | null;
   vision: string | null;
   historia: string | null;
-  valores: { titulo: string; desc: string }[] | null;
+  valores: { titulo: string; desc: string; imagen?: string | null }[] | null;
   medios_pago: string[] | null;
 }
 

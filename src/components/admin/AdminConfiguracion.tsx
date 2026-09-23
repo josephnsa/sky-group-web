@@ -15,22 +15,21 @@ const VACIO = {
   mision: "",
   vision: "",
   historia: "",
-  valores: "",
   medios_pago: "",
 };
 
-// [{titulo, desc}] <-> "Título: Descripción" por línea — mismo formato
-// simple ya usado para la ficha técnica de productos (AdminProductos.tsx).
-function valoresATexto(valores: { titulo: string; desc: string }[] | null) {
-  return (valores ?? []).map((v) => `${v.titulo}: ${v.desc}`).join("\n");
+// Un valor en edición: texto controlado igual que el resto del form, más el
+// archivo de imagen elegido (si lo hay) y la URL ya guardada (para mostrar
+// la miniatura actual y no perderla si no se sube una nueva).
+interface ValorEnEdicion {
+  titulo: string;
+  desc: string;
+  imagenUrl: string | null;
+  archivo: File | null;
 }
-function textoAValores(texto: string) {
-  const lineas = texto.split("\n").map((l) => l.trim()).filter(Boolean);
-  if (lineas.length === 0) return null;
-  return lineas.map((linea) => {
-    const [titulo, ...resto] = linea.split(":");
-    return { titulo: titulo.trim(), desc: resto.join(":").trim() };
-  });
+
+function valoresAFormulario(valores: { titulo: string; desc: string; imagen?: string | null }[] | null): ValorEnEdicion[] {
+  return (valores ?? []).map((v) => ({ titulo: v.titulo, desc: v.desc, imagenUrl: v.imagen ?? null, archivo: null }));
 }
 
 function aFormulario(c: ConfiguracionSitio) {
@@ -47,7 +46,6 @@ function aFormulario(c: ConfiguracionSitio) {
     mision: c.mision ?? "",
     vision: c.vision ?? "",
     historia: c.historia ?? "",
-    valores: valoresATexto(c.valores),
     medios_pago: (c.medios_pago ?? []).join("\n"),
   };
 }
@@ -71,6 +69,7 @@ function Panel() {
   const [fachadaActual, setFachadaActual] = useState<string | null>(null);
   const [archivoLogo, setArchivoLogo] = useState<File | null>(null);
   const [archivoFachada, setArchivoFachada] = useState<File | null>(null);
+  const [valores, setValores] = useState<ValorEnEdicion[]>([]);
 
   async function cargar() {
     setCargando(true);
@@ -81,6 +80,7 @@ function Panel() {
         setForm(aFormulario(c));
         setLogoActual(c.logo_url);
         setFachadaActual(c.foto_fachada_url);
+        setValores(valoresAFormulario(c.valores));
       } else {
         setNoMigrado(true);
       }
@@ -88,6 +88,17 @@ function Panel() {
       setNoMigrado(true);
     }
     setCargando(false);
+  }
+
+  function agregarValor() {
+    setValores((v) => [...v, { titulo: "", desc: "", imagenUrl: null, archivo: null }]);
+  }
+  function quitarValor(i: number) {
+    setValores((v) => v.filter((_, idx) => idx !== i));
+  }
+  function actualizarValor(i: number, cambios: Partial<ValorEnEdicion>) {
+    setValores((v) => v.map((val, idx) => (idx === i ? { ...val, ...cambios } : val)));
+    setGuardado(false);
   }
 
   useEffect(() => {
@@ -117,11 +128,23 @@ function Panel() {
         mision: form.mision.trim() || null,
         vision: form.vision.trim() || null,
         historia: form.historia.trim() || null,
-        valores: textoAValores(form.valores),
         medios_pago: form.medios_pago.split("\n").map((m) => m.trim()).filter(Boolean) || null,
       };
       if (archivoLogo) cambios.logo_url = await subirImagen(archivoLogo, "configuracion");
       if (archivoFachada) cambios.foto_fachada_url = await subirImagen(archivoFachada, "configuracion");
+
+      // Solo se suben las imágenes de valores que tienen un archivo nuevo
+      // elegido — el resto conserva su URL ya guardada.
+      const valoresConImagen = await Promise.all(
+        valores
+          .filter((v) => v.titulo.trim())
+          .map(async (v) => ({
+            titulo: v.titulo.trim(),
+            desc: v.desc.trim(),
+            imagen: v.archivo ? await subirImagen(v.archivo, "configuracion") : v.imagenUrl,
+          })),
+      );
+      cambios.valores = valoresConImagen.length > 0 ? valoresConImagen : null;
 
       await configuracionAdmin.actualizar(cambios);
       setArchivoLogo(null);
@@ -182,16 +205,67 @@ function Panel() {
           <CampoTextarea label="Visión" value={form.vision} onInput={(v) => campo("vision", v)} />
           <CampoTextarea label="Nuestra historia" value={form.historia} onInput={(v) => campo("historia", v)} />
           <div>
-            <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              Valores (uno por línea, formato "Título: Descripción")
-            </label>
-            <textarea
-              rows={5}
-              placeholder={"Compromiso: Nos involucramos con las necesidades de nuestros clientes.\nCalidad: ..."}
-              value={form.valores}
-              onInput={(e) => campo("valores", (e.target as HTMLTextAreaElement).value)}
-              class="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-            />
+            <div class="flex items-center justify-between">
+              <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Valores</label>
+              <button
+                type="button"
+                onClick={agregarValor}
+                class="text-sm text-brand-blue-dark transition-colors duration-200 hover:underline dark:text-brand-blue"
+              >
+                + Agregar valor
+              </button>
+            </div>
+            {valores.length === 0 && (
+              <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                Sin editar todavía — el sitio muestra los 5 valores actuales por defecto. Agregá uno para empezar a personalizarlos.
+              </p>
+            )}
+            <div class="mt-2 space-y-3">
+              {valores.map((v, i) => (
+                <div key={i} class="flex gap-3 rounded-md border border-neutral-200 p-3 dark:border-neutral-700">
+                  <div class="shrink-0">
+                    {(v.archivo ? URL.createObjectURL(v.archivo) : v.imagenUrl) ? (
+                      <img
+                        src={v.archivo ? URL.createObjectURL(v.archivo) : v.imagenUrl!}
+                        alt=""
+                        class="h-16 w-16 rounded-md object-cover"
+                      />
+                    ) : (
+                      <div class="h-16 w-16 rounded-md bg-neutral-200 dark:bg-neutral-800" />
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => actualizarValor(i, { archivo: (e.target as HTMLInputElement).files?.[0] ?? null })}
+                      class="mt-1 w-16 text-xs text-neutral-500"
+                    />
+                  </div>
+                  <div class="min-w-0 flex-1 space-y-1.5">
+                    <input
+                      type="text"
+                      placeholder="Título (ej. Compromiso)"
+                      value={v.titulo}
+                      onInput={(e) => actualizarValor(i, { titulo: (e.target as HTMLInputElement).value })}
+                      class="w-full rounded-md border border-neutral-300 bg-white px-2.5 py-1.5 text-sm font-medium dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Descripción"
+                      value={v.desc}
+                      onInput={(e) => actualizarValor(i, { desc: (e.target as HTMLInputElement).value })}
+                      class="w-full rounded-md border border-neutral-300 bg-white px-2.5 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => quitarValor(i)}
+                    class="shrink-0 self-start text-xs text-red-600 transition-colors duration-200 hover:underline dark:text-red-400"
+                  >
+                    Quitar
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
