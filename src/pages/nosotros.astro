@@ -17,12 +17,12 @@ const mision = c.mision || MISION_DEFECTO;
 const vision = c.vision || VISION_DEFECTO;
 const historia = c.historia || HISTORIA_DEFECTO;
 
-// Imágenes referenciales mientras el negocio no suba las suyas propias
-// desde /admin/configuracion (fotos reales ya curadas para el sitio, no
-// una imagen genérica de stock).
-const misionImagen = c.misionImagen || "/images/categorias/equipamiento-exterior.webp";
-const visionImagen = c.visionImagen || "/images/hero/auto-real.webp";
-const historiaImagen = c.historiaImagen || "/images/nosotros/fachada.webp";
+// Imágenes referenciales, fijas por ahora — el negocio las va a reemplazar
+// directamente subiendo sus propias fotos a estas rutas (no editable desde
+// el admin a propósito, para mantener esto simple).
+const misionImagen = "/images/categorias/equipamiento-exterior.webp";
+const visionImagen = "/images/hero/auto-real.webp";
+const historiaImagen = "/images/nosotros/fachada.webp";
 
 const VALORES_DEFECTO: { titulo: string; desc: string; imagen?: string | null }[] = [
   { titulo: "Compromiso", desc: "Nos involucramos con las necesidades de nuestros clientes." },

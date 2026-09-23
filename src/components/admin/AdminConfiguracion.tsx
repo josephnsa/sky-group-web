@@ -70,12 +70,6 @@ function Panel() {
   const [archivoLogo, setArchivoLogo] = useState<File | null>(null);
   const [archivoFachada, setArchivoFachada] = useState<File | null>(null);
   const [valores, setValores] = useState<ValorEnEdicion[]>([]);
-  const [misionImagenActual, setMisionImagenActual] = useState<string | null>(null);
-  const [visionImagenActual, setVisionImagenActual] = useState<string | null>(null);
-  const [historiaImagenActual, setHistoriaImagenActual] = useState<string | null>(null);
-  const [archivoMision, setArchivoMision] = useState<File | null>(null);
-  const [archivoVision, setArchivoVision] = useState<File | null>(null);
-  const [archivoHistoria, setArchivoHistoria] = useState<File | null>(null);
 
   async function cargar() {
     setCargando(true);
@@ -87,9 +81,6 @@ function Panel() {
         setLogoActual(c.logo_url);
         setFachadaActual(c.foto_fachada_url);
         setValores(valoresAFormulario(c.valores));
-        setMisionImagenActual(c.mision_imagen);
-        setVisionImagenActual(c.vision_imagen);
-        setHistoriaImagenActual(c.historia_imagen);
       } else {
         setNoMigrado(true);
       }
@@ -141,9 +132,6 @@ function Panel() {
       };
       if (archivoLogo) cambios.logo_url = await subirImagen(archivoLogo, "configuracion");
       if (archivoFachada) cambios.foto_fachada_url = await subirImagen(archivoFachada, "configuracion");
-      if (archivoMision) cambios.mision_imagen = await subirImagen(archivoMision, "configuracion");
-      if (archivoVision) cambios.vision_imagen = await subirImagen(archivoVision, "configuracion");
-      if (archivoHistoria) cambios.historia_imagen = await subirImagen(archivoHistoria, "configuracion");
 
       // Solo se suben las imágenes de valores que tienen un archivo nuevo
       // elegido — el resto conserva su URL ya guardada.
@@ -161,9 +149,6 @@ function Panel() {
       await configuracionAdmin.actualizar(cambios);
       setArchivoLogo(null);
       setArchivoFachada(null);
-      setArchivoMision(null);
-      setArchivoVision(null);
-      setArchivoHistoria(null);
       setGuardado(true);
       await cargar();
     } catch (err) {
@@ -216,18 +201,9 @@ function Panel() {
         <p class="text-sm font-semibold text-neutral-900 dark:text-white">Página "Nosotros"</p>
         <p class="text-xs text-neutral-500 dark:text-neutral-400">Dejá un campo vacío para mantener el texto actual del sitio.</p>
         <div class="mt-2 space-y-4">
-          <div class="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-start">
-            <CampoTextarea label="Misión" value={form.mision} onInput={(v) => campo("mision", v)} />
-            <CampoImagen label="Imagen" urlActual={misionImagenActual} onFile={setArchivoMision} />
-          </div>
-          <div class="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-start">
-            <CampoTextarea label="Visión" value={form.vision} onInput={(v) => campo("vision", v)} />
-            <CampoImagen label="Imagen" urlActual={visionImagenActual} onFile={setArchivoVision} />
-          </div>
-          <div class="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-start">
-            <CampoTextarea label="Nuestra historia" value={form.historia} onInput={(v) => campo("historia", v)} />
-            <CampoImagen label="Imagen" urlActual={historiaImagenActual} onFile={setArchivoHistoria} />
-          </div>
+          <CampoTextarea label="Misión" value={form.mision} onInput={(v) => campo("mision", v)} />
+          <CampoTextarea label="Visión" value={form.vision} onInput={(v) => campo("vision", v)} />
+          <CampoTextarea label="Nuestra historia" value={form.historia} onInput={(v) => campo("historia", v)} />
           <div>
             <div class="flex items-center justify-between">
               <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Valores</label>
@@ -373,31 +349,6 @@ function CampoTextarea({ label, value, onInput }: Omit<CampoTextoProps, "type">)
         value={value}
         onInput={(e) => onInput((e.target as HTMLTextAreaElement).value)}
         class="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-      />
-    </div>
-  );
-}
-
-interface CampoImagenProps {
-  label: string;
-  urlActual: string | null;
-  onFile: (archivo: File | null) => void;
-}
-
-function CampoImagen({ label, urlActual, onFile }: CampoImagenProps) {
-  return (
-    <div class="shrink-0">
-      <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">{label}</label>
-      {urlActual ? (
-        <img src={urlActual} alt="" class="mt-1 h-16 w-24 rounded-md object-cover" />
-      ) : (
-        <div class="mt-1 h-16 w-24 rounded-md bg-neutral-200 dark:bg-neutral-800" />
-      )}
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) => onFile((e.target as HTMLInputElement).files?.[0] ?? null)}
-        class="mt-1 w-24 text-xs text-neutral-500"
       />
     </div>
   );
