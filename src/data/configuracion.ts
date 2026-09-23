@@ -32,8 +32,11 @@ async function cargar() {
     // string vacío/null → sin editar todavía, el que consume esto (nosotros.astro)
     // se queda con su propio texto por defecto en ese caso.
     mision: (fila?.mision as string) || null,
+    misionImagen: (fila?.mision_imagen as string) || null,
     vision: (fila?.vision as string) || null,
+    visionImagen: (fila?.vision_imagen as string) || null,
     historia: (fila?.historia as string) || null,
+    historiaImagen: (fila?.historia_imagen as string) || null,
     valores: (fila?.valores as { titulo: string; desc: string; imagen?: string | null }[] | null) || null,
     mediosPago: (fila?.medios_pago as string[] | null) || null,
   };
