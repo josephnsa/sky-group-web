@@ -2,7 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import { MEDIOS_DE_PAGO } from "../consts";
 import { configuracionSitio as c } from "../data/configuracion";
-import { BadgeVisa, BadgeAmex, BadgeYape, BadgePlin, BadgeEfectivo } from "../components/icons/pagos";
+import { BadgeVisa, BadgeAmex, BadgeYape, BadgePlin } from "../components/icons/pagos";
 
 const medios = c.mediosPago && c.mediosPago.length > 0 ? c.mediosPago : MEDIOS_DE_PAGO;
 
@@ -13,7 +13,6 @@ const DESCRIPCION_POR_MEDIO: Record<string, string> = {
   "Yape": "Escanea el QR o paga al número de WhatsApp del negocio desde la app Yape.",
   "Plin": "Igual que Yape: transferencia inmediata desde la app Plin al número del negocio.",
   "Transferencia bancaria": "Coordinamos los datos de la cuenta por WhatsApp al confirmar tu pedido.",
-  "Efectivo contra entrega": "Pagas en efectivo al recibir tu pedido, coordinando el punto de entrega.",
   "Tarjeta de crédito o débito": "Visa y American Express, coordinando el cobro por WhatsApp.",
 };
 ---
@@ -31,8 +30,6 @@ const DESCRIPCION_POR_MEDIO: Record<string, string> = {
       <BadgeAmex class="text-sm" />
       <BadgeYape class="text-sm" />
       <BadgePlin class="text-sm" />
-      <BadgeEfectivo class="text-sm" />
-      <span class="ml-auto text-sm text-neutral-500 dark:text-neutral-400">y más</span>
     </div>
 
     <ul class="mt-6 grid gap-3 sm:grid-cols-2">

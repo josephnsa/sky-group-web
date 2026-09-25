@@ -41,7 +41,6 @@ export const MEDIOS_DE_PAGO = [
   "Yape",
   "Plin",
   "Transferencia bancaria",
-  "Efectivo contra entrega",
 ]; // TODO: ajustar según lo que realmente acepte el negocio
 
 export const SUCURSALES = [
