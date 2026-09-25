@@ -1,10 +1,10 @@
 ---
-import { MEDIOS_DE_PAGO, NEGOCIO, SITE } from "../consts";
+import { NEGOCIO, SITE } from "../consts";
 import { configuracionSitio as c } from "../data/configuracion";
 import { ICONO_POR_RED } from "./icons/redes";
+import { BadgeVisa, BadgeAmex, BadgeYape, BadgePlin, BadgeEfectivo } from "./icons/pagos";
 
 const anio = new Date().getFullYear();
-const medios = c.mediosPago && c.mediosPago.length > 0 ? c.mediosPago : MEDIOS_DE_PAGO;
 const redesActivas = Object.entries({
   facebook: c.facebook,
   instagram: c.instagram,
@@ -30,18 +30,26 @@ const redesActivas = Object.entries({
         loading="lazy"
       />
       <ul class="mt-3 space-y-1 text-sm text-neutral-400">
-        <li>Tel: {c.telefono}</li>
+        <li>WhatsApp: {c.telefono}</li>
         <li>Correo: {c.correo}</li>
-        <li>{c.direccion}</li>
+        <li>Tienda Principal: {c.direccion}</li>
       </ul>
-      <p class="mt-2 text-xs text-neutral-500">{c.horario}</p>
+      <p class="mt-2 text-xs text-neutral-500">Horario de atención: {c.horario}</p>
     </div>
 
     <div>
-      <p class="font-semibold text-white">Medios de pago</p>
-      <ul class="mt-2 space-y-1 text-sm text-neutral-400">
-        {medios.map((m) => <li>{m}</li>)}
-      </ul>
+      <a href="/medios-de-pago" class="font-semibold text-white transition-colors duration-200 hover:text-brand-blue hover:underline">
+        Medios de pago
+      </a>
+      <p class="mt-2 text-sm text-neutral-400">Aceptamos todos los medios de pago</p>
+      <div class="relative mt-3 flex flex-wrap items-center gap-2">
+        <BadgeVisa class="text-xs" />
+        <BadgeAmex />
+        <BadgeYape />
+        <BadgePlin />
+        <BadgeEfectivo />
+      </div>
+      <p class="mt-1 text-right text-xs text-neutral-500">y más</p>
     </div>
 
     <div>
@@ -50,7 +58,6 @@ const redesActivas = Object.entries({
         <li><a class="text-neutral-400 transition-colors duration-200 hover:text-brand-blue hover:underline" href="/nosotros">Nosotros</a></li>
         <li><a class="text-neutral-400 transition-colors duration-200 hover:text-brand-blue hover:underline" href="/contacto">Contacto</a></li>
         <li><a class="text-neutral-400 transition-colors duration-200 hover:text-brand-blue hover:underline" href="/medios-de-pago">Medios de pago</a></li>
-        <li><a class="text-neutral-400 transition-colors duration-200 hover:text-brand-blue hover:underline" href="/redes-sociales">Redes sociales</a></li>
         <li>
           <a class="font-medium text-white transition-colors duration-200 hover:text-brand-blue hover:underline" href="/libro-de-reclamaciones">
             Libro de Reclamaciones Virtual
@@ -58,7 +65,9 @@ const redesActivas = Object.entries({
         </li>
       </ul>
       {redesActivas.length > 0 && (
-        <div class="mt-4 flex gap-4">
+        <div class="mt-4">
+          <p class="text-sm font-semibold text-white">Redes sociales</p>
+          <div class="mt-2 flex gap-4">
           {redesActivas.map(([nombre, url]) => {
             const Icono = ICONO_POR_RED[nombre];
             return (
@@ -73,6 +82,7 @@ const redesActivas = Object.entries({
               </a>
             );
           })}
+          </div>
         </div>
       )}
     </div>
