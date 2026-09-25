@@ -62,11 +62,11 @@ const redesActivas = Object.entries({
             Libro de Reclamaciones Virtual
           </a>
         </li>
+        <li><a class="text-neutral-400 transition-colors duration-200 hover:text-brand-blue hover:underline" href="/redes-sociales">Redes sociales</a></li>
       </ul>
       {redesActivas.length > 0 && (
-        <div class="mt-4">
-          <p class="text-sm text-neutral-400">Redes sociales</p>
-          <div class="mt-2 flex gap-4">
+        <div class="mt-2">
+          <div class="flex gap-4">
           {redesActivas.map(([nombre, url]) => {
             const Icono = ICONO_POR_RED[nombre];
             return (
