@@ -186,6 +186,9 @@ export interface ConfiguracionSitio {
   historia: string | null;
   valores: { titulo: string; desc: string; imagen?: string | null }[] | null;
   medios_pago: string[] | null;
+  envios_texto: string | null;
+  envios_imagen_1: string | null;
+  envios_imagen_2: string | null;
 }
 
 export const configuracionAdmin = {

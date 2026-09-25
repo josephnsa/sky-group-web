@@ -36,6 +36,9 @@ async function cargar() {
     historia: (fila?.historia as string) || null,
     valores: (fila?.valores as { titulo: string; desc: string; imagen?: string | null }[] | null) || null,
     mediosPago: (fila?.medios_pago as string[] | null) || null,
+    enviosTexto: (fila?.envios_texto as string) || null,
+    enviosImagen1: (fila?.envios_imagen_1 as string) || null,
+    enviosImagen2: (fila?.envios_imagen_2 as string) || null,
   };
 }
 

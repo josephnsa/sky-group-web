@@ -16,6 +16,7 @@ const VACIO = {
   vision: "",
   historia: "",
   medios_pago: "",
+  envios_texto: "",
 };
 
 // Un valor en edición: texto controlado igual que el resto del form, más el
@@ -47,6 +48,7 @@ function aFormulario(c: ConfiguracionSitio) {
     vision: c.vision ?? "",
     historia: c.historia ?? "",
     medios_pago: (c.medios_pago ?? []).join("\n"),
+    envios_texto: c.envios_texto ?? "",
   };
 }
 
@@ -70,6 +72,10 @@ function Panel() {
   const [archivoLogo, setArchivoLogo] = useState<File | null>(null);
   const [archivoFachada, setArchivoFachada] = useState<File | null>(null);
   const [valores, setValores] = useState<ValorEnEdicion[]>([]);
+  const [enviosImagen1Actual, setEnviosImagen1Actual] = useState<string | null>(null);
+  const [enviosImagen2Actual, setEnviosImagen2Actual] = useState<string | null>(null);
+  const [archivoEnvios1, setArchivoEnvios1] = useState<File | null>(null);
+  const [archivoEnvios2, setArchivoEnvios2] = useState<File | null>(null);
 
   async function cargar() {
     setCargando(true);
@@ -81,6 +87,8 @@ function Panel() {
         setLogoActual(c.logo_url);
         setFachadaActual(c.foto_fachada_url);
         setValores(valoresAFormulario(c.valores));
+        setEnviosImagen1Actual(c.envios_imagen_1);
+        setEnviosImagen2Actual(c.envios_imagen_2);
       } else {
         setNoMigrado(true);
       }
@@ -129,9 +137,12 @@ function Panel() {
         vision: form.vision.trim() || null,
         historia: form.historia.trim() || null,
         medios_pago: form.medios_pago.split("\n").map((m) => m.trim()).filter(Boolean) || null,
+        envios_texto: form.envios_texto.trim() || null,
       };
       if (archivoLogo) cambios.logo_url = await subirImagen(archivoLogo, "configuracion");
       if (archivoFachada) cambios.foto_fachada_url = await subirImagen(archivoFachada, "configuracion");
+      if (archivoEnvios1) cambios.envios_imagen_1 = await subirImagen(archivoEnvios1, "configuracion");
+      if (archivoEnvios2) cambios.envios_imagen_2 = await subirImagen(archivoEnvios2, "configuracion");
 
       // Solo se suben las imágenes de valores que tienen un archivo nuevo
       // elegido — el resto conserva su URL ya guardada.
@@ -149,6 +160,8 @@ function Panel() {
       await configuracionAdmin.actualizar(cambios);
       setArchivoLogo(null);
       setArchivoFachada(null);
+      setArchivoEnvios1(null);
+      setArchivoEnvios2(null);
       setGuardado(true);
       await cargar();
     } catch (err) {
@@ -281,6 +294,36 @@ function Panel() {
           onInput={(e) => campo("medios_pago", (e.target as HTMLTextAreaElement).value)}
           class="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
         />
+      </div>
+
+      <div>
+        <p class="text-sm font-semibold text-neutral-900 dark:text-white">Página "Envíos a todo el Perú"</p>
+        <p class="text-xs text-neutral-500 dark:text-neutral-400">Dejá el texto vacío para mantener el texto actual del sitio.</p>
+        <div class="mt-2 space-y-3">
+          <CampoTextarea label="Detalle de envíos" value={form.envios_texto} onInput={(v) => campo("envios_texto", v)} />
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Imagen 1 (opcional)</label>
+              {enviosImagen1Actual && <img src={enviosImagen1Actual} alt="" class="mt-1 h-20 w-full rounded-md object-cover" />}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setArchivoEnvios1((e.target as HTMLInputElement).files?.[0] ?? null)}
+                class="mt-1 block w-full text-xs text-neutral-500"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Imagen 2 (opcional)</label>
+              {enviosImagen2Actual && <img src={enviosImagen2Actual} alt="" class="mt-1 h-20 w-full rounded-md object-cover" />}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setArchivoEnvios2((e.target as HTMLInputElement).files?.[0] ?? null)}
+                class="mt-1 block w-full text-xs text-neutral-500"
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="grid gap-6 sm:grid-cols-2">
