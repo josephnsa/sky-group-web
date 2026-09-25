@@ -1,0 +1,62 @@
+---
+import Layout from "../layouts/Layout.astro";
+
+const CATALOGOS = [
+  {
+    nombre: "Accesorios",
+    descripcion: "Accesorios tuning, decoración e interior y confort.",
+    archivo: "/catalogos/catalogo-accesorios.pdf",
+  },
+  {
+    nombre: "Equipamiento",
+    descripcion: "Equipamiento exterior, auxilio vehicular y remolque.",
+    archivo: "/catalogos/catalogo-equipamiento.pdf",
+  },
+  {
+    nombre: "Barras, Parrillas y Porta Equipajes",
+    descripcion: "Línea completa de barras transversales, parrillas y porta equipajes.",
+    archivo: "/catalogos/catalogo-barras-parrillas.pdf",
+  },
+];
+---
+
+<Layout title="Catálogo amplio" description="Catálogos generales de SKY Group en PDF">
+  <section class="mx-auto max-w-3xl px-4 py-12 sm:py-16">
+    <h1 class="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white sm:text-4xl lg:text-5xl">
+      Catálogo amplio
+    </h1>
+    <p class="mt-4 text-neutral-700 dark:text-neutral-400">
+      Descarga nuestros catálogos generales en PDF — sin precios, para que veas
+      la variedad completa de productos que manejamos. Para cotizar, escríbenos
+      por WhatsApp con el código o nombre del producto que te interese.
+    </p>
+
+    <div class="mt-8 space-y-4">
+      {
+        CATALOGOS.map((cat, i) => (
+          <a
+            href={cat.archivo}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-reveal
+            style={`transition-delay: ${i * 90}ms`}
+            class="group flex items-center gap-4 rounded-lg border border-neutral-200 p-5 transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-neutral-800"
+          >
+            <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-blue/10 text-brand-blue-dark transition-transform duration-300 group-hover:scale-110 dark:text-brand-blue">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="h-6 w-6" aria-hidden="true">
+                <path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" stroke-linejoin="round" />
+                <path d="M14 3v5h5" stroke-linejoin="round" />
+                <path d="M9 13h6M9 17h6" stroke-linecap="round" />
+              </svg>
+            </span>
+            <span class="min-w-0 flex-1">
+              <span class="block font-semibold text-neutral-900 dark:text-white">Catálogo {cat.nombre}</span>
+              <span class="mt-0.5 block text-sm text-neutral-500 dark:text-neutral-400">{cat.descripcion}</span>
+            </span>
+            <span class="shrink-0 text-sm font-medium text-brand-blue-dark dark:text-brand-blue">Descargar →</span>
+          </a>
+        ))
+      }
+    </div>
+  </section>
+</Layout>
