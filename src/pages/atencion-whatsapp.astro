@@ -1,0 +1,57 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { NEGOCIO } from "../consts";
+import { configuracionSitio as c } from "../data/configuracion";
+
+const numero = NEGOCIO.whatsappNumero.replace(/\D/g, "");
+const linkGeneral = `https://wa.me/${numero}?text=${encodeURIComponent("Hola, quisiera hacer una consulta.")}`;
+const linkMayorista = `https://wa.me/${numero}?text=${encodeURIComponent("Hola, quisiera información para compra al por mayor.")}`;
+
+const TEXTO_MAYORISTA_DEFECTO =
+  "También atendemos pedidos al por mayor para negocios y distribuidores. Escríbenos por WhatsApp para coordinar precios y condiciones según el volumen que necesites.";
+const textoMayorista = c.atencionMayoristaTexto || TEXTO_MAYORISTA_DEFECTO;
+---
+
+<Layout title="Atención por WhatsApp" description="Cotiza y compra directo por WhatsApp con SKY Group">
+  <section class="mx-auto max-w-3xl px-4 py-12 sm:py-16">
+    <h1 class="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white sm:text-4xl lg:text-5xl">
+      Atención por WhatsApp
+    </h1>
+    <p class="mt-4 text-neutral-700 dark:text-neutral-400">
+      Cotiza y compra directo, sin formularios largos. Escríbenos con el
+      producto que te interesa y te ayudamos a coordinar todo por WhatsApp.
+    </p>
+
+    {
+      c.atencionVideo && (
+        <video
+          src={c.atencionVideo}
+          controls
+          class="mt-6 w-full rounded-lg border border-neutral-200 dark:border-neutral-800"
+        />
+      )
+    }
+
+    <a
+      href={linkGeneral}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="mt-6 inline-flex items-center gap-2 rounded-md bg-green-600 px-6 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-green-700"
+    >
+      Escribir por WhatsApp
+    </a>
+
+    <div class="mt-10 rounded-lg border border-neutral-200 p-5 dark:border-neutral-800">
+      <p class="font-semibold text-neutral-900 dark:text-white">Atención al por mayor</p>
+      <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400">{textoMayorista}</p>
+      <a
+        href={linkMayorista}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="mt-4 inline-flex items-center gap-2 rounded-md border border-green-600 px-5 py-2.5 text-sm font-semibold text-green-700 transition-colors duration-200 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-950/40"
+      >
+        Consultar por mayor
+      </a>
+    </div>
+  </section>
+</Layout>
