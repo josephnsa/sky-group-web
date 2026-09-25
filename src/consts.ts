@@ -60,4 +60,5 @@ export const MARCAS = [
   { nombre: "TACPRO", logo: "/images/brand/marcas/tacpro.png", desc: "Focos y faros LED de alta gama" },
   { nombre: "SKYLINE", logo: "/images/brand/marcas/skyline.png", desc: "Barras transversales, parrillas, porta equipajes y tapas de tolva" },
   { nombre: "SPORTS", logo: "/images/brand/marcas/sports.png", desc: "Accesorios tuning" },
+  { nombre: "RoadSafe", logo: "/images/brand/marcas/roadsafe.png", desc: "Auxilio vehicular: gatas, compresoras, kits de emergencia y cables para batería" },
 ]; // TODO: agregar más marcas si el negocio trabaja otras
