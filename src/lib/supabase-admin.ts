@@ -189,6 +189,8 @@ export interface ConfiguracionSitio {
   envios_texto: string | null;
   envios_imagen_1: string | null;
   envios_imagen_2: string | null;
+  atencion_video_url: string | null;
+  atencion_mayorista_texto: string | null;
 }
 
 export const configuracionAdmin = {

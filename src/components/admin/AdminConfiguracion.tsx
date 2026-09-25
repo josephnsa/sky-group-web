@@ -17,6 +17,7 @@ const VACIO = {
   historia: "",
   medios_pago: "",
   envios_texto: "",
+  atencion_mayorista_texto: "",
 };
 
 // Un valor en edición: texto controlado igual que el resto del form, más el
@@ -49,6 +50,7 @@ function aFormulario(c: ConfiguracionSitio) {
     historia: c.historia ?? "",
     medios_pago: (c.medios_pago ?? []).join("\n"),
     envios_texto: c.envios_texto ?? "",
+    atencion_mayorista_texto: c.atencion_mayorista_texto ?? "",
   };
 }
 
@@ -76,6 +78,8 @@ function Panel() {
   const [enviosImagen2Actual, setEnviosImagen2Actual] = useState<string | null>(null);
   const [archivoEnvios1, setArchivoEnvios1] = useState<File | null>(null);
   const [archivoEnvios2, setArchivoEnvios2] = useState<File | null>(null);
+  const [atencionVideoActual, setAtencionVideoActual] = useState<string | null>(null);
+  const [archivoAtencionVideo, setArchivoAtencionVideo] = useState<File | null>(null);
 
   async function cargar() {
     setCargando(true);
@@ -89,6 +93,7 @@ function Panel() {
         setValores(valoresAFormulario(c.valores));
         setEnviosImagen1Actual(c.envios_imagen_1);
         setEnviosImagen2Actual(c.envios_imagen_2);
+        setAtencionVideoActual(c.atencion_video_url);
       } else {
         setNoMigrado(true);
       }
@@ -138,11 +143,13 @@ function Panel() {
         historia: form.historia.trim() || null,
         medios_pago: form.medios_pago.split("\n").map((m) => m.trim()).filter(Boolean) || null,
         envios_texto: form.envios_texto.trim() || null,
+        atencion_mayorista_texto: form.atencion_mayorista_texto.trim() || null,
       };
       if (archivoLogo) cambios.logo_url = await subirImagen(archivoLogo, "configuracion");
       if (archivoFachada) cambios.foto_fachada_url = await subirImagen(archivoFachada, "configuracion");
       if (archivoEnvios1) cambios.envios_imagen_1 = await subirImagen(archivoEnvios1, "configuracion");
       if (archivoEnvios2) cambios.envios_imagen_2 = await subirImagen(archivoEnvios2, "configuracion");
+      if (archivoAtencionVideo) cambios.atencion_video_url = await subirImagen(archivoAtencionVideo, "configuracion");
 
       // Solo se suben las imágenes de valores que tienen un archivo nuevo
       // elegido — el resto conserva su URL ya guardada.
@@ -162,6 +169,7 @@ function Panel() {
       setArchivoFachada(null);
       setArchivoEnvios1(null);
       setArchivoEnvios2(null);
+      setArchivoAtencionVideo(null);
       setGuardado(true);
       await cargar();
     } catch (err) {
@@ -294,6 +302,24 @@ function Panel() {
           onInput={(e) => campo("medios_pago", (e.target as HTMLTextAreaElement).value)}
           class="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
         />
+      </div>
+
+      <div>
+        <p class="text-sm font-semibold text-neutral-900 dark:text-white">Página "Atención por WhatsApp"</p>
+        <p class="text-xs text-neutral-500 dark:text-neutral-400">Video y texto de atención al por mayor, opcionales.</p>
+        <div class="mt-2 space-y-3">
+          <div>
+            <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Video (opcional)</label>
+            {atencionVideoActual && <p class="mt-1 text-xs text-neutral-500">Ya hay un video cargado — subí uno nuevo para reemplazarlo.</p>}
+            <input
+              type="file"
+              accept="video/*"
+              onChange={(e) => setArchivoAtencionVideo((e.target as HTMLInputElement).files?.[0] ?? null)}
+              class="mt-1 block w-full text-sm text-neutral-700 dark:text-neutral-300"
+            />
+          </div>
+          <CampoTextarea label="Texto de atención al por mayor" value={form.atencion_mayorista_texto} onInput={(v) => campo("atencion_mayorista_texto", v)} />
+        </div>
       </div>
 
       <div>
