@@ -2,31 +2,60 @@
 import Layout from "../layouts/Layout.astro";
 import { MEDIOS_DE_PAGO } from "../consts";
 import { configuracionSitio as c } from "../data/configuracion";
+import { BadgeVisa, BadgeAmex, BadgeYape, BadgePlin, BadgeEfectivo } from "../components/icons/pagos";
 
 const medios = c.mediosPago && c.mediosPago.length > 0 ? c.mediosPago : MEDIOS_DE_PAGO;
+
+// Descripción breve por método — solo para los que ya conocemos el nombre
+// exacto (los que vengan editados desde el admin con otro texto se
+// muestran igual, solo sin la descripción extra).
+const DESCRIPCION_POR_MEDIO: Record<string, string> = {
+  "Yape": "Escanea el QR o paga al número de WhatsApp del negocio desde la app Yape.",
+  "Plin": "Igual que Yape: transferencia inmediata desde la app Plin al número del negocio.",
+  "Transferencia bancaria": "Coordinamos los datos de la cuenta por WhatsApp al confirmar tu pedido.",
+  "Efectivo contra entrega": "Pagas en efectivo al recibir tu pedido, coordinando el punto de entrega.",
+  "Tarjeta de crédito o débito": "Visa y American Express, coordinando el cobro por WhatsApp.",
+};
 ---
 
 <Layout title="Medios de pago">
   <section class="mx-auto max-w-3xl px-4 py-12 sm:py-16">
     <h1 class="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white sm:text-4xl lg:text-5xl">Medios de pago</h1>
     <p class="mt-4 text-neutral-700 dark:text-neutral-400">
-      Aceptamos los siguientes medios de pago. La coordinación final del pago
-      se realiza directamente por WhatsApp al confirmar tu pedido.
+      Aceptamos todos los medios de pago. La coordinación final del pago se
+      realiza directamente por WhatsApp al confirmar tu pedido.
     </p>
-    <ul class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+
+    <div class="relative mt-6 flex flex-wrap items-center gap-3 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
+      <BadgeVisa class="text-sm" />
+      <BadgeAmex class="text-sm" />
+      <BadgeYape class="text-sm" />
+      <BadgePlin class="text-sm" />
+      <BadgeEfectivo class="text-sm" />
+      <span class="ml-auto text-sm text-neutral-500 dark:text-neutral-400">y más</span>
+    </div>
+
+    <ul class="mt-6 grid gap-3 sm:grid-cols-2">
       {
         medios.map((m, i) => (
           <li
-            class={`rounded-lg border-t-4 p-4 text-center text-sm font-medium text-neutral-800 dark:text-neutral-100 ${
+            class={`rounded-lg border-t-4 p-4 text-sm text-neutral-800 dark:text-neutral-100 ${
               i % 2 === 0
                 ? "border-t-brand-blue bg-brand-blue/5 dark:bg-brand-blue/10"
                 : "border-t-brand-green bg-brand-green/5 dark:bg-brand-green/10"
             }`}
           >
-            {m}
+            <p class="font-semibold">{m}</p>
+            {DESCRIPCION_POR_MEDIO[m] && (
+              <p class="mt-1 text-neutral-600 dark:text-neutral-400">{DESCRIPCION_POR_MEDIO[m]}</p>
+            )}
           </li>
         ))
       }
     </ul>
+
+    <p class="mt-6 text-sm text-neutral-500 dark:text-neutral-400">
+      ¿Necesitas otra forma de pago? Escríbenos por WhatsApp y vemos qué opción funciona mejor para tu pedido.
+    </p>
   </section>
 </Layout>
