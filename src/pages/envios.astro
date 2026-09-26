@@ -1,29 +1,48 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { configuracionSitio as c } from "../data/configuracion";
 
-const TEXTO_DEFECTO =
-  "Coordinamos el envío de tu pedido a todo el Perú. En Lima, la entrega se coordina directamente por WhatsApp según tu distrito. Para provincias, trabajamos con agencias de transporte — el costo y tiempo de entrega dependen del destino y del tamaño del pedido, y se confirman al armar tu cotización.";
-const texto = c.enviosTexto || TEXTO_DEFECTO;
-const imagenes = [c.enviosImagen1, c.enviosImagen2].filter(Boolean) as string[];
+const SECCIONES = [
+  {
+    titulo: "Envío a Lima",
+    texto:
+      "En Lima Metropolitana coordinamos la entrega directamente por WhatsApp, según tu distrito. Una vez confirmado tu pedido, te damos un tiempo estimado de entrega (normalmente 1 a 2 días hábiles) y las opciones de recojo en tienda o envío a domicilio.",
+    imagen: "/images/hero/auto-real.webp",
+  },
+  {
+    titulo: "Envío a Provincia",
+    texto:
+      "Para provincias trabajamos con agencias de transporte de confianza. El costo depende del destino y del tamaño del pedido, y el tiempo de entrega suele ser de 2 a 5 días hábiles según la ciudad — te confirmamos todos los detalles por WhatsApp al armar tu cotización.",
+    imagen: "/images/categorias/remolque.webp",
+  },
+];
 ---
 
 <Layout title="Envíos a todo el Perú" description="Detalle de envíos de SKY Group a Lima y provincias">
-  <section class="mx-auto max-w-3xl px-4 py-12 sm:py-16">
+  <section class="mx-auto max-w-4xl px-4 py-12 sm:py-16">
     <h1 class="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white sm:text-4xl lg:text-5xl">
       Envíos a todo el Perú
     </h1>
-    <p class="mt-4 whitespace-pre-line text-neutral-700 dark:text-neutral-400">{texto}</p>
+    <p class="mt-4 text-neutral-700 dark:text-neutral-400">
+      Coordinamos el envío de tu pedido a todo el Perú, tanto a Lima como a provincias.
+    </p>
 
-    {
-      imagenes.length > 0 && (
-        <div class={`mt-8 grid gap-4 ${imagenes.length > 1 ? "sm:grid-cols-2" : ""}`}>
-          {imagenes.map((img) => (
-            <img src={img} alt="" class="w-full rounded-lg border border-neutral-200 object-cover dark:border-neutral-800" loading="lazy" />
-          ))}
-        </div>
-      )
-    }
+    <div class="mt-8 space-y-6">
+      {
+        SECCIONES.map((s, i) => (
+          <div
+            data-reveal
+            style={`transition-delay: ${i * 100}ms`}
+            class="grid items-center gap-6 rounded-lg border border-neutral-200 p-6 sm:grid-cols-2 dark:border-neutral-800"
+          >
+            <div>
+              <h2 class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">{s.titulo}</h2>
+              <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400">{s.texto}</p>
+            </div>
+            <img src={s.imagen} alt="" class="aspect-[4/3] w-full rounded-lg object-cover" loading="lazy" />
+          </div>
+        ))
+      }
+    </div>
 
     <p class="mt-8 text-sm text-neutral-500 dark:text-neutral-400">
       ¿Tienes dudas sobre el envío a tu ciudad? Escríbenos por WhatsApp y te confirmamos costo y tiempo estimado.
