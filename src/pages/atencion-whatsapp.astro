@@ -1,12 +1,18 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { NEGOCIO } from "../consts";
 import { configuracionSitio as c } from "../data/configuracion";
 import { youtubeEmbedUrl } from "../lib/youtube";
 
-const numero = NEGOCIO.whatsappNumero.replace(/\D/g, "");
-const linkGeneral = `https://wa.me/${numero}?text=${encodeURIComponent("Hola, quisiera hacer una consulta.")}`;
-const linkMayorista = `https://wa.me/${numero}?text=${encodeURIComponent("Hola, quisiera información para compra al por mayor.")}`;
+// Números específicos de esta página (distintos al WhatsApp general del
+// resto del sitio) — tienda tiene uno, ventas al por mayor tiene dos.
+const NUMERO_TIENDA = "51922555680";
+const NUMEROS_MAYORISTA = ["51922555680", "51963323363"];
+
+function linkWhatsapp(numero: string, mensaje: string) {
+  return `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
+}
+
+const linkTienda = linkWhatsapp(NUMERO_TIENDA, "Hola, quisiera hacer una consulta.");
 
 const TEXTO_MAYORISTA_DEFECTO =
   "También atendemos pedidos al por mayor para negocios y distribuidores. Escríbenos por WhatsApp para coordinar precios y condiciones según el volumen que necesites.";
@@ -45,7 +51,7 @@ const embedMayorista = youtubeEmbedUrl(c.atencionMayoristaYoutube || VIDEO_MAYOR
         )
       }
       <a
-        href={linkGeneral}
+        href={linkTienda}
         target="_blank"
         rel="noopener noreferrer"
         class="mt-4 inline-flex items-center gap-2 rounded-md bg-green-600 px-6 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-green-700"
@@ -71,14 +77,20 @@ const embedMayorista = youtubeEmbedUrl(c.atencionMayoristaYoutube || VIDEO_MAYOR
           </div>
         )
       }
-      <a
-        href={linkMayorista}
-        target="_blank"
-        rel="noopener noreferrer"
-        class="mt-4 inline-flex items-center gap-2 rounded-md border border-green-600 px-5 py-2.5 text-sm font-semibold text-green-700 transition-colors duration-200 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-950/40"
-      >
-        Consultar por mayor
-      </a>
+      <div class="mt-4 flex flex-wrap gap-3">
+        {
+          NUMEROS_MAYORISTA.map((num) => (
+            <a
+              href={linkWhatsapp(num, "Hola, quisiera información para compra al por mayor.")}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-2 rounded-md border border-green-600 px-5 py-2.5 text-sm font-semibold text-green-700 transition-colors duration-200 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-950/40"
+            >
+              Consultar por mayor · +{num.slice(0, 2)} {num.slice(2, 5)} {num.slice(5, 8)} {num.slice(8)}
+            </a>
+          ))
+        }
+      </div>
     </div>
   </section>
 </Layout>
