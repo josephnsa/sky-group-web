@@ -1,26 +1,38 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import { supabase } from "../lib/supabase";
 
-const CATALOGOS = [
+// Fallback estático — los 3 catálogos que ya estaban subidos manualmente,
+// para que la página no se quede vacía si la tabla `catalogos` todavía no
+// existe (antes de correr la migración) o hay un problema de red en build.
+const CATALOGOS_DEFECTO = [
   {
     nombre: "Accesorios",
     descripcion: "Accesorios tuning, decoración e interior y confort.",
-    archivo: "/catalogos/catalogo-accesorios.pdf",
-    portada: "/catalogos/portada-accesorios.webp",
+    archivo_url: "/catalogos/catalogo-accesorios.pdf",
+    portada_url: "/catalogos/portada-accesorios.webp",
   },
   {
     nombre: "Equipamiento",
     descripcion: "Equipamiento exterior, auxilio vehicular y remolque.",
-    archivo: "/catalogos/catalogo-equipamiento.pdf",
-    portada: "/catalogos/portada-equipamiento.webp",
+    archivo_url: "/catalogos/catalogo-equipamiento.pdf",
+    portada_url: "/catalogos/portada-equipamiento.webp",
   },
   {
     nombre: "Barras, Parrillas y Porta Equipajes",
     descripcion: "Línea completa de barras transversales, parrillas y porta equipajes.",
-    archivo: "/catalogos/catalogo-barras-parrillas.pdf",
-    portada: "/catalogos/portada-barras-parrillas.webp",
+    archivo_url: "/catalogos/catalogo-barras-parrillas.pdf",
+    portada_url: "/catalogos/portada-barras-parrillas.webp",
   },
 ];
+
+let CATALOGOS = CATALOGOS_DEFECTO;
+try {
+  const { data, error } = await supabase.from("catalogos").select("*").order("orden");
+  if (!error && data && data.length > 0) CATALOGOS = data;
+} catch {
+  // Tabla todavía no migrada — se sigue con el fallback.
+}
 ---
 
 <Layout title="Catálogo amplio" description="Catálogos generales de SKY Group en PDF">
@@ -38,18 +50,27 @@ const CATALOGOS = [
       {
         CATALOGOS.map((cat, i) => (
           <a
-            href={cat.archivo}
+            href={cat.archivo_url}
             download
             data-reveal
             style={`transition-delay: ${i * 90}ms`}
             class="group flex flex-col overflow-hidden rounded-lg border border-neutral-200 transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-neutral-800"
           >
-            <img
-              src={cat.portada}
-              alt={`Portada del catálogo ${cat.nombre}`}
-              class="aspect-[3/4] w-full object-cover transition-transform duration-300 group-hover:scale-105"
-              loading="lazy"
-            />
+            {cat.portada_url ? (
+              <img
+                src={cat.portada_url}
+                alt={`Portada del catálogo ${cat.nombre}`}
+                class="aspect-[3/4] w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                loading="lazy"
+              />
+            ) : (
+              <div class="flex aspect-[3/4] w-full items-center justify-center bg-neutral-100 dark:bg-neutral-800">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-12 w-12 text-neutral-400" aria-hidden="true">
+                  <path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" stroke-linejoin="round" />
+                  <path d="M14 3v5h5" stroke-linejoin="round" />
+                </svg>
+              </div>
+            )}
             <div class="flex flex-1 flex-col p-4">
               <span class="block font-semibold text-neutral-900 dark:text-white">Catálogo {cat.nombre}</span>
               <span class="mt-0.5 block flex-1 text-sm text-neutral-500 dark:text-neutral-400">{cat.descripcion}</span>

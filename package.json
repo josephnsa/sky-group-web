@@ -24,6 +24,7 @@
     "astro": "^7.2.10",
     "framer-motion": "^13.2.0",
     "nanostores": "^1.5.3",
+    "pdfjs-dist": "^6.3.289",
     "preact": "^10.29.8",
     "react": "file:./vendor/shim-react",
     "react-dom": "file:./vendor/shim-react-dom",

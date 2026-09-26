@@ -168,6 +168,35 @@ export const carruselAdmin = {
   },
 };
 
+export interface CatalogoAdmin {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  archivo_url: string;
+  portada_url: string | null;
+  orden: number;
+}
+
+export const catalogosAdmin = {
+  async listar(): Promise<CatalogoAdmin[]> {
+    const { data, error } = await supabase.from("catalogos").select("*").order("orden");
+    if (error) throw error;
+    return data;
+  },
+  async crear(catalogo: Omit<CatalogoAdmin, "id">) {
+    const { error } = await supabase.from("catalogos").insert(catalogo);
+    if (error) throw error;
+  },
+  async actualizar(id: string, cambios: Partial<CatalogoAdmin>) {
+    const { error } = await supabase.from("catalogos").update(cambios).eq("id", id);
+    if (error) throw error;
+  },
+  async borrar(id: string) {
+    const { error } = await supabase.from("catalogos").delete().eq("id", id);
+    if (error) throw error;
+  },
+};
+
 export interface ConfiguracionSitio {
   id: number;
   telefono: string | null;
