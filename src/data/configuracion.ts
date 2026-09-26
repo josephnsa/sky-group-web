@@ -39,8 +39,9 @@ async function cargar() {
     enviosTexto: (fila?.envios_texto as string) || null,
     enviosImagen1: (fila?.envios_imagen_1 as string) || null,
     enviosImagen2: (fila?.envios_imagen_2 as string) || null,
-    atencionVideo: (fila?.atencion_video_url as string) || null,
     atencionMayoristaTexto: (fila?.atencion_mayorista_texto as string) || null,
+    atencionTiendaYoutube: (fila?.atencion_tienda_youtube as string) || null,
+    atencionMayoristaYoutube: (fila?.atencion_mayorista_youtube as string) || null,
   };
 }
 

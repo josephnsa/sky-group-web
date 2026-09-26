@@ -220,6 +220,8 @@ export interface ConfiguracionSitio {
   envios_imagen_2: string | null;
   atencion_video_url: string | null;
   atencion_mayorista_texto: string | null;
+  atencion_tienda_youtube: string | null;
+  atencion_mayorista_youtube: string | null;
 }
 
 export const configuracionAdmin = {

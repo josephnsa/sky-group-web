@@ -18,6 +18,8 @@ const VACIO = {
   medios_pago: "",
   envios_texto: "",
   atencion_mayorista_texto: "",
+  atencion_tienda_youtube: "",
+  atencion_mayorista_youtube: "",
 };
 
 // Un valor en edición: texto controlado igual que el resto del form, más el
@@ -51,6 +53,8 @@ function aFormulario(c: ConfiguracionSitio) {
     medios_pago: (c.medios_pago ?? []).join("\n"),
     envios_texto: c.envios_texto ?? "",
     atencion_mayorista_texto: c.atencion_mayorista_texto ?? "",
+    atencion_tienda_youtube: c.atencion_tienda_youtube ?? "",
+    atencion_mayorista_youtube: c.atencion_mayorista_youtube ?? "",
   };
 }
 
@@ -78,8 +82,6 @@ function Panel() {
   const [enviosImagen2Actual, setEnviosImagen2Actual] = useState<string | null>(null);
   const [archivoEnvios1, setArchivoEnvios1] = useState<File | null>(null);
   const [archivoEnvios2, setArchivoEnvios2] = useState<File | null>(null);
-  const [atencionVideoActual, setAtencionVideoActual] = useState<string | null>(null);
-  const [archivoAtencionVideo, setArchivoAtencionVideo] = useState<File | null>(null);
 
   async function cargar() {
     setCargando(true);
@@ -93,7 +95,6 @@ function Panel() {
         setValores(valoresAFormulario(c.valores));
         setEnviosImagen1Actual(c.envios_imagen_1);
         setEnviosImagen2Actual(c.envios_imagen_2);
-        setAtencionVideoActual(c.atencion_video_url);
       } else {
         setNoMigrado(true);
       }
@@ -144,12 +145,13 @@ function Panel() {
         medios_pago: form.medios_pago.split("\n").map((m) => m.trim()).filter(Boolean) || null,
         envios_texto: form.envios_texto.trim() || null,
         atencion_mayorista_texto: form.atencion_mayorista_texto.trim() || null,
+        atencion_tienda_youtube: form.atencion_tienda_youtube.trim() || null,
+        atencion_mayorista_youtube: form.atencion_mayorista_youtube.trim() || null,
       };
       if (archivoLogo) cambios.logo_url = await subirImagen(archivoLogo, "configuracion");
       if (archivoFachada) cambios.foto_fachada_url = await subirImagen(archivoFachada, "configuracion");
       if (archivoEnvios1) cambios.envios_imagen_1 = await subirImagen(archivoEnvios1, "configuracion");
       if (archivoEnvios2) cambios.envios_imagen_2 = await subirImagen(archivoEnvios2, "configuracion");
-      if (archivoAtencionVideo) cambios.atencion_video_url = await subirImagen(archivoAtencionVideo, "configuracion");
 
       // Solo se suben las imágenes de valores que tienen un archivo nuevo
       // elegido — el resto conserva su URL ya guardada.
@@ -169,7 +171,6 @@ function Panel() {
       setArchivoFachada(null);
       setArchivoEnvios1(null);
       setArchivoEnvios2(null);
-      setArchivoAtencionVideo(null);
       setGuardado(true);
       await cargar();
     } catch (err) {
@@ -306,18 +307,10 @@ function Panel() {
 
       <div>
         <p class="text-sm font-semibold text-neutral-900 dark:text-white">Página "Atención por WhatsApp"</p>
-        <p class="text-xs text-neutral-500 dark:text-neutral-400">Video y texto de atención al por mayor, opcionales.</p>
+        <p class="text-xs text-neutral-500 dark:text-neutral-400">Enlaces de YouTube (pegá la URL normal, ej. https://www.youtube.com/watch?v=...) y texto de atención al por mayor.</p>
         <div class="mt-2 space-y-3">
-          <div>
-            <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Video (opcional)</label>
-            {atencionVideoActual && <p class="mt-1 text-xs text-neutral-500">Ya hay un video cargado — subí uno nuevo para reemplazarlo.</p>}
-            <input
-              type="file"
-              accept="video/*"
-              onChange={(e) => setArchivoAtencionVideo((e.target as HTMLInputElement).files?.[0] ?? null)}
-              class="mt-1 block w-full text-sm text-neutral-700 dark:text-neutral-300"
-            />
-          </div>
+          <CampoTexto label="Video: Atención en tienda" value={form.atencion_tienda_youtube} onInput={(v) => campo("atencion_tienda_youtube", v)} />
+          <CampoTexto label="Video: Atención al por mayor" value={form.atencion_mayorista_youtube} onInput={(v) => campo("atencion_mayorista_youtube", v)} />
           <CampoTextarea label="Texto de atención al por mayor" value={form.atencion_mayorista_texto} onInput={(v) => campo("atencion_mayorista_texto", v)} />
         </div>
       </div>
