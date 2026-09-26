@@ -6,16 +6,19 @@ const CATALOGOS = [
     nombre: "Accesorios",
     descripcion: "Accesorios tuning, decoración e interior y confort.",
     archivo: "/catalogos/catalogo-accesorios.pdf",
+    portada: "/catalogos/portada-accesorios.webp",
   },
   {
     nombre: "Equipamiento",
     descripcion: "Equipamiento exterior, auxilio vehicular y remolque.",
     archivo: "/catalogos/catalogo-equipamiento.pdf",
+    portada: "/catalogos/portada-equipamiento.webp",
   },
   {
     nombre: "Barras, Parrillas y Porta Equipajes",
     descripcion: "Línea completa de barras transversales, parrillas y porta equipajes.",
     archivo: "/catalogos/catalogo-barras-parrillas.pdf",
+    portada: "/catalogos/portada-barras-parrillas.webp",
   },
 ];
 ---
@@ -31,29 +34,27 @@ const CATALOGOS = [
       por WhatsApp con el código o nombre del producto que te interese.
     </p>
 
-    <div class="mt-8 space-y-4">
+    <div class="mt-8 grid gap-5 sm:grid-cols-3">
       {
         CATALOGOS.map((cat, i) => (
           <a
             href={cat.archivo}
-            target="_blank"
-            rel="noopener noreferrer"
+            download
             data-reveal
             style={`transition-delay: ${i * 90}ms`}
-            class="group flex items-center gap-4 rounded-lg border border-neutral-200 p-5 transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-neutral-800"
+            class="group flex flex-col overflow-hidden rounded-lg border border-neutral-200 transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-neutral-800"
           >
-            <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-blue/10 text-brand-blue-dark transition-transform duration-300 group-hover:scale-110 dark:text-brand-blue">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="h-6 w-6" aria-hidden="true">
-                <path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" stroke-linejoin="round" />
-                <path d="M14 3v5h5" stroke-linejoin="round" />
-                <path d="M9 13h6M9 17h6" stroke-linecap="round" />
-              </svg>
-            </span>
-            <span class="min-w-0 flex-1">
+            <img
+              src={cat.portada}
+              alt={`Portada del catálogo ${cat.nombre}`}
+              class="aspect-[3/4] w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              loading="lazy"
+            />
+            <div class="flex flex-1 flex-col p-4">
               <span class="block font-semibold text-neutral-900 dark:text-white">Catálogo {cat.nombre}</span>
-              <span class="mt-0.5 block text-sm text-neutral-500 dark:text-neutral-400">{cat.descripcion}</span>
-            </span>
-            <span class="shrink-0 text-sm font-medium text-brand-blue-dark dark:text-brand-blue">Descargar →</span>
+              <span class="mt-0.5 block flex-1 text-sm text-neutral-500 dark:text-neutral-400">{cat.descripcion}</span>
+              <span class="mt-3 text-sm font-medium text-brand-blue-dark dark:text-brand-blue">Descargar →</span>
+            </div>
           </a>
         ))
       }
