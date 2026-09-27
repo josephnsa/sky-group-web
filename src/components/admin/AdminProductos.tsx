@@ -71,6 +71,10 @@ function Panel() {
   // sku !== null mientras se edita un producto existente (en vez de crear
   // uno nuevo) — el mismo formulario de abajo se reusa para ambos casos.
   const [editandoSku, setEditandoSku] = useState<string | null>(null);
+  // El formulario de agregar/editar arranca colapsado — la lista es lo
+  // primero que se ve al entrar, no un formulario largo tapando todo.
+  const [formAbierto, setFormAbierto] = useState(false);
+  const [busqueda, setBusqueda] = useState("");
 
   async function cargar() {
     setCargando(true);
@@ -95,6 +99,7 @@ function Panel() {
     setArchivos([]);
     setArchivoVideo(null);
     setEscribiendoNuevaSub(false);
+    setFormAbierto(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -104,6 +109,7 @@ function Panel() {
     setArchivos([]);
     setArchivoVideo(null);
     setEscribiendoNuevaSub(false);
+    setFormAbierto(false);
     (document.getElementById("form-producto") as HTMLFormElement)?.reset();
   }
 
@@ -229,18 +235,36 @@ function Panel() {
     await cargar();
   }
 
+  const busquedaNorm = busqueda.trim().toLowerCase();
+  const productosFiltrados = busquedaNorm
+    ? productos.filter(
+        (p) =>
+          p.nombre.toLowerCase().includes(busquedaNorm) ||
+          p.sku.toLowerCase().includes(busquedaNorm) ||
+          p.marca.toLowerCase().includes(busquedaNorm),
+      )
+    : productos;
+
   return (
     <div class="space-y-8">
+      {!formAbierto && (
+        <button
+          type="button"
+          onClick={() => setFormAbierto(true)}
+          class="inline-flex items-center gap-1.5 rounded-md bg-brand-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-brand-blue-dark"
+        >
+          + Agregar producto
+        </button>
+      )}
+      {formAbierto && (
       <form id="form-producto" onSubmit={guardar} class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-800">
         <div class="flex items-center justify-between">
           <h2 class="font-semibold text-neutral-900 dark:text-white">
             {editandoSku ? `Editando: ${editandoSku}` : "Agregar producto"}
           </h2>
-          {editandoSku && (
-            <button type="button" onClick={cancelarEdicion} class="text-sm text-neutral-500 hover:underline dark:text-neutral-400">
-              Cancelar edición
-            </button>
-          )}
+          <button type="button" onClick={cancelarEdicion} class="text-sm text-neutral-500 hover:underline dark:text-neutral-400">
+            Cancelar
+          </button>
         </div>
 
         <div class="grid gap-4 sm:grid-cols-2">
@@ -418,14 +442,28 @@ function Panel() {
           {guardando ? "Guardando..." : editandoSku ? "Guardar cambios" : "Agregar producto"}
         </button>
       </form>
+      )}
 
       <div>
-        <h2 class="mb-3 font-semibold text-neutral-900 dark:text-white">Productos actuales ({productos.length})</h2>
+        <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <h2 class="font-semibold text-neutral-900 dark:text-white">
+            Productos ({productosFiltrados.length}{busquedaNorm ? ` de ${productos.length}` : ""})
+          </h2>
+          <input
+            type="search"
+            placeholder="Buscar por nombre, SKU o marca..."
+            value={busqueda}
+            onInput={(e) => setBusqueda((e.target as HTMLInputElement).value)}
+            class="w-full max-w-xs rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+          />
+        </div>
         {cargando ? (
           <p class="text-sm text-neutral-500">Cargando...</p>
+        ) : productosFiltrados.length === 0 ? (
+          <p class="text-sm text-neutral-500 dark:text-neutral-400">Ningún producto coincide con "{busqueda}".</p>
         ) : (
           <ul class="max-h-[32rem] space-y-3 overflow-y-auto">
-            {productos.map((p) => (
+            {productosFiltrados.map((p) => (
               <li
                 key={p.sku}
                 class={`flex items-center gap-4 rounded-lg border p-3 dark:border-neutral-800 ${
