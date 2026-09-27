@@ -14,13 +14,7 @@ export default function AdminInicio() {
           href="/admin/categorias"
           class="rounded-lg border border-neutral-200 p-5 text-center font-semibold text-neutral-900 transition-colors duration-200 hover:border-brand-blue hover:bg-brand-blue/5 dark:border-neutral-800 dark:text-white dark:hover:bg-brand-blue/10"
         >
-          Categorías
-        </a>
-        <a
-          href="/admin/productos"
-          class="rounded-lg border border-neutral-200 p-5 text-center font-semibold text-neutral-900 transition-colors duration-200 hover:border-brand-blue hover:bg-brand-blue/5 dark:border-neutral-800 dark:text-white dark:hover:bg-brand-blue/10"
-        >
-          Productos
+          Categorías y productos
         </a>
         <a
           href="/admin/catalogos"
