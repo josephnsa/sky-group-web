@@ -17,6 +17,7 @@ function Panel() {
   const [guardando, setGuardando] = useState(false);
   const [generandoMiniatura, setGenerandoMiniatura] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [noMigrado, setNoMigrado] = useState(false);
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [archivoPdf, setArchivoPdf] = useState<File | null>(null);
@@ -25,7 +26,11 @@ function Panel() {
 
   async function cargar() {
     setCargando(true);
-    setCatalogos(await catalogosAdmin.listar());
+    try {
+      setCatalogos(await catalogosAdmin.listar());
+    } catch {
+      setNoMigrado(true);
+    }
     setCargando(false);
   }
 
@@ -118,6 +123,15 @@ function Panel() {
     if (!confirm(`¿Borrar el catálogo "${c.nombre}"?`)) return;
     await catalogosAdmin.borrar(c.id);
     await cargar();
+  }
+
+  if (noMigrado) {
+    return (
+      <div class="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+        Todavía falta correr <code>docs/migracion-catalogos.sql</code> en el SQL Editor
+        de Supabase — sin eso, esta sección no tiene dónde guardar los catálogos.
+      </div>
+    );
   }
 
   return (
