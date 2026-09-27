@@ -41,6 +41,9 @@ function Panel() {
   // (una a la vez, para no saturar la lista).
   const [expandida, setExpandida] = useState<string | null>(null);
   const [nuevaSub, setNuevaSub] = useState("");
+  // El formulario de agregar/editar arranca colapsado — la lista es lo
+  // primero que se ve al entrar, no un formulario vacío tapando todo.
+  const [formAbierto, setFormAbierto] = useState(false);
 
   async function cargar() {
     setCargando(true);
@@ -85,6 +88,7 @@ function Panel() {
     setEditandoSlug(cat.slug);
     setNombre(cat.nombre);
     setArchivo(null);
+    setFormAbierto(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -92,6 +96,7 @@ function Panel() {
     setEditandoSlug(null);
     setNombre("");
     setArchivo(null);
+    setFormAbierto(false);
     (document.getElementById("form-categoria") as HTMLFormElement)?.reset();
   }
 
@@ -145,16 +150,24 @@ function Panel() {
 
   return (
     <div class="space-y-8">
+      {!formAbierto && (
+        <button
+          type="button"
+          onClick={() => setFormAbierto(true)}
+          class="inline-flex items-center gap-1.5 rounded-md bg-brand-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-brand-blue-dark"
+        >
+          + Agregar categoría
+        </button>
+      )}
+      {formAbierto && (
       <form id="form-categoria" onSubmit={guardar} class="space-y-4 rounded-lg border border-neutral-200 p-5 dark:border-neutral-800">
         <div class="flex items-center justify-between">
           <h2 class="font-semibold text-neutral-900 dark:text-white">
             {editandoSlug ? `Editando: ${editandoSlug}` : "Agregar categoría"}
           </h2>
-          {editandoSlug && (
-            <button type="button" onClick={cancelarEdicion} class="text-sm text-neutral-500 hover:underline dark:text-neutral-400">
-              Cancelar edición
-            </button>
-          )}
+          <button type="button" onClick={cancelarEdicion} class="text-sm text-neutral-500 hover:underline dark:text-neutral-400">
+            Cancelar
+          </button>
         </div>
 
         <div>
@@ -203,9 +216,10 @@ function Panel() {
           {guardando ? "Guardando..." : editandoSlug ? "Guardar cambios" : "Agregar categoría"}
         </button>
       </form>
+      )}
 
       <div>
-        <h2 class="mb-3 font-semibold text-neutral-900 dark:text-white">Categorías actuales</h2>
+        <h2 class="mb-3 font-semibold text-neutral-900 dark:text-white">Categorías ({categorias.length})</h2>
         {cargando ? (
           <p class="text-sm text-neutral-500">Cargando...</p>
         ) : (
