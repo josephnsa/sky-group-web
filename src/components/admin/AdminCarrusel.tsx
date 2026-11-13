@@ -206,7 +206,7 @@ function Panel() {
         ) : (
           <ul class="space-y-3">
             {slidesOrdenados.map((s, i) => (
-              <li key={s.id} class={`flex items-center gap-4 rounded-lg border border-neutral-200 p-3 dark:border-neutral-800 ${s.activo ? "" : "opacity-60"}`}>
+              <li key={s.id} class={`flex flex-wrap items-center gap-3 rounded-lg sm:flex-nowrap sm:gap-4 border border-neutral-200 p-3 dark:border-neutral-800 ${s.activo ? "" : "opacity-60"}`}>
                 <span
                   class="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-brand-blue text-xs font-bold text-white"
                   title={`Diapositiva ${i + 1} de ${slidesOrdenados.length}`}
@@ -223,6 +223,9 @@ function Panel() {
                     <span class="italic">Solo imagen, sin botón</span>
                   )}
                 </div>
+                {/* Controles: en celular bajan a su propia línea (antes "Borrar"
+                quedaba fuera de la pantalla en 375px). */}
+                <div class="flex w-full items-center justify-end gap-4 sm:w-auto">
                 <div class="flex flex-col">
                   <button
                     type="button"
@@ -268,6 +271,7 @@ function Panel() {
                 >
                   Borrar
                 </button>
+                </div>
               </li>
             ))}
           </ul>

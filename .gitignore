@@ -46,3 +46,11 @@ Sin título 18.pdf
 .claude/
 .agents/
 skills-lock.json
+
+# Material y archivos locales que no son parte del sitio (nunca subir)
+credenciales*.txt
+*credencial*
+client_secret*.json
+PAG WEB SKY/
+PAG WEB SKY-*.zip
+Sin t*tulo*.pdf
