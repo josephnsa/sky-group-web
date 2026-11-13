@@ -16,7 +16,10 @@ export default function GaleriaProducto({ nombre, imagenes, video }: Props) {
   const hayMiniaturas = imagenes.length > 1 || !!video;
 
   return (
-    <div>
+    // min-w-0: es un ítem de la grilla de la ficha; sin esto, con 6 o más
+    // miniaturas la fila (que tiene su propio scroll) ensanchaba la columna
+    // y la página se desbordaba a lo ancho en celular.
+    <div class="min-w-0">
       {activa === VIDEO && video ? (
         <video
           src={video}
