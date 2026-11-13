@@ -46,7 +46,7 @@ export default function VistaRapidaModal({ producto, onClose }: Props) {
       transition={{ duration: DURATION.base }}
     >
       <motion.div
-        class="w-full max-w-2xl rounded-lg bg-white shadow-xl dark:bg-neutral-900"
+        class="max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-lg bg-white shadow-xl dark:bg-neutral-900"
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
