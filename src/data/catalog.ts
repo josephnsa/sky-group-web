@@ -21,6 +21,7 @@ export interface Producto {
   imagen: string; // ruta dentro de /public, URL de Supabase Storage, o el placeholder
   imagenes?: string[]; // fotos adicionales (galería) — la primera de `imagen` no se repite acá
   video?: string; // URL de video del producto (Supabase Storage), opcional
+  enlaceConoceMas?: string; // botón "¡Conoce más!": TikTok/YouTube se abre en modal, otro enlace en pestaña nueva
   descripcion: string;
   destacado?: boolean;
   compatibilidad?: string[]; // modelos/vehículos compatibles, ej. "Toyota Yaris 2015-2020"
@@ -93,6 +94,7 @@ async function cargarDatos() {
       imagen: f.imagen ?? IMAGEN_PLACEHOLDER,
       imagenes: f.imagenes ?? undefined,
       video: f.video_url ?? undefined,
+      enlaceConoceMas: f.enlace_conoce_mas?.trim() || undefined,
       descripcion: f.descripcion,
       destacado: f.destacado ?? false,
       compatibilidad: f.compatibilidad ?? undefined,

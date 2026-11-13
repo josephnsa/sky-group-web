@@ -72,9 +72,8 @@ export default function ProductCard({ producto, onVistaRapida }: Props) {
         )}
       </div>
       <div class="flex flex-1 flex-col gap-1 p-3">
-        <p class="text-xs font-semibold uppercase tracking-wide text-brand-blue-dark dark:text-brand-blue">
-          {producto.marca}
-        </p>
+        {/* Sin marca en la tarjeta del catálogo (pedido del cliente): la
+        marca se muestra solo dentro de la ficha, como "Marca: X" o "Marca: S/M". */}
         <a
           href={`/producto/${producto.sku}`}
           class="line-clamp-2 min-h-[2.5rem] text-sm font-medium text-neutral-900 hover:underline dark:text-neutral-100"

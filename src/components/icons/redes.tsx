@@ -46,3 +46,36 @@ export const ICONO_POR_RED: Record<string, (p: IconProps) => ReturnType<typeof I
   tiktok: IconTiktok,
   youtube: IconYoutube,
 };
+
+// Logo a color de cada red (colores oficiales de cada marca), para
+// /redes-sociales — pedido explícito del cliente: que se reconozca el logo
+// real de cada red, no un ícono genérico con el degradado de SKY.
+// Facebook y YouTube: el glifo ya es el logo completo, solo se pinta con su
+// color. Instagram y TikTok: glifo blanco sobre su fondo característico.
+export function LogoRedColor({ red, class: clase = "h-14 w-14" }: { red: string; class?: string }) {
+  switch (red) {
+    case "facebook":
+      return <IconFacebook class={`${clase} text-[#1877F2]`} />;
+    case "youtube":
+      return <IconYoutube class={`${clase} text-[#FF0000]`} />;
+    case "instagram":
+      return (
+        <span
+          class={`${clase} flex items-center justify-center rounded-2xl text-white`}
+          style="background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%)"
+        >
+          <IconInstagram class="h-3/5 w-3/5" />
+        </span>
+      );
+    case "tiktok":
+      return (
+        <span class={`${clase} flex items-center justify-center rounded-2xl bg-black text-white`}>
+          <IconTiktok class="h-3/5 w-3/5 [filter:drop-shadow(-1.5px_-1.5px_0_#25F4EE)_drop-shadow(1.5px_1.5px_0_#FE2C55)]" />
+        </span>
+      );
+    default: {
+      const Icono = ICONO_POR_RED[red];
+      return Icono ? <Icono class={clase} /> : null;
+    }
+  }
+}

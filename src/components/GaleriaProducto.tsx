@@ -11,23 +11,9 @@ interface Props {
 // sin sumar un segundo booleano que haya que mantener sincronizado.
 const VIDEO = -1;
 
-const ZOOM_FACTOR = 2.2;
-
 export default function GaleriaProducto({ nombre, imagenes, video }: Props) {
   const [activa, setActiva] = useState(0);
-  // Zoom estilo Amazon: al pasar el mouse por encima (solo dispositivos con
-  // puntero real, no táctiles) se amplía la imagen siguiendo el cursor en
-  // el mismo lugar. Sin modal de pantalla completa — solo este hover.
-  const [posicionMouse, setPosicionMouse] = useState({ x: 50, y: 50 });
-  const [conMouseEncima, setConMouseEncima] = useState(false);
   const hayMiniaturas = imagenes.length > 1 || !!video;
-
-  function alMoverMouse(e: MouseEvent) {
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setPosicionMouse({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) });
-  }
 
   return (
     <div>
@@ -39,24 +25,25 @@ export default function GaleriaProducto({ nombre, imagenes, video }: Props) {
           class="w-full rounded-lg border border-neutral-200 dark:border-neutral-800"
         />
       ) : (
-        <div
-          onMouseEnter={() => setConMouseEncima(true)}
-          onMouseLeave={() => setConMouseEncima(false)}
-          onMouseMove={alMoverMouse}
-          class="relative block w-full cursor-zoom-in overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-800"
+        // Zoom: antes era una lupa al pasar el mouse (estilo Amazon); el
+        // cliente pidió que la imagen se abra en una pestaña nueva, donde se
+        // ve a tamaño completo y se puede ampliar con el zoom del navegador.
+        <a
+          href={imagenes[activa]}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Ver imagen en una pestaña nueva"
+          class="group relative block w-full cursor-zoom-in overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-800"
         >
           <img src={imagenes[activa]} alt={nombre} class="w-full object-cover" />
-          {conMouseEncima && (
-            <span
-              class="pointer-events-none absolute inset-0 bg-no-repeat"
-              style={{
-                backgroundImage: `url(${imagenes[activa]})`,
-                backgroundSize: `${ZOOM_FACTOR * 100}%`,
-                backgroundPosition: `${posicionMouse.x}% ${posicionMouse.y}%`,
-              }}
-            />
-          )}
-        </div>
+          <span class="pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-1.5 rounded-md bg-black/60 px-2.5 py-1.5 text-xs font-medium text-white opacity-80 transition-opacity duration-200 group-hover:opacity-100">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m21 21-4.3-4.3M11 8v6M8 11h6" />
+            </svg>
+            Ampliar
+          </span>
+        </a>
       )}
       <p class="mt-1.5 text-center text-xs text-neutral-400 dark:text-neutral-500">Imágenes referenciales</p>
       {hayMiniaturas && (

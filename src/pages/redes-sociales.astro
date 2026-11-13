@@ -2,7 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import { SITE } from "../consts";
 import { configuracionSitio as c } from "../data/configuracion";
-import { ICONO_POR_RED } from "../components/icons/redes";
+import { LogoRedColor } from "../components/icons/redes";
 
 const NOMBRE_RED: Record<string, string> = {
   facebook: "Facebook",
@@ -39,7 +39,6 @@ const redes = [
       redes.length > 0 ? (
         <div class="mt-8 grid gap-5 sm:grid-cols-2">
           {redes.map(([nombre, url], i) => {
-            const Icono = ICONO_POR_RED[nombre];
             return (
               <a
                 href={url}
@@ -49,8 +48,8 @@ const redes = [
                 style={`transition-delay: ${i * 80}ms`}
                 class="group flex items-center gap-4 rounded-lg border border-neutral-200 p-5 transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-neutral-800"
               >
-                <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-blue to-brand-green text-white transition-transform duration-300 group-hover:scale-110">
-                  <Icono class="h-7 w-7" />
+                <span class="shrink-0 transition-transform duration-300 group-hover:scale-110">
+                  <LogoRedColor red={nombre} class="h-14 w-14" />
                 </span>
                 <span class="min-w-0">
                   <span class="block font-semibold text-neutral-900 dark:text-white">{NOMBRE_RED[nombre]}</span>

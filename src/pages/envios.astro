@@ -1,51 +1,198 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import { NEGOCIO } from "../consts";
 
-const SECCIONES = [
-  {
-    titulo: "Envío a Lima",
-    texto:
-      "En Lima Metropolitana coordinamos la entrega directamente por WhatsApp, según tu distrito. Una vez confirmado tu pedido, te damos un tiempo estimado de entrega (normalmente 1 a 2 días hábiles) y las opciones de recojo en tienda o envío a domicilio.",
-    imagen: "/images/hero/auto-real.webp",
-  },
-  {
-    titulo: "Envío a Provincia",
-    texto:
-      "Para provincias trabajamos con agencias de transporte de confianza. El costo depende del destino y del tamaño del pedido, y el tiempo de entrega suele ser de 2 a 5 días hábiles según la ciudad — te confirmamos todos los detalles por WhatsApp al armar tu cotización.",
-    imagen: "/images/categorias/remolque.webp",
-  },
+// Contenido tal cual "ENVIOS A TODO EL PERU - INFO OK.docx" (carpeta PAG WEB
+// SKY del cliente), que reemplaza el texto genérico anterior (tenía plazos
+// de entrega supuestos que el negocio nunca confirmó). El documento pide que
+// "se vea visual y bonito y con información al mismo tiempo": datos clave
+// arriba, luego una sección para clientes y otra para distribuidores.
+
+const DATOS_CLAVE = [
+  { titulo: "Retiro en tienda gratis", desc: "Av. México 1028, La Victoria, Lima." },
+  { titulo: "Despacho el mismo día", desc: "Pagos confirmados hasta las 4:00 pm." },
+  { titulo: "Sin recargo hasta la agencia", desc: "El flete se paga en destino." },
+  { titulo: "Lima y provincias", desc: "Reparto propio, courier y agencias." },
 ];
+
+const NACIONAL = [
+  "El pago del producto debe encontrarse confirmado para proceder con el envío.",
+  "Sin recargos adicionales por el envío hasta la agencia de transporte.",
+  "El flete se paga en destino, directamente a la agencia de transporte de su preferencia.",
+  "Los envíos con pagos confirmados hasta las 4:00 pm se envían el mismo día; posterior a ello, el pedido queda sujeto a disponibilidad y cobertura de nuestro servicio de reparto.",
+];
+
+const ZONAS = ["Lima Norte", "Lima Sur", "Lima Centro", "Lima Este", "Otras zonas de Lima"];
 ---
 
-<Layout title="Envíos a todo el Perú" description="Detalle de envíos de SKY Group a Lima y provincias">
-  <section class="mx-auto max-w-4xl px-4 py-12 sm:py-16">
-    <h1 class="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white sm:text-4xl lg:text-5xl">
-      Envíos a todo el Perú
-    </h1>
-    <p class="mt-4 text-neutral-700 dark:text-neutral-400">
-      Coordinamos el envío de tu pedido a todo el Perú, tanto a Lima como a provincias.
+<Layout title="Envíos a todo el Perú" description="Modalidades de entrega de SKY Group en Lima y provincias, para clientes y distribuidores">
+  <section class="bg-gradient-to-br from-brand-blue/10 via-white to-brand-green/10 dark:from-brand-blue/15 dark:via-neutral-950 dark:to-brand-green/10">
+    <div class="mx-auto max-w-5xl px-4 py-12 sm:py-16">
+      <h1 class="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white sm:text-4xl lg:text-5xl">
+        Envíos a todo el Perú
+      </h1>
+      <p class="mt-4 max-w-3xl text-lg text-neutral-700 dark:text-neutral-300">
+        Llegamos a Lima y provincias con diferentes modalidades de despacho, según el tipo de compra, la zona y la urgencia
+        de tu pedido.
+      </p>
+      <p class="mt-4 max-w-3xl rounded-md border-l-4 border-brand-blue bg-white/70 px-4 py-3 text-sm text-neutral-700 dark:bg-neutral-900/60 dark:text-neutral-300">
+        <b>A considerar:</b> las modalidades de despacho pueden variar según destino, volumen del pedido, agencia disponible y
+        programación de rutas dentro de nuestra área de cobertura.
+      </p>
+
+      <ul class="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {
+          DATOS_CLAVE.map((d, i) => (
+            <li
+              data-reveal
+              style={`transition-delay: ${i * 90}ms`}
+              class={`rounded-lg border-t-4 bg-white p-4 shadow-sm dark:bg-neutral-900 ${
+                i % 2 === 0 ? "border-t-brand-blue" : "border-t-brand-green"
+              }`}
+            >
+              <p class="font-bold text-neutral-900 dark:text-white">{d.titulo}</p>
+              <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{d.desc}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-5xl px-4 py-12 sm:py-16">
+    <h2 class="border-l-4 border-brand-blue pl-3 text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
+      Atención a clientes
+    </h2>
+    <p class="mt-3 text-neutral-700 dark:text-neutral-300">
+      Ponemos a disposición de nuestros clientes diferentes modalidades de entrega, de acuerdo con su ubicación y
+      requerimientos.
     </p>
 
-    <div class="mt-8 space-y-6">
-      {
-        SECCIONES.map((s, i) => (
-          <div
-            data-reveal
-            style={`transition-delay: ${i * 100}ms`}
-            class="grid items-center gap-6 rounded-lg border border-neutral-200 p-6 sm:grid-cols-2 dark:border-neutral-800"
-          >
-            <div>
-              <h2 class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">{s.titulo}</h2>
-              <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400">{s.texto}</p>
-            </div>
-            <img src={s.imagen} alt="" class="aspect-[4/3] w-full rounded-lg object-cover" loading="lazy" />
-          </div>
-        ))
-      }
-    </div>
+    <div class="mt-6 grid gap-5 md:grid-cols-2">
+      <article data-reveal class="rounded-lg border border-neutral-200 p-6 dark:border-neutral-800">
+        <div class="flex items-center gap-3">
+          <span class="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-brand-blue/10 text-brand-blue-dark dark:text-brand-blue">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z" /><circle cx="12" cy="9.5" r="2.5" /></svg>
+          </span>
+          <h3 class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">Entregas en Lima</h3>
+        </div>
+        <div class="mt-4 space-y-3 text-sm text-neutral-700 dark:text-neutral-300">
+          <p>
+            Para pedidos dentro del área Metropolitana de Lima, ofrecemos el servicio de entrega mediante nuestro transporte o
+            servicio de reparto, coordinado según disponibilidad y área de cobertura.
+          </p>
+          <p>
+            <b class="text-neutral-900 dark:text-white">Pedidos urgentes o de menor volumen:</b> puedes solicitar tu propio
+            servicio de courier (apps de envío) para recoger el pedido en nuestro local, previo pago del producto. Se enviarán
+            imágenes al momento de la entrega, garantizando la seguridad del mismo.
+          </p>
+          <p class="rounded-md bg-brand-green/10 px-3 py-2">
+            <b class="text-neutral-900 dark:text-white">Retiro en tienda:</b> totalmente gratis en nuestro local ubicado en
+            Avenida México 1028, La Victoria, Lima.
+          </p>
+        </div>
+      </article>
 
-    <p class="mt-8 text-sm text-neutral-500 dark:text-neutral-400">
-      ¿Tienes dudas sobre el envío a tu ciudad? Escríbenos por WhatsApp y te confirmamos costo y tiempo estimado.
+      <article data-reveal style="transition-delay: 90ms" class="rounded-lg border border-neutral-200 p-6 dark:border-neutral-800">
+        <div class="flex items-center gap-3">
+          <span class="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-brand-green/10 text-brand-green-dark dark:text-brand-green">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7" /><circle cx="7" cy="17.5" r="1.8" /><circle cx="17" cy="17.5" r="1.8" /></svg>
+          </span>
+          <h3 class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">Envíos a nivel nacional</h3>
+        </div>
+        <p class="mt-4 text-sm text-neutral-700 dark:text-neutral-300">
+          Realizamos despachos a las diferentes provincias del país mediante agencias de transporte, de acuerdo con la
+          preferencia del cliente.
+        </p>
+        <ul class="mt-3 space-y-2 text-sm text-neutral-700 dark:text-neutral-300">
+          {
+            NACIONAL.map((t) => (
+              <li class="flex gap-2">
+                <span class="mt-0.5 font-bold text-brand-green-dark dark:text-brand-green" aria-hidden="true">✓</span>
+                {t}
+              </li>
+            ))
+          }
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <section class="border-y border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900/50">
+    <div class="mx-auto max-w-5xl px-4 py-12 sm:py-16">
+      <h2 class="border-l-4 border-brand-green pl-3 text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
+        Distribuidores
+      </h2>
+      <p class="mt-3 text-neutral-700 dark:text-neutral-300">
+        Brindamos soluciones de despacho adaptadas a sus necesidades, con diferentes modalidades de acuerdo con el volumen del
+        pedido, ubicación y requerimientos de entrega.
+      </p>
+
+      <div class="mt-6 grid gap-5 md:grid-cols-2">
+        <article data-reveal class="rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+          <h3 class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">Distribución en Lima</h3>
+          <p class="mt-3 text-sm text-neutral-700 dark:text-neutral-300">
+            Para pedidos de atención inmediata, la coordinación es directamente con su asesor de ventas autorizado. Para
+            pedidos de menor volumen que requieran una atención rápida y eficiente, contamos con la opción del recojo en
+            nuestro local, o atención de courier (apps de envío) coordinados con el distribuidor.
+          </p>
+          <p class="mt-4 font-semibold text-neutral-900 dark:text-white">Envíos programados</p>
+          <p class="mt-1 text-sm text-neutral-700 dark:text-neutral-300">
+            Contamos con servicio de reparto periódico a determinadas zonas de Lima diariamente. Los pedidos se programan de
+            acuerdo con la zona y disponibilidad:
+          </p>
+          <ul class="mt-3 flex flex-wrap gap-2" aria-label="Zonas de reparto programado">
+            {
+              ZONAS.map((z) => (
+                <li class="rounded-full bg-brand-blue/10 px-3 py-1 text-xs font-semibold text-brand-blue-dark dark:text-brand-blue">{z}</li>
+              ))
+            }
+          </ul>
+          <p class="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
+            Los envíos programados se coordinan directamente con su asesor de ventas autorizado.
+          </p>
+        </article>
+
+        <article data-reveal style="transition-delay: 90ms" class="rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+          <h3 class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">Distribución a nivel nacional</h3>
+          <p class="mt-3 text-sm text-neutral-700 dark:text-neutral-300">
+            Para pedidos destinados a otras ciudades del país, coordinamos el envío mediante la agencia de transporte que nos
+            indica el distribuidor.
+          </p>
+          <ul class="mt-3 space-y-2 text-sm text-neutral-700 dark:text-neutral-300">
+            {
+              NACIONAL.map((t) => (
+                <li class="flex gap-2">
+                  <span class="mt-0.5 font-bold text-brand-green-dark dark:text-brand-green" aria-hidden="true">✓</span>
+                  {t}
+                </li>
+              ))
+            }
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-5xl px-4 py-12">
+    <div class="rounded-lg border border-amber-300/60 bg-amber-50 p-5 text-sm text-neutral-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-neutral-300">
+      <p class="font-semibold text-neutral-900 dark:text-white">Sobre el transporte por agencia</p>
+      <p class="mt-2">
+        SKY GROUP no se responsabiliza por daños ocasionados durante el transporte de los productos por la agencia solicitada
+        por el cliente o distribuidor. Nuestros envíos se realizan de manera cuidadosa, con los rotulados respectivos, para
+        brindar la mayor seguridad y garantizar que los productos lleguen en el mejor estado a tus manos. Por lo tanto, no
+        asumimos responsabilidad por daños o el mal estado de los productos debido a malas prácticas de las agencias de
+        transporte.
+      </p>
+    </div>
+    <p class="mt-6 text-sm text-neutral-600 dark:text-neutral-400">
+      ¿Tienes dudas sobre el envío a tu ciudad? Escríbenos por WhatsApp al
+      <a
+        href={`https://wa.me/${NEGOCIO.whatsappNumero}?text=${encodeURIComponent("Hola, quisiera consultar sobre el envío de un pedido.")}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="font-semibold text-brand-blue-dark underline dark:text-brand-blue">{NEGOCIO.telefono}</a
+      >.
     </p>
   </section>
 </Layout>
