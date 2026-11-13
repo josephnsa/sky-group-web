@@ -5,10 +5,12 @@ import {
   categoriasAdmin,
   productosAdmin,
   subcategoriasAdmin,
+  tiposAdmin,
   subirImagen,
   type CategoriaAdmin,
   type ProductoAdmin,
   type SubcategoriaAdmin,
+  type TipoAdmin,
 } from "../../lib/supabase-admin";
 
 function slugify(texto: string) {
@@ -21,6 +23,7 @@ function slugify(texto: string) {
 }
 
 const NUEVA_SUBCATEGORIA = "__nueva__";
+const NUEVO_TIPO = "__nuevo_tipo__";
 
 interface ProductoRapido {
   sku: string;
@@ -45,6 +48,7 @@ const PRODUCTO_VACIO = {
   compatibilidad: "",
   especificaciones: "",
   enlaceConoceMas: "",
+  tipo: "",
 };
 
 function productoAFormulario(p: ProductoAdmin) {
@@ -60,6 +64,7 @@ function productoAFormulario(p: ProductoAdmin) {
     compatibilidad: (p.compatibilidad ?? []).join(", "),
     especificaciones: (p.especificaciones ?? []).map((e) => `${e.etiqueta}: ${e.valor}`).join("\n"),
     enlaceConoceMas: p.enlace_conoce_mas ?? "",
+    tipo: p.tipo ?? "",
   };
 }
 
@@ -75,6 +80,10 @@ function Panel() {
   // --- datos ---
   const [categorias, setCategorias] = useState<CategoriaAdmin[]>([]);
   const [subcategorias, setSubcategorias] = useState<SubcategoriaAdmin[]>([]);
+  // Tercer nivel del Excel ("tipo de producto"). Vacío si la migración
+  // docs/migracion-categorias-excel.sql todavía no se corrió.
+  const [tipos, setTipos] = useState<TipoAdmin[]>([]);
+  const [nuevoTipo, setNuevoTipo] = useState("");
   const [productos, setProductos] = useState<ProductoAdmin[]>([]);
   const [cargando, setCargando] = useState(true);
 
@@ -107,6 +116,9 @@ function Panel() {
   const [prodEditandoSku, setProdEditandoSku] = useState<string | null>(null);
   const [prodForm, setProdForm] = useState(PRODUCTO_VACIO);
   const [escribiendoNuevaSub, setEscribiendoNuevaSub] = useState(false);
+  const [escribiendoNuevoTipo, setEscribiendoNuevoTipo] = useState(false);
+  const [archivoFichaTecnica, setArchivoFichaTecnica] = useState<File | null>(null);
+  const [quitarFichaTecnica, setQuitarFichaTecnica] = useState(false);
   const [archivosProducto, setArchivosProducto] = useState<File[]>([]);
   const [archivoVideoProducto, setArchivoVideoProducto] = useState<File | null>(null);
   const [guardandoProducto, setGuardandoProducto] = useState(false);
@@ -132,9 +144,15 @@ function Panel() {
 
   async function cargar() {
     setCargando(true);
-    const [c, s, p] = await Promise.all([categoriasAdmin.listar(), subcategoriasAdmin.listar(), productosAdmin.listar()]);
+    const [c, s, p, t] = await Promise.all([
+      categoriasAdmin.listar(),
+      subcategoriasAdmin.listar(),
+      productosAdmin.listar(),
+      tiposAdmin.listar(),
+    ]);
     setCategorias(c);
     setSubcategorias(s);
+    setTipos(t);
     setProductos(p);
     setCargando(false);
   }
@@ -341,6 +359,8 @@ function Panel() {
       await Promise.all(
         productosAfectados.map((p) => productosAdmin.actualizar(p.sku, { subcategoria: nuevoNombre })),
       );
+      // Sus tipos de producto pasan a colgar del nombre nuevo.
+      await tiposAdmin.renombrarSubcategoria(sub.categoria_slug, sub.nombre, nuevoNombre);
       cancelarEdicionSub();
       await cargar();
     } catch {
@@ -356,10 +376,51 @@ function Panel() {
       afectados.length > 0
         ? `${afectados.length} producto${afectados.length !== 1 ? "s" : ""} la tiene${afectados.length !== 1 ? "n" : ""} asignada actualmente. No se van a modificar ni a borrar, pero esta subcategoría dejará de estar disponible para elegir en productos nuevos.`
         : "Ningún producto la tiene asignada actualmente — se puede borrar sin afectar nada.";
-    pedirConfirmacion(`Borrar subcategoría "${sub.nombre}"`, mensaje, async () => {
+    const tiposDeEsta = tiposDe(sub.categoria_slug, sub.nombre).length;
+    const mensajeCompleto =
+      tiposDeEsta > 0 ? `${mensaje} También se borran sus ${tiposDeEsta} tipo${tiposDeEsta !== 1 ? "s" : ""} de producto.` : mensaje;
+    pedirConfirmacion(`Borrar subcategoría "${sub.nombre}"`, mensajeCompleto, async () => {
       await subcategoriasAdmin.borrar(sub.id);
+      await tiposAdmin.borrarDeSubcategoria(sub.categoria_slug, sub.nombre);
       await cargar();
     }, afectados.length > 0);
+  }
+
+  // ===== Tipo de producto (tercer nivel) =====
+
+  function tiposDe(categoriaSlug: string, subcategoria: string) {
+    return tipos.filter((t) => t.categoria_slug === categoriaSlug && t.subcategoria === subcategoria);
+  }
+
+  async function agregarTipo(sub: SubcategoriaAdmin) {
+    const texto = nuevoTipo.trim();
+    if (!texto) return;
+    try {
+      await tiposAdmin.crear({
+        categoria_slug: sub.categoria_slug,
+        subcategoria: sub.nombre,
+        nombre: texto,
+        orden: tiposDe(sub.categoria_slug, sub.nombre).length,
+      });
+      setNuevoTipo("");
+      await cargar();
+    } catch {
+      setAviso("No se pudo agregar el tipo: es probable que ya exista en esta subcategoría, o que falte correr docs/migracion-categorias-excel.sql en Supabase.");
+    }
+  }
+
+  function borrarTipo(tipo: TipoAdmin) {
+    const usan = productos.filter(
+      (p) => p.categoria_slug === tipo.categoria_slug && p.subcategoria === tipo.subcategoria && p.tipo === tipo.nombre,
+    ).length;
+    const mensaje =
+      usan > 0
+        ? `${usan} producto${usan !== 1 ? "s lo usan" : " lo usa"}. No se modifican, pero el tipo dejará de estar disponible para elegir.`
+        : "Ningún producto lo usa: se puede borrar sin afectar nada.";
+    pedirConfirmacion(`Borrar tipo "${tipo.nombre}"`, mensaje, async () => {
+      await tiposAdmin.borrar(tipo.id);
+      await cargar();
+    }, usan > 0);
   }
 
   // ===== Producto =====
@@ -422,7 +483,10 @@ function Panel() {
     setProdForm({ ...PRODUCTO_VACIO, subcategoria: subcategoria ?? "" });
     setArchivosProducto([]);
     setArchivoVideoProducto(null);
+    setArchivoFichaTecnica(null);
+    setQuitarFichaTecnica(false);
     setEscribiendoNuevaSub(false);
+    setEscribiendoNuevoTipo(false);
     setProdFormAbierto(true);
   }
 
@@ -432,7 +496,10 @@ function Panel() {
     setProdForm(productoAFormulario(p));
     setArchivosProducto([]);
     setArchivoVideoProducto(null);
+    setArchivoFichaTecnica(null);
+    setQuitarFichaTecnica(false);
     setEscribiendoNuevaSub(false);
+    setEscribiendoNuevoTipo(false);
     setProdFormAbierto(true);
   }
 
@@ -443,16 +510,32 @@ function Panel() {
     setProdForm(PRODUCTO_VACIO);
     setArchivosProducto([]);
     setArchivoVideoProducto(null);
+    setArchivoFichaTecnica(null);
+    setQuitarFichaTecnica(false);
     setEscribiendoNuevaSub(false);
+    setEscribiendoNuevoTipo(false);
   }
 
   async function elegirSubcategoriaProducto(valor: string) {
+    // Al cambiar de subcategoría, el tipo elegido ya no corresponde.
+    campoProducto("tipo", "");
+    setEscribiendoNuevoTipo(false);
     if (valor === NUEVA_SUBCATEGORIA) {
       setEscribiendoNuevaSub(true);
       campoProducto("subcategoria", "");
     } else {
       setEscribiendoNuevaSub(false);
       campoProducto("subcategoria", valor);
+    }
+  }
+
+  function elegirTipoProducto(valor: string) {
+    if (valor === NUEVO_TIPO) {
+      setEscribiendoNuevoTipo(true);
+      campoProducto("tipo", "");
+    } else {
+      setEscribiendoNuevoTipo(false);
+      campoProducto("tipo", valor);
     }
   }
 
@@ -489,6 +572,28 @@ function Panel() {
         }
       }
 
+      // Tipo nuevo escrito a mano: se agrega a la lista de su subcategoría.
+      const tipoTexto = prodForm.tipo.trim();
+      if (
+        escribiendoNuevoTipo &&
+        tipoTexto &&
+        prodForm.subcategoria.trim() &&
+        !tiposDe(categoriaSlug, prodForm.subcategoria.trim()).some((t) => t.nombre === tipoTexto)
+      ) {
+        try {
+          await tiposAdmin.crear({
+            categoria_slug: categoriaSlug,
+            subcategoria: prodForm.subcategoria.trim(),
+            nombre: tipoTexto,
+            orden: tiposDe(categoriaSlug, prodForm.subcategoria.trim()).length,
+          });
+        } catch {
+          // Ya existía o falta la migración: el producto igual guarda el texto.
+        }
+      }
+      const original = productos.find((p) => p.sku === prodEditandoSku);
+      const urlFicha = archivoFichaTecnica ? await subirImagen(archivoFichaTecnica, "fichas") : null;
+
       const datosComunes = {
         categoria_slug: categoriaSlug,
         subcategoria: prodForm.subcategoria.trim(),
@@ -506,6 +611,9 @@ function Panel() {
         ...(prodForm.enlaceConoceMas.trim() || productos.find((p) => p.sku === prodEditandoSku)?.enlace_conoce_mas
           ? { enlace_conoce_mas: prodForm.enlaceConoceMas.trim() || null }
           : {}),
+        // Mismo criterio para las columnas de docs/migracion-categorias-excel.sql.
+        ...(tipoTexto || original?.tipo ? { tipo: tipoTexto || null } : {}),
+        ...(urlFicha ? { ficha_tecnica_url: urlFicha } : quitarFichaTecnica && original?.ficha_tecnica_url ? { ficha_tecnica_url: null } : {}),
       };
 
       const urlsFotos = archivosProducto.length > 0 ? await Promise.all(archivosProducto.map((a) => subirImagen(a, "productos"))) : null;
@@ -910,6 +1018,8 @@ function Panel() {
                   />
                   <input
                     type="number"
+                    step="0.01"
+                    min="0"
                     placeholder="Precio S/ (opcional)"
                     value={productoRapido.precio}
                     onInput={(e) => setProductoRapido((f) => ({ ...f, precio: (e.target as HTMLInputElement).value }))}
@@ -1223,8 +1333,53 @@ function Panel() {
                                       {(() => {
                                         const sub = subsMostradas.find((s) => s.id === subExpandidaId)!;
                                         const prods = productosConSubcategoria(sub);
+                                        const tiposSub = tiposDe(sub.categoria_slug, sub.nombre);
                                         return (
                                           <>
+                                            {/* Tercer nivel del Excel: tipos de producto de esta subcategoría. */}
+                                            <div class="mb-4 rounded-md border border-dashed border-neutral-300 bg-white p-3 dark:border-neutral-700 dark:bg-neutral-900">
+                                              <p class="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+                                                Tipos de producto en "{sub.nombre}" ({tiposSub.length})
+                                              </p>
+                                              {tiposSub.length > 0 ? (
+                                                <ul class="mt-2 flex flex-wrap gap-1.5">
+                                                  {tiposSub.map((t) => (
+                                                    <li key={t.id} class="inline-flex items-center gap-1 rounded-full bg-neutral-100 py-0.5 pl-2.5 pr-1 text-xs text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
+                                                      {t.nombre}
+                                                      <button
+                                                        type="button"
+                                                        onClick={() => borrarTipo(t)}
+                                                        aria-label={`Borrar tipo ${t.nombre}`}
+                                                        class="flex h-5 w-5 items-center justify-center rounded-full text-neutral-500 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/40"
+                                                      >
+                                                        ×
+                                                      </button>
+                                                    </li>
+                                                  ))}
+                                                </ul>
+                                              ) : (
+                                                <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">Sin tipos todavía.</p>
+                                              )}
+                                              <form
+                                                onSubmit={(e) => {
+                                                  e.preventDefault();
+                                                  agregarTipo(sub);
+                                                }}
+                                                class="mt-2 flex gap-2"
+                                              >
+                                                <input
+                                                  type="text"
+                                                  placeholder="Nuevo tipo..."
+                                                  aria-label={`Nuevo tipo en ${sub.nombre}`}
+                                                  value={nuevoTipo}
+                                                  onInput={(e) => setNuevoTipo((e.target as HTMLInputElement).value)}
+                                                  class="w-full max-w-xs rounded-md border border-neutral-300 bg-white px-2.5 py-1 text-xs dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100"
+                                                />
+                                                <button type="submit" class="shrink-0 rounded-md bg-brand-blue px-2.5 py-1 text-xs font-semibold text-white hover:bg-brand-blue-dark">
+                                                  Agregar tipo
+                                                </button>
+                                              </form>
+                                            </div>
                                             <div class="mb-2 flex items-center justify-between">
                                               <p class="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
                                                 Productos en "{sub.nombre}"
@@ -1254,7 +1409,7 @@ function Panel() {
                                                 <div class="min-w-0 flex-1">
                                                   <p class="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">{p.nombre}</p>
                                                   <p class="truncate text-xs text-neutral-500 dark:text-neutral-400">
-                                                    {p.sku} · {p.marca} · {p.precio != null ? `S/ ${p.precio}` : "Sin precio"}
+                                                    {p.sku} · {p.marca}{p.tipo ? ` · ${p.tipo}` : ""} · {p.precio != null ? `S/ ${p.precio}` : "Sin precio"}
                                                   </p>
                                                 </div>
                                                 <button
@@ -1430,7 +1585,10 @@ function Panel() {
                         <td class="px-4 py-3 text-neutral-600 dark:text-neutral-400">
                           {categorias.find((c) => c.slug === p.categoria_slug)?.nombre ?? p.categoria_slug}
                         </td>
-                        <td class="px-4 py-3 text-neutral-600 dark:text-neutral-400">{p.subcategoria}</td>
+                        <td class="px-4 py-3 text-neutral-600 dark:text-neutral-400">
+                          {p.subcategoria}
+                          {p.tipo && <span class="block text-xs text-neutral-500 dark:text-neutral-500">{p.tipo}</span>}
+                        </td>
                         <td class="px-4 py-3 text-neutral-600 dark:text-neutral-400">{p.precio != null ? `S/ ${p.precio}` : "Sin precio"}</td>
                         <td class="px-4 py-3">
                           <button
@@ -1547,6 +1705,40 @@ function Panel() {
                   />
                 )}
               </div>
+              <div>
+                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300" htmlFor="tipo-producto">
+                  Tipo de producto (opcional)
+                </label>
+                <select
+                  id="tipo-producto"
+                  disabled={!prodForm.subcategoria.trim()}
+                  value={escribiendoNuevoTipo ? NUEVO_TIPO : prodForm.tipo}
+                  onInput={(e) => elegirTipoProducto((e.target as HTMLSelectElement).value)}
+                  class="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                >
+                  <option value="">{prodForm.subcategoria.trim() ? "Sin tipo" : "Primero elige la subcategoría"}</option>
+                  {tiposDe(prodFormCategoriaSlug, prodForm.subcategoria.trim()).map((t) => (
+                    <option value={t.nombre}>{t.nombre}</option>
+                  ))}
+                  {/* Un tipo que el producto ya tenía pero que no está en la lista. */}
+                  {prodForm.tipo &&
+                    !escribiendoNuevoTipo &&
+                    !tiposDe(prodFormCategoriaSlug, prodForm.subcategoria.trim()).some((t) => t.nombre === prodForm.tipo) && (
+                      <option value={prodForm.tipo}>{prodForm.tipo}</option>
+                    )}
+                  <option value={NUEVO_TIPO}>+ Nuevo tipo...</option>
+                </select>
+                {escribiendoNuevoTipo && (
+                  <input
+                    type="text"
+                    required
+                    placeholder="Nombre del nuevo tipo"
+                    value={prodForm.tipo}
+                    onInput={(e) => campoProducto("tipo", (e.target as HTMLInputElement).value)}
+                    class="mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                  />
+                )}
+              </div>
               <CampoTexto label="Nombre" value={prodForm.nombre} onInput={(v) => campoProducto("nombre", v)} required />
               <CampoTexto label="Marca" value={prodForm.marca} onInput={(v) => campoProducto("marca", v)} required />
               <CampoTexto
@@ -1598,6 +1790,33 @@ function Panel() {
                 onInput={(e) => campoProducto("especificaciones", (e.target as HTMLTextAreaElement).value)}
                 class="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
               />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300" htmlFor="ficha-tecnica">
+                Ficha técnica en PDF (opcional)
+              </label>
+              <input
+                id="ficha-tecnica"
+                type="file"
+                accept="application/pdf"
+                onChange={(e) => setArchivoFichaTecnica((e.target as HTMLInputElement).files?.[0] ?? null)}
+                class="mt-1 block w-full text-sm text-neutral-700 dark:text-neutral-300"
+              />
+              {(() => {
+                const actual = productos.find((p) => p.sku === prodEditandoSku)?.ficha_tecnica_url;
+                if (archivoFichaTecnica) return <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">PDF elegido: {archivoFichaTecnica.name}</p>;
+                if (!actual) return <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">En la ficha del producto aparece el botón "Descargar ficha técnica (PDF)".</p>;
+                return (
+                  <div class="mt-1 flex flex-wrap items-center gap-3 text-xs">
+                    <a href={actual} target="_blank" rel="noopener noreferrer" class="text-brand-blue-dark underline dark:text-brand-blue">Ver PDF actual</a>
+                    <label class="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
+                      <input type="checkbox" checked={quitarFichaTecnica} onChange={(e) => setQuitarFichaTecnica((e.target as HTMLInputElement).checked)} />
+                      Quitar la ficha técnica
+                    </label>
+                  </div>
+                );
+              })()}
             </div>
 
             <div>
@@ -1737,6 +1956,10 @@ function CampoTexto({ label, value, onInput, type = "text", required }: CampoTex
       <input
         type={type}
         required={required}
+        // Precios en soles con céntimos (ej. 55.90): sin step, el navegador
+        // solo acepta enteros y bloqueaba el guardado del producto.
+        step={type === "number" ? "0.01" : undefined}
+        min={type === "number" ? "0" : undefined}
         value={value}
         onInput={(e) => onInput((e.target as HTMLInputElement).value)}
         class="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"

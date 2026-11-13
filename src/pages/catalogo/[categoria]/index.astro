@@ -3,21 +3,47 @@ import Layout from "../../../layouts/Layout.astro";
 import CatalogoInteractivo from "../../../components/CatalogoInteractivo";
 import { iconoDeCategoria } from "../../../components/icons/categorias";
 import { getCategorias, getProductosPorCategoria, getFotoCategoria } from "../../../data/catalog";
+import { REDIRECCIONES_CATEGORIAS } from "../../../data/redirecciones-categorias";
 
 export function getStaticPaths() {
-  return getCategorias().map((c) => ({
+  const categorias = getCategorias();
+  const reales = categorias.map((c) => ({
     params: { categoria: c.slug },
-    props: { nombreCategoria: c.categoria, subcategorias: c.subcategorias },
+    props: { nombreCategoria: c.categoria, subcategorias: c.subcategorias, redirigirA: null as string | null },
   }));
+  // URLs de categorías que ya no existen -> su categoría nueva (enlaces
+  // compartidos, favoritos y resultados de Google no quedan rotos).
+  const existentes = new Set(categorias.map((c) => c.slug));
+  const redirecciones = Object.entries(REDIRECCIONES_CATEGORIAS)
+    .filter(([viejo, nuevo]) => !existentes.has(viejo) && existentes.has(nuevo))
+    .map(([viejo, nuevo]) => ({
+      params: { categoria: viejo },
+      props: { nombreCategoria: "", subcategorias: [] as string[], redirigirA: `/catalogo/${nuevo}` },
+    }));
+  return [...reales, ...redirecciones];
 }
 
 const { categoria } = Astro.params;
-const { nombreCategoria, subcategorias } = Astro.props;
+const { nombreCategoria, subcategorias, redirigirA } = Astro.props;
 const productos = getProductosPorCategoria(categoria!);
 const Icono = iconoDeCategoria(nombreCategoria);
 const foto = getFotoCategoria(nombreCategoria);
 ---
 
+{redirigirA ? (
+  <html lang="es">
+    <head>
+      <meta charset="utf-8" />
+      <title>Redirigiendo…</title>
+      <meta http-equiv="refresh" content={`0; url=${redirigirA}`} />
+      <link rel="canonical" href={redirigirA} />
+      <meta name="robots" content="noindex" />
+    </head>
+    <body>
+      <a href={redirigirA}>Esta categoría cambió de nombre. Ir a la nueva categoría</a>
+    </body>
+  </html>
+) : (
 <Layout title={nombreCategoria}>
   <div class="border-b border-neutral-200 bg-gradient-to-r from-brand-blue/10 to-brand-green/10 dark:border-neutral-800 dark:from-brand-blue/5 dark:to-brand-green/5">
     <div class="mx-auto max-w-7xl px-4 py-10">
@@ -39,9 +65,12 @@ const foto = getFotoCategoria(nombreCategoria);
         subcategorias.length > 0 && (
           <div class="mt-4 flex flex-wrap gap-2">
             {subcategorias.map((s: string) => (
-              <span class="rounded-full bg-white px-3 py-1 text-xs font-medium text-neutral-700 shadow-sm dark:bg-neutral-800 dark:text-neutral-300">
+              <a
+                href={`/catalogo/${categoria}?sub=${encodeURIComponent(s)}`}
+                class="rounded-full bg-white px-3 py-1 text-xs font-medium text-neutral-700 shadow-sm transition-colors hover:bg-brand-blue hover:text-white dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-brand-blue dark:hover:text-white"
+              >
                 {s}
-              </span>
+              </a>
             ))}
           </div>
         )
@@ -53,3 +82,4 @@ const foto = getFotoCategoria(nombreCategoria);
     <CatalogoInteractivo client:load productos={productos} />
   </section>
 </Layout>
+)}

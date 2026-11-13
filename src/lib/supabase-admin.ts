@@ -15,6 +15,16 @@ export interface SubcategoriaAdmin {
   orden: number;
 }
 
+// Tercer nivel del Excel del cliente ("tipo de producto"), dentro de una
+// subcategoría. Tabla creada por docs/migracion-categorias-excel.sql.
+export interface TipoAdmin {
+  id: string;
+  categoria_slug: string;
+  subcategoria: string;
+  nombre: string;
+  orden: number;
+}
+
 export interface ProductoAdmin {
   sku: string;
   categoria_slug: string;
@@ -28,6 +38,9 @@ export interface ProductoAdmin {
   video_url: string | null;
   // Opcional en el tipo: la columna se agrega con docs/migracion-enlace-conoce-mas.sql.
   enlace_conoce_mas?: string | null;
+  // Opcionales en el tipo: las columnas se agregan con docs/migracion-categorias-excel.sql.
+  tipo?: string | null;
+  ficha_tecnica_url?: string | null;
   descripcion: string;
   destacado: boolean;
   activo: boolean;
@@ -127,6 +140,35 @@ export const subcategoriasAdmin = {
   async borrar(id: string) {
     const { error } = await supabase.from("subcategorias").delete().eq("id", id);
     if (error) throw error;
+  },
+};
+
+export const tiposAdmin = {
+  // Si la migración todavía no se corrió, la tabla no existe: se devuelve
+  // una lista vacía para que el panel siga funcionando como antes.
+  async listar(): Promise<TipoAdmin[]> {
+    const { data, error } = await supabase.from("tipos_producto").select("*").order("orden");
+    if (error) return [];
+    return data;
+  },
+  async crear(tipo: Omit<TipoAdmin, "id">) {
+    const { error } = await supabase.from("tipos_producto").insert(tipo);
+    if (error) throw error;
+  },
+  async borrar(id: string) {
+    const { error } = await supabase.from("tipos_producto").delete().eq("id", id);
+    if (error) throw error;
+  },
+  // Al renombrar o borrar una subcategoría, sus tipos la siguen.
+  // No cortan la operación principal (renombrar/borrar la subcategoría) si
+  // la tabla todavía no existe: solo se avisa en la consola.
+  async renombrarSubcategoria(categoria_slug: string, anterior: string, nueva: string) {
+    const { error } = await supabase.from("tipos_producto").update({ subcategoria: nueva }).eq("categoria_slug", categoria_slug).eq("subcategoria", anterior);
+    if (error) console.warn("tipos_producto: no se pudo actualizar la subcategoría", error.message);
+  },
+  async borrarDeSubcategoria(categoria_slug: string, subcategoria: string) {
+    const { error } = await supabase.from("tipos_producto").delete().eq("categoria_slug", categoria_slug).eq("subcategoria", subcategoria);
+    if (error) console.warn("tipos_producto: no se pudieron borrar los tipos", error.message);
   },
 };
 

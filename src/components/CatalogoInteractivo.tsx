@@ -34,6 +34,13 @@ function marcaDesdeUrl() {
   return new URLSearchParams(window.location.search).get("marca") ?? "";
 }
 
+// Mismo mecanismo: el menú de Categorías y los chips de la página de
+// categoría enlazan a /catalogo/<categoria>?sub=<subcategoría>&tipo=<tipo>.
+function paramDesdeUrl(nombre: string) {
+  if (typeof window === "undefined") return "";
+  return new URLSearchParams(window.location.search).get(nombre) ?? "";
+}
+
 export default function CatalogoInteractivo({ productos, categorias }: Props) {
   const [busqueda, setBusqueda] = useState("");
 
@@ -49,9 +56,14 @@ export default function CatalogoInteractivo({ productos, categorias }: Props) {
     if (q) setBusqueda(q);
     const marca = marcaDesdeUrl();
     if (marca) setMarcas([marca]);
+    const sub = paramDesdeUrl("sub");
+    if (sub) setSubcategoria(sub);
+    const t = paramDesdeUrl("tipo");
+    if (t) setTipo(t);
   }, []);
   const [categoria, setCategoria] = useState("");
   const [subcategoria, setSubcategoria] = useState("");
+  const [tipo, setTipo] = useState("");
   const [marcas, setMarcas] = useState<string[]>([]);
   const [precioMin, setPrecioMin] = useState("");
   const [precioMax, setPrecioMax] = useState("");
@@ -73,6 +85,15 @@ export default function CatalogoInteractivo({ productos, categorias }: Props) {
     return Array.from(new Set(universoCategoria.map((p) => p.subcategoria))).sort();
   }, [universoCategoria]);
 
+  // Tercer nivel (tipo de producto): solo se ofrece cuando hay una
+  // subcategoría elegida y alguno de sus productos tiene tipo.
+  const tiposDisponibles = useMemo(() => {
+    if (!subcategoria) return [];
+    return Array.from(
+      new Set(universoCategoria.filter((p) => p.subcategoria === subcategoria && p.tipo).map((p) => p.tipo!)),
+    ).sort();
+  }, [universoCategoria, subcategoria]);
+
   const marcasDisponibles = useMemo(() => {
     // "Genérico"/"Sin marca" no son marcas: no se ofrecen como filtro.
     return Array.from(new Set(universoCategoria.filter((p) => !esSinMarca(p.marca)).map((p) => p.marca))).sort();
@@ -87,6 +108,7 @@ export default function CatalogoInteractivo({ productos, categorias }: Props) {
     setBusqueda("");
     setCategoria("");
     setSubcategoria("");
+    setTipo("");
     setMarcas([]);
     setPrecioMin("");
     setPrecioMax("");
@@ -103,6 +125,7 @@ export default function CatalogoInteractivo({ productos, categorias }: Props) {
       const coincideTexto = coincideProducto(p, busqueda);
       const coincideCategoria = !categoria || p.categoria === categoria;
       const coincideSubcategoria = !subcategoria || p.subcategoria === subcategoria;
+      const coincideTipo = !tipo || p.tipo === tipo;
       const coincideMarca = marcas.length === 0 || marcas.includes(p.marca);
       // Un producto sin precio cargado no se puede confirmar que esté "dentro"
       // de un rango de precio — se excluye en vez de asumir que sí entra.
@@ -113,6 +136,7 @@ export default function CatalogoInteractivo({ productos, categorias }: Props) {
         coincideTexto &&
         coincideCategoria &&
         coincideSubcategoria &&
+        coincideTipo &&
         coincideMarca &&
         coincideMin &&
         coincideMax &&
@@ -134,14 +158,14 @@ export default function CatalogoInteractivo({ productos, categorias }: Props) {
     });
 
     return lista;
-  }, [busqueda, categoria, subcategoria, marcas, precioMin, precioMax, soloOfertas, orden, productos]);
+  }, [busqueda, categoria, subcategoria, tipo, marcas, precioMin, precioMax, soloOfertas, orden, productos]);
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA));
   const paginaActual = Math.min(pagina, totalPaginas);
   const paginados = filtrados.slice((paginaActual - 1) * POR_PAGINA, paginaActual * POR_PAGINA);
 
   const hayFiltrosActivos =
-    busqueda || categoria || subcategoria || marcas.length > 0 || precioMin || precioMax || soloOfertas;
+    busqueda || categoria || subcategoria || tipo || marcas.length > 0 || precioMin || precioMax || soloOfertas;
 
   return (
     <div class="flex flex-col gap-6 lg:flex-row">
@@ -186,6 +210,7 @@ export default function CatalogoInteractivo({ productos, categorias }: Props) {
               onChange={(e) => {
                 setPagina(1);
                 setSubcategoria("");
+                setTipo("");
                 setCategoria((e.target as HTMLSelectElement).value);
               }}
               class="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
@@ -208,6 +233,7 @@ export default function CatalogoInteractivo({ productos, categorias }: Props) {
               onChange={(e) => {
                 setPagina(1);
                 setSubcategoria((e.target as HTMLSelectElement).value);
+                setTipo("");
               }}
               class="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
             >
@@ -215,6 +241,30 @@ export default function CatalogoInteractivo({ productos, categorias }: Props) {
               {subcategoriasDisponibles.map((s) => (
                 <option key={s} value={s}>
                   {s}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {tiposDisponibles.length > 0 && (
+          <div>
+            <label class="block text-xs font-semibold uppercase text-neutral-500 dark:text-neutral-400" htmlFor="filtro-tipo">
+              Tipo de producto
+            </label>
+            <select
+              id="filtro-tipo"
+              value={tipo}
+              onChange={(e) => {
+                setPagina(1);
+                setTipo((e.target as HTMLSelectElement).value);
+              }}
+              class="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+            >
+              <option value="">Todos</option>
+              {tiposDisponibles.map((t) => (
+                <option key={t} value={t}>
+                  {t}
                 </option>
               ))}
             </select>

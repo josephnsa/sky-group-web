@@ -70,7 +70,7 @@ export function coincideProducto(producto: Producto, busquedaCruda: string): boo
   // caso más común es que alguien escriba el SKU sin el guion.
   if (normalizarCodigo(producto.sku).includes(normalizarCodigo(busqueda))) return true;
 
-  const camposTexto = [producto.nombre, producto.marca, producto.categoria, producto.subcategoria]
+  const camposTexto = [producto.nombre, producto.marca, producto.categoria, producto.subcategoria, producto.tipo ?? ""]
     .map(normalizarTexto)
     .join(" ");
 
