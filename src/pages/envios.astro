@@ -19,16 +19,16 @@ const DATOS = [
 
 // Envío nacional (igual para clientes y distribuidores, según el documento).
 const NACIONAL = [
-  { titulo: "Confirmas el pago", desc: "El pago del producto debe estar confirmado para proceder con el envío." },
-  { titulo: "Despachamos", desc: "Con pago confirmado hasta las 4:00 pm, sale el mismo día. Después, queda sujeto a disponibilidad y cobertura de reparto." },
-  { titulo: "Llevamos a tu agencia", desc: "A la agencia de transporte de tu preferencia, sin recargo adicional." },
-  { titulo: "Recibes y pagas el flete", desc: "El flete se paga en destino, directamente a la agencia." },
+  { titulo: "Pago confirmado", desc: "El pago del producto debe encontrarse confirmado para proceder con el envío." },
+  { titulo: "Despacho", desc: "Los envíos con pagos confirmados hasta las 4:00 pm serán enviados al mismo día, posterior a ello, el pedido queda sujeto a disponibilidad y cobertura de nuestro servicio de reparto." },
+  { titulo: "Hasta la agencia", desc: "Sin recargos adicionales por el envío hasta la agencia de transporte." },
+  { titulo: "Flete en destino", desc: "El flete se paga en destino, directamente a la agencia de transporte de su preferencia." },
 ];
 
 const LIMA_CLIENTES = [
-  { titulo: "Reparto en Lima", desc: "Entrega con nuestro transporte o servicio de reparto dentro de Lima Metropolitana, coordinada según disponibilidad y área de cobertura.", icono: "camion" },
-  { titulo: "Courier o app de envío", desc: "Para pedidos urgentes o de menor volumen: solicitas tu propio courier para recoger el pedido, previo pago. Enviamos imágenes al momento de la entrega.", icono: "moto" },
-  { titulo: "Retiro en tienda gratis", desc: "Recoge tu pedido sin costo en nuestro local de Avenida México 1028, La Victoria, Lima.", icono: "tienda", destacado: true },
+  { titulo: "Entregas en Lima", desc: "Para pedidos dentro del área Metropolitana de Lima, ofrecemos el servicio de entrega mediante nuestro transporte o servicio de reparto, coordinado según disponibilidad y área de cobertura.", icono: "camion" },
+  { titulo: "Pedidos urgentes o de menor volumen", desc: "Puedes solicitar tu propio servicio de courier (apps de envío) para recoger el pedido en nuestro local, previo pago del producto; se enviarán imágenes al momento de la entrega garantizando la seguridad del mismo.", icono: "moto" },
+  { titulo: "Opción de retiro en tienda", desc: "Totalmente gratis en nuestro local ubicado en Avenida México 1028 La Victoria, Lima.", icono: "tienda", destacado: true },
 ];
 
 const ZONAS = ["Lima Norte", "Lima Sur", "Lima Centro", "Lima Este", "Otras zonas de Lima"];
@@ -96,7 +96,10 @@ const ZONAS = ["Lima Norte", "Lima Sur", "Lima Centro", "Lima Este", "Otras zona
 
     {/* --- Clientes --- */}
     <div role="tabpanel" id="panel-clientes" aria-labelledby="tab-clientes" class="mt-8">
-      <h3 class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">Entregas en Lima</h3>
+      <p class="text-neutral-700 dark:text-neutral-300">
+        Ponemos a disposición de nuestros clientes diferentes modalidades de entrega, de acuerdo con su ubicación y requerimientos.
+      </p>
+      <h3 class="mt-5 text-xl font-bold tracking-tight text-neutral-900 dark:text-white">En Lima</h3>
       <div class="mt-4 grid gap-4 md:grid-cols-3">
         {
           LIMA_CLIENTES.map((m) => (
@@ -124,27 +127,32 @@ const ZONAS = ["Lima Norte", "Lima Sur", "Lima Centro", "Lima Este", "Otras zona
         <article class="rounded-xl border border-neutral-200 p-5 dark:border-neutral-800">
           <h3 class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">Distribución en Lima</h3>
           <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-            Pedidos de atención inmediata: se coordinan directamente con tu asesor de ventas autorizado. Para pedidos de menor volumen
-            que requieran rapidez: recojo en nuestro local o courier (apps de envío) coordinado con el distribuidor.
+            Para pedidos de atención inmediata, la coordinación es directamente con su asesor de ventas autorizado. Para pedidos de menor
+            volumen que requieran una atención rápida y eficiente, contamos con la opción del recojo en nuestro local, o atención de courier
+            (apps de envío) coordinados con el distribuidor.
           </p>
         </article>
         <article class="rounded-xl border border-brand-blue/30 bg-brand-blue/5 p-5 dark:bg-brand-blue/10">
           <h3 class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">Envíos programados</h3>
           <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-            Reparto periódico a determinadas zonas de Lima diariamente, programado según zona y disponibilidad:
+            Contamos con servicio de reparto periódico a determinadas zonas de Lima diariamente, los pedidos son programados de acuerdo
+            con la zona y disponibilidad:
           </p>
           <ul class="mt-4 flex flex-wrap gap-2" aria-label="Zonas de reparto programado">
             {ZONAS.map((z) => <li class="rounded-full bg-white px-3 py-1 text-xs font-bold text-brand-blue-dark shadow-sm dark:bg-neutral-900 dark:text-brand-blue">{z}</li>)}
           </ul>
-          <p class="mt-3 text-xs text-neutral-500 dark:text-neutral-400">Se coordinan directamente con tu asesor de ventas autorizado.</p>
+          <p class="mt-3 text-xs text-neutral-500 dark:text-neutral-400">Los envíos programados son coordinados directamente con su asesor de ventas autorizado.</p>
         </article>
       </div>
     </div>
 
     {/* --- Nacional: igual para ambos --- */}
     <div class="mt-12 rounded-2xl bg-neutral-50 p-6 sm:p-8 dark:bg-neutral-900">
-      <h3 class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">Envíos a provincias</h3>
-      <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-400">Mediante la agencia de transporte de tu preferencia (o la que indique el distribuidor).</p>
+      <h3 class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">Envíos a nivel nacional</h3>
+      <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+        <b>Clientes:</b> realizamos despachos a las diferentes provincias del país mediante agencias de transporte, de acuerdo con la preferencia del cliente.
+        <b>Distribuidores:</b> para pedidos destinados a otras ciudades del país, realizamos la coordinación del envío mediante la agencia de transporte que nos brinda el distribuidor.
+      </p>
       <ol class="relative mt-8 grid gap-6 md:grid-cols-4">
         <span class="absolute left-[1.35rem] top-6 hidden h-0.5 w-[calc(100%-2.7rem)] bg-gradient-to-r from-brand-blue/40 via-brand-green/40 to-brand-blue/40 md:block" aria-hidden="true"></span>
         {

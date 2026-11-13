@@ -15,13 +15,13 @@ const WHATSAPP = `https://wa.me/${NEGOCIO.whatsappNumero}?text=${encodeURICompon
 
 const PILARES = [
   { titulo: "Respaldo", desc: "Nuestros productos cuentan con un estándar certificado y una calidad garantizada para proteger tu inversión.", icono: "escudo" },
-  { titulo: "Condiciones", desc: "Cada producto tiene parámetros y estándares de acuerdo al mercado vigente, que se toman en cuenta para la revisión de la garantía.", icono: "ajustes" },
+  { titulo: "Condiciones", desc: "Cada producto tiene unos parámetros y estándares de acuerdo al mercado vigente, los cuales se tomarán en cuenta para la revisión de la garantía.", icono: "ajustes" },
   { titulo: "Tiempo", desc: "Todo reclamo debe realizarse en un plazo máximo de 7 días calendario desde la recepción del producto.", icono: "reloj" },
-  { titulo: "Atención personalizada", desc: "Tu asesor comercial autorizado te brinda soporte y orientación en todo el proceso de garantías.", icono: "chat" },
+  { titulo: "Atención personalizada", desc: "Tu asesor comercial autorizado te brindará el soporte y la orientación en todo el proceso de garantías.", icono: "chat" },
 ];
 
 const PASOS = [
-  { titulo: "Nos contactas", desc: "Cuéntanos qué producto tiene el inconveniente, lo antes posible, con el formulario o por WhatsApp.", icono: "whatsapp" },
+  { titulo: "Nos contactas", desc: "Si considera que un producto adquirido presenta una falla o inconveniente, comuníquese con nuestro equipo de atención al cliente lo antes posible.", icono: "whatsapp" },
   { titulo: "Revisamos tu información", desc: "Podemos pedirte el comprobante, el código del producto, fotos o videos y datos de instalación o uso.", icono: "documento" },
   { titulo: "Evaluamos el producto", desc: "Determinamos la naturaleza del inconveniente. Si hace falta una revisión técnica, podemos solicitar el producto.", icono: "lupa" },
   { titulo: "Te informamos el resultado", desc: "Te comunicamos si corresponde la garantía y cuál es la alternativa de atención aplicable.", icono: "check" },
@@ -29,32 +29,37 @@ const PASOS = [
 
 const CUBRE = [
   "Defectos de fabricación.",
-  "Fallas de funcionamiento.",
+  "Defectos de funcionamiento.",
   "Falta de conformidad respecto de las características, condiciones o especificaciones ofrecidas al momento de la compra.",
 ];
 
 const NO_CUBRE = [
   "Uso inadecuado del producto.",
-  "Instalación incorrecta o distinta a las instrucciones proporcionadas.",
-  "Instalación, modificación, adaptación o manipulación por terceros no autorizados, cuando haya ocasionado la falla.",
+  "Instalación incorrecta o aplicación realizada de manera distinta a las instrucciones proporcionadas.",
+  "Instalación, modificación, adaptación o manipulación realizada por terceros no autorizados, cuando ello haya ocasionado la falla.",
   "Daños por golpes, accidentes, choques o factores externos.",
-  "Negligencia, mal uso o uso indebido.",
+  "Daños ocasionados por negligencia, mal uso o uso indebido.",
   "Alteraciones, modificaciones o reparaciones no autorizadas.",
-  "Desgaste natural por el uso normal, en elementos sujetos a desgaste.",
-  "Falta de mantenimiento, cuando sea necesario y haya sido informado.",
-  "Factores externos, condiciones ambientales o eventos ajenos al producto.",
-  "Uso en condiciones diferentes a aquellas para las que fue diseñado o comercializado.",
+  "Desgaste natural derivado del uso normal del producto, cuando por su naturaleza se trate de un elemento sujeto a desgaste.",
+  "Falta de mantenimiento cuando este resulte necesario y haya sido informado al consumidor.",
+  "Daños ocasionados por factores externos, condiciones ambientales o eventos ajenos al producto, cuando corresponda.",
+  "Uso del producto en condiciones diferentes a aquellas para las cuales fue diseñado o comercializado.",
 ];
 
 const INFO = [
-  { texto: "Comprobante de pago o documento que acredite la compra.", icono: "documento" },
-  { texto: "Producto y, cuando corresponda, número de serie, código o modelo.", icono: "etiqueta" },
-  { texto: "Descripción detallada de la falla o inconveniente.", icono: "chat" },
-  { texto: "Fotografías o videos del problema, cuando sea necesario.", icono: "camara" },
-  { texto: "Información sobre la instalación, uso o mantenimiento del producto.", icono: "llave" },
+  { texto: "Comprobante de pago o documento que permita acreditar la adquisición.", icono: "documento" },
+  { texto: "Información del producto y, cuando corresponda, número de serie, código o modelo.", icono: "etiqueta" },
+  { texto: "Descripción detallada de la falla o inconveniente presentado.", icono: "chat" },
+  { texto: "Fotografías o videos que permitan identificar el problema, cuando resulte necesario.", icono: "camara" },
+  { texto: "Información relacionada con la instalación, uso o mantenimiento del producto, cuando corresponda.", icono: "llave" },
 ];
 
-const SOLUCIONES = ["Reparación del producto", "Reposición o cambio", "Devolución de lo pagado, cuando legalmente corresponda", "Otra solución aplicable según las condiciones y la normativa"];
+const SOLUCIONES = [
+  "Reparación del producto.",
+  "Reposición o cambio del producto.",
+  "Devolución de la contraprestación pagada, cuando legalmente corresponda.",
+  "Otra solución que resulte aplicable de acuerdo con las condiciones de la garantía y la normativa vigente.",
+];
 
 // Marcas con garantía extendida (documento). SKY ACCESORIES y SKY EQUIPMENT
 // son líneas de SKY: se muestran junto a su logo.
@@ -137,8 +142,11 @@ const DETALLE = [
       <span class="mt-5 block h-1 w-20 rounded-full bg-gradient-to-r from-brand-blue to-brand-green" aria-hidden="true"></span>
       <p class="mt-5 max-w-xl text-lg font-semibold text-white">Tu compra cuenta con el respaldo de SKY GROUP.</p>
       <p class="mt-2 max-w-xl text-white/80">
-        Nos comprometemos a ofrecer productos de calidad y un servicio confiable, de manera responsable y transparente, mediante
+        Nos comprometemos en ofrecer productos de calidad y un servicio confiable de manera responsable y transparente, mediante
         proveedores certificados y condiciones con estándares del mercado.
+      </p>
+      <p class="mt-2 max-w-xl text-white/80">
+        Nuestro equipo está capacitado y disponible para orientarte en todo el proceso, en el caso requieras este tipo de atención.
       </p>
       <div class="mt-8 flex flex-wrap gap-3">
         <a href="#solicitar" class="inline-flex items-center gap-2 rounded-md bg-brand-blue px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-blue/30 transition-transform hover:scale-105 active:scale-95">
@@ -220,7 +228,7 @@ const DETALLE = [
         <h2 class="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-white">¿Qué cubre la garantía?</h2>
       </div>
       <p class="mt-4 text-sm text-neutral-700 dark:text-neutral-300">
-        Productos que presenten, según su naturaleza y las condiciones de la garantía aplicable:
+        La garantía cubre los productos que presenten, siempre que corresponda según la naturaleza del producto y las condiciones de la garantía aplicable:
       </p>
       <ul class="mt-4 space-y-3">
         {
@@ -233,8 +241,10 @@ const DETALLE = [
         }
       </ul>
       <p class="mt-6 rounded-lg border border-brand-green/30 bg-white/70 px-4 py-3 text-xs text-neutral-700 dark:bg-neutral-900/60 dark:text-neutral-300">
-        La garantía comercial aplica durante el plazo y bajo las condiciones informadas para cada producto (comprobante, certificado,
-        empaque, ficha técnica, publicidad o esta web), sin perjuicio de tus derechos según la legislación peruana.
+        La garantía ofrecida por nosotros se entiende sin perjuicio de los derechos que correspondan al consumidor conforme a la
+        legislación peruana vigente. La garantía comercial, cuando corresponda, será aplicable durante el plazo y bajo las condiciones
+        informadas para cada producto, ya sea en el comprobante de pago, certificado de garantía, empaque, ficha técnica, publicidad,
+        página web u otro medio en el que se haya informado sus condiciones.
       </p>
     </div>
 
@@ -245,7 +255,10 @@ const DETALLE = [
         </span>
         <h2 class="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-white">¿Cuándo no aplica?</h2>
       </div>
-      <p class="mt-4 text-sm text-neutral-700 dark:text-neutral-300">La garantía comercial no comprende daños o fallas ocasionados por:</p>
+      <p class="mt-4 text-sm text-neutral-700 dark:text-neutral-300">
+        Sin perjuicio de los derechos reconocidos por la legislación vigente, la garantía comercial no comprende, cuando corresponda y
+        según la naturaleza de cada producto, los daños o fallas ocasionados por:
+      </p>
       <ul class="mt-4 grid gap-2.5">
         {
           NO_CUBRE.map((c) => (
@@ -266,8 +279,8 @@ const DETALLE = [
       <span class="block h-1 w-12 rounded-full bg-gradient-to-r from-brand-blue to-brand-green" aria-hidden="true"></span>
       <h2 class="mt-3 text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-white">Garantías específicas</h2>
       <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-        Todos los productos de nuestras marcas cuentan con <b class="text-neutral-900 dark:text-white">garantía extendida</b>. Para conocer la
-        cobertura de un producto específico, consulta con nuestros asesores antes o después de tu compra.
+        Todos nuestros productos de nuestras marcas cuentan con <b class="text-neutral-900 dark:text-white">garantía extendida</b>. Para
+        conocer mejor la cobertura aplicable a un producto específico, consulte con nuestros asesores de ventas antes o después de su compra.
       </p>
       <ul class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
         {
@@ -284,7 +297,7 @@ const DETALLE = [
     <div>
       <span class="block h-1 w-12 rounded-full bg-gradient-to-r from-brand-blue to-brand-green" aria-hidden="true"></span>
       <h2 class="mt-3 text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-white">¿Qué información necesitamos?</h2>
-      <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400">Así podemos ayudarte más rápido. Para iniciar una solicitud podremos pedirte:</p>
+      <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400">Para iniciar una solicitud de garantía, podremos solicitar:</p>
       <ul class="mt-6 grid gap-3 sm:grid-cols-2">
         {
           INFO.map((d, i) => (
@@ -301,10 +314,21 @@ const DETALLE = [
           ))
         }
       </ul>
-      <p class="mt-6 text-sm font-semibold text-neutral-900 dark:text-white">Según el resultado de la evaluación, la solución puede ser:</p>
+      <p class="mt-4 text-xs text-neutral-500 dark:text-neutral-400">
+        La presentación de esta información tiene como finalidad facilitar la identificación del producto y la evaluación técnica del caso.
+      </p>
+      <p class="mt-6 text-sm font-semibold text-neutral-900 dark:text-white">Resultados de la evaluación</p>
+      <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+        Una vez realizada la evaluación correspondiente, se comunicará al cliente el resultado y, cuando corresponda, la alternativa de
+        atención aplicable. Dependiendo de las circunstancias del caso, de la naturaleza del producto y de la normativa aplicable, la
+        solución podrá comprender, cuando corresponda:
+      </p>
       <ul class="mt-3 flex flex-wrap gap-2">
         {SOLUCIONES.map((s) => <li class="rounded-full border border-brand-blue/30 bg-brand-blue/5 px-3 py-1 text-xs font-medium text-brand-blue-dark dark:text-brand-blue">{s}</li>)}
       </ul>
+      <p class="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
+        La solución aplicable será determinada considerando las circunstancias particulares del caso y los derechos reconocidos por la legislación peruana.
+      </p>
     </div>
   </section>
 
@@ -333,6 +357,11 @@ const DETALLE = [
         En SKY GROUP buscamos que cada solicitud sea atendida de manera objetiva, transparente y respetuosa, procurando brindar una
         solución adecuada de acuerdo con la naturaleza del producto, las condiciones ofrecidas y la normativa vigente. Nuestro objetivo
         es mantener una relación de confianza con nuestros clientes antes, durante y después de la compra.
+      </p>
+      <p class="mt-3 text-sm text-neutral-600 dark:text-neutral-400">
+        Para realizar una consulta sobre las condiciones específicas de garantía, conocer el plazo, cobertura y condiciones aplicables a un
+        producto determinado puede comunicarse con su asesor de ventas autorizado, para una atención personalizada, consulte la información
+        proporcionada al momento de la compra o comuníquese con nuestro equipo de atención al cliente.
       </p>
     </div>
   </section>
