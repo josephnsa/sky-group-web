@@ -111,14 +111,20 @@ export default function BotonConoceMas({ enlace, nombre }: Props) {
                   class="absolute inset-0 h-full w-full"
                 />
               </div>
-              <a
-                href={enlace}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="px-4 py-2.5 text-center text-sm font-medium text-brand-blue-dark hover:underline dark:text-brand-blue"
-              >
-                Ver en {video.plataforma}
-              </a>
+              {/* Respaldo visible: el reproductor insertado depende de TikTok y a
+              veces no carga (red, región o bloqueadores); este botón siempre
+              lleva al video en la app o la web de la plataforma. */}
+              <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                <p class="text-xs text-neutral-500 dark:text-neutral-400">¿No se reproduce?</p>
+                <a
+                  href={enlace}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-1.5 rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-semibold text-white transition-transform hover:scale-105 active:scale-95 dark:bg-white dark:text-neutral-900"
+                >
+                  Ver en {video.plataforma}
+                </a>
+              </div>
             </motion.div>
           </motion.div>
         )}
