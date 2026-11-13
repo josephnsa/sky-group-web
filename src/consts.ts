@@ -61,4 +61,6 @@ export const MARCAS = [
   { nombre: "SKYLINE", logo: "/images/brand/marcas/skyline.png", desc: "Barras transversales, parrillas, porta equipajes y tapas de tolva" },
   { nombre: "SPORTS", logo: "/images/brand/marcas/sports.png", desc: "Accesorios tuning" },
   { nombre: "RoadSafe", logo: "/images/brand/marcas/roadsafe.png", desc: "Auxilio vehicular: gatas, compresoras, kits de emergencia y cables para batería" },
+  // Logo en "PAG WEB SKY/LOGOS/LOGOS BLOX"; listada entre las marcas con garantía extendida (GARANTIAS - INFO OK.docx).
+  { nombre: "BLOX", logo: "/images/brand/marcas/blox.png", desc: "Tuercas y seguros deportivos" },
 ]; // TODO: agregar más marcas si el negocio trabaja otras
