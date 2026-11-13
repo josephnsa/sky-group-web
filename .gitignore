@@ -43,3 +43,11 @@ _pagweb_extraido2/
 Sin título 18.pdf
 
 # herramientas locales, no parte del sitio
+
+# Material y archivos locales que no son parte del sitio (nunca subir)
+credenciales*.txt
+*credencial*
+client_secret*.json
+PAG WEB SKY/
+PAG WEB SKY-*.zip
+Sin t*tulo*.pdf
