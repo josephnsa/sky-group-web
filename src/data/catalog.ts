@@ -10,7 +10,14 @@ import { supabase } from "../lib/supabase";
 export interface Producto {
   sku: string;
   categoria: string;
+  // Slug real de la categoría (columna categoria_slug). Las páginas de
+  // categoría filtran por esto y no por slugify(nombre): si desde el admin se
+  // renombra una categoría, el slug no cambia y antes sus productos
+  // desaparecían de /catalogo/<slug>.
+  categoriaSlug: string;
   subcategoria: string;
+  // Tercer nivel del Excel del cliente ("PRODUCTOS (SUB SUB)"), opcional.
+  tipo?: string;
   nombre: string;
   marca: string;
   // La mayoría de productos no tiene precio cargado (se cotiza por
@@ -22,6 +29,7 @@ export interface Producto {
   imagenes?: string[]; // fotos adicionales (galería) — la primera de `imagen` no se repite acá
   video?: string; // URL de video del producto (Supabase Storage), opcional
   enlaceConoceMas?: string; // botón "¡Conoce más!": TikTok/YouTube se abre en modal, otro enlace en pestaña nueva
+  fichaTecnicaUrl?: string; // PDF descargable con la ficha técnica, opcional
   descripcion: string;
   destacado?: boolean;
   compatibilidad?: string[]; // modelos/vehículos compatibles, ej. "Toyota Yaris 2015-2020"
@@ -49,6 +57,8 @@ async function cargarDatos() {
     { data: filasCategorias, error: errorCategorias },
     { data: filasProductos, error: errorProductos },
     { data: filasCarrusel, error: errorCarrusel },
+    { data: filasSubcategorias },
+    { data: filasTipos },
   ] = await Promise.all([
     // El sitio público solo muestra categorías/productos activos — algo
     // "inactivado" desde el panel de admin sigue existiendo (no se borra),
@@ -65,6 +75,11 @@ async function cargarDatos() {
     // contrapartida (igual que ya pasa con categorías/productos) es que un
     // cambio del admin necesita un rebuild del sitio para publicarse.
     supabase.from("carousel_slides").select("id, imagen_url, titulo, enlace").eq("activo", true).order("orden"),
+    // Solo para respetar el orden del Excel en el menú (subcategorías y
+    // tipos). Si la tabla tipos_producto todavía no existe (migración sin
+    // correr), el error se ignora y se ordena alfabéticamente.
+    supabase.from("subcategorias").select("categoria_slug, nombre, orden").order("orden"),
+    supabase.from("tipos_producto").select("categoria_slug, subcategoria, nombre, orden").order("orden"),
   ]);
 
   // No se usa `throw` acá a propósito: si Supabase todavía no tiene las
@@ -86,7 +101,9 @@ async function cargarDatos() {
     .map((f: any) => ({
       sku: f.sku,
       categoria: nombrePorSlug.get(f.categoria_slug) ?? f.categoria_slug,
+      categoriaSlug: f.categoria_slug,
       subcategoria: f.subcategoria,
+      tipo: f.tipo?.trim() || undefined,
       nombre: f.nombre,
       marca: f.marca,
       precio: f.precio != null ? Number(f.precio) : undefined,
@@ -95,6 +112,7 @@ async function cargarDatos() {
       imagenes: f.imagenes ?? undefined,
       video: f.video_url ?? undefined,
       enlaceConoceMas: f.enlace_conoce_mas?.trim() || undefined,
+      fichaTecnicaUrl: f.ficha_tecnica_url?.trim() || undefined,
       descripcion: f.descripcion,
       destacado: f.destacado ?? false,
       compatibilidad: f.compatibilidad ?? undefined,
@@ -103,25 +121,64 @@ async function cargarDatos() {
 
   const carrusel = (filasCarrusel ?? []) as DiapositivaCarrusel[];
 
-  return { categorias, productos, carrusel };
+  const ordenSub = new Map(((filasSubcategorias ?? []) as any[]).map((s) => [`${s.categoria_slug}|${s.nombre}`, s.orden as number]));
+  const ordenTipo = new Map(((filasTipos ?? []) as any[]).map((t) => [`${t.categoria_slug}|${t.subcategoria}|${t.nombre}`, t.orden as number]));
+
+  return { categorias, productos, carrusel, ordenSub, ordenTipo };
 }
 
-const { categorias: categoriasCache, productos, carrusel: carruselSlides } = await cargarDatos();
+const { categorias: categoriasCache, productos, carrusel: carruselSlides, ordenSub, ordenTipo } = await cargarDatos();
 
 export { productos, carruselSlides };
 
+function ordenar<T>(lista: T[], clave: (x: T) => string, orden: Map<string, number>, nombre: (x: T) => string) {
+  return [...lista].sort((a, b) => {
+    const oa = orden.get(clave(a)) ?? 999;
+    const ob = orden.get(clave(b)) ?? 999;
+    return oa !== ob ? oa - ob : nombre(a).localeCompare(nombre(b), "es");
+  });
+}
+
+export interface SubcategoriaPublica {
+  nombre: string;
+  tipos: string[];
+}
+
+// Solo se listan en el sitio las categorías, subcategorías y tipos que tienen
+// productos activos: la estructura completa del Excel (con categorías aún
+// vacías como Motos o Camiones) vive en el admin, y cada rama aparece sola
+// en la web en cuanto se le carga su primer producto (y se republica).
 export function getCategorias() {
-  return categoriasCache.map((cat) => ({
-    categoria: cat.nombre,
-    slug: cat.slug,
-    subcategorias: Array.from(
-      new Set(productos.filter((p) => p.categoria === cat.nombre).map((p) => p.subcategoria)),
-    ),
-  }));
+  return categoriasCache
+    .map((cat) => {
+      const suyos = productos.filter((p) => p.categoriaSlug === cat.slug);
+      const nombresSub = Array.from(new Set(suyos.map((p) => p.subcategoria)));
+      const arbol: SubcategoriaPublica[] = ordenar(nombresSub, (s) => `${cat.slug}|${s}`, ordenSub, (s) => s).map((sub) => ({
+        nombre: sub,
+        tipos: ordenar(
+          Array.from(new Set(suyos.filter((p) => p.subcategoria === sub && p.tipo).map((p) => p.tipo!))),
+          (t) => `${cat.slug}|${sub}|${t}`,
+          ordenTipo,
+          (t) => t,
+        ),
+      }));
+      return {
+        categoria: cat.nombre,
+        slug: cat.slug,
+        cantidad: suyos.length,
+        subcategorias: arbol.map((a) => a.nombre),
+        arbol,
+      };
+    })
+    .filter((c) => c.cantidad > 0);
 }
 
 export function getProductosPorCategoria(categoriaSlug: string) {
-  return productos.filter((p) => slugify(p.categoria) === categoriaSlug);
+  return productos.filter((p) => p.categoriaSlug === categoriaSlug);
+}
+
+export function getSlugCategoria(nombreCategoria: string) {
+  return categoriasCache.find((c) => c.nombre === nombreCategoria)?.slug ?? slugify(nombreCategoria);
 }
 
 export function getProductoPorSku(sku: string) {

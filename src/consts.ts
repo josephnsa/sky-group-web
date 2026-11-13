@@ -57,6 +57,8 @@ export const SUCURSALES = [
 // public/images/brand/marcas/). Descripciones tal cual la presentación
 // oficial (diapositiva 8). Se muestran en Nosotros y en Inicio.
 export const MARCAS = [
+  // Marca propia: "MARCA SKY - mayoría de productos de accesorios para vehículos" (presentación 2026, diapositiva 8).
+  { nombre: "SKY", logo: "/images/brand/marcas/sky.png", desc: "Accesorios para vehículos de marca propia" },
   { nombre: "TACPRO", logo: "/images/brand/marcas/tacpro.png", desc: "Focos y faros LED de alta gama" },
   { nombre: "SKYLINE", logo: "/images/brand/marcas/skyline.png", desc: "Barras transversales, parrillas, porta equipajes y tapas de tolva" },
   { nombre: "SPORTS", logo: "/images/brand/marcas/sports.png", desc: "Accesorios tuning" },

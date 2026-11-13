@@ -12,7 +12,12 @@ export default defineConfig({
   site: 'https://sky.com.pe',
   integrations: [
     preact(),
-    sitemap(),
+    sitemap({
+      // Las URLs de categorías anteriores solo redirigen a la nueva
+      // (src/data/redirecciones-categorias.ts): no se indexan.
+      filter: (page) =>
+        !/\/catalogo\/(4x4-off-road|electronica-y-tecnologia-vehicular|auxilio-vehicular|remolque|seguros|molduras-y-protectores|mantenimiento-y-herramientas|accesorios-tuning-y-decoracion|para-trabajo-y-negocio)\/?$/.test(page),
+    }),
     AstroPWA({
       registerType: 'autoUpdate',
       includeAssets: ['icons/icon-512.png', 'icons/apple-touch-icon.png'],

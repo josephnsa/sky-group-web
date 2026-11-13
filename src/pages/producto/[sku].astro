@@ -3,7 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import AddToCartButton from "../../components/AddToCartButton";
 import GaleriaProducto from "../../components/GaleriaProducto";
 import BotonConoceMas from "../../components/BotonConoceMas";
-import { getImagenProducto, productos, slugify } from "../../data/catalog";
+import { getImagenProducto, productos } from "../../data/catalog";
 import { marcaVisible } from "../../lib/marca";
 
 export function getStaticPaths() {
@@ -26,8 +26,12 @@ const tieneDetalleTecnico =
   <section class="mx-auto max-w-5xl px-4 py-12 sm:py-16">
     <nav class="text-sm text-neutral-500 dark:text-neutral-400">
       <a href="/catalogo" class="hover:underline">Catálogo</a> /{" "}
-      <a href={`/catalogo/${slugify(producto.categoria)}`} class="hover:underline">
+      <a href={`/catalogo/${producto.categoriaSlug}`} class="hover:underline">
         {producto.categoria}
+      </a>{" "}
+      /{" "}
+      <a href={`/catalogo/${producto.categoriaSlug}?sub=${encodeURIComponent(producto.subcategoria)}`} class="hover:underline">
+        {producto.subcategoria}
       </a>{" "}
       / {producto.nombre}
     </nav>
@@ -81,6 +85,23 @@ const tieneDetalleTecnico =
             )
           }
         </div>
+
+        {
+          producto.fichaTecnicaUrl && (
+            <a
+              href={producto.fichaTecnicaUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              download
+              class="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-brand-blue-dark hover:underline dark:text-brand-blue"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true">
+                <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><path d="M14 3v6h6M12 12v6M9 15l3 3 3-3" />
+              </svg>
+              Descargar ficha técnica (PDF)
+            </a>
+          )
+        }
 
         <div id="detalle-tecnico">
         {

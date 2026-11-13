@@ -143,19 +143,59 @@ export function IconChip(p: IconProps) {
   );
 }
 
+export function IconMoto(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <circle cx="5.5" cy="16.5" r="3" />
+      <circle cx="18.5" cy="16.5" r="3" />
+      <path d="M5.5 16.5 9 10h5l2.5 6.5M14 10l-1-3h3M9 10l-2-2H4.5" stroke-linecap="round" stroke-linejoin="round" />
+    </Svg>
+  );
+}
+
+export function IconCamion(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M2 6h11v10H2zM13 9h4.5L21 12.5V16h-8" stroke-linejoin="round" />
+      <circle cx="6" cy="17.5" r="1.8" />
+      <circle cx="17" cy="17.5" r="1.8" />
+    </Svg>
+  );
+}
+
+export function IconEnchufe(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4" stroke-linecap="round" stroke-linejoin="round" />
+    </Svg>
+  );
+}
+
 export const ICONO_POR_CATEGORIA: Record<string, (p: IconProps) => ReturnType<typeof IconWrench>> = {
+  // Las 11 categorías del Excel del cliente (CATEGORIA PRODUCTOS.xlsx).
+  "Equipamiento Exterior": IconRoofBox,
   "Iluminación": IconBulb,
+  "Interior y Confort": IconSeat,
+  "Accesorios Eléctricos": IconEnchufe,
+  "Seguridad, Auxilio y Remolque": IconShieldCheck,
+  "Cuidado y Limpieza": IconSpray,
+  "Tuning y Personalización": IconSparkle,
+  "Repuestos y Más": IconWrench,
+  "Herramientas": IconBriefcase,
+  "Accesorios para Motos": IconMoto,
+  "Accesorios para Camiones": IconCamion,
+  // Nombres anteriores: siguen funcionando si se revierte la migración o si
+  // desde el admin se vuelve a crear una de estas categorías.
+  "Barras y Equipamiento Exterior": IconRoofBox,
   "Accesorios Tuning y Decoración": IconSparkle,
   "Auxilio Vehicular": IconBattery,
   "Remolque": IconTow,
   "Mantenimiento y Herramientas": IconSpray,
-  "Barras y Equipamiento Exterior": IconRoofBox,
   "4x4 / Off Road": IconMountain,
   "Electrónica y Tecnología Vehicular": IconChip,
   "Para Trabajo y Negocio": IconBriefcase,
   "Molduras y Protectores": IconTrim,
   "Seguros": IconShieldCheck,
-  "Interior y Confort": IconSeat,
 };
 
 export function iconoDeCategoria(categoria: string) {
