@@ -26,6 +26,8 @@ export interface ProductoAdmin {
   imagen: string | null;
   imagenes: string[] | null;
   video_url: string | null;
+  // Opcional en el tipo: la columna se agrega con docs/migracion-enlace-conoce-mas.sql.
+  enlace_conoce_mas?: string | null;
   descripcion: string;
   destacado: boolean;
   activo: boolean;

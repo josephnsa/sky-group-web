@@ -1,5 +1,6 @@
 import { NEGOCIO, SITE } from "../consts";
 import type { CartLine } from "./cart-store";
+import { marcaVisible } from "./marca";
 
 export function formatearSoles(monto: number) {
   return `S/ ${monto.toFixed(2)}`;
@@ -20,7 +21,7 @@ export function construirMensajePedido(lineas: CartLine[], total: number) {
         l.producto.precio != null
           ? `Cant: ${l.cantidad} · Precio: ${formatearSoles(l.producto.precio)} · Subtotal: ${formatearSoles(l.subtotal)}`
           : `Cant: ${l.cantidad} · Precio: por confirmar`;
-      return `• *${l.producto.nombre}* (Código: ${l.producto.sku}, ${l.producto.marca}) — ${datos}`;
+      return `• *${l.producto.nombre}* (Código: ${l.producto.sku}, Marca: ${marcaVisible(l.producto.marca)}) — ${datos}`;
     })
     .join(SALTO);
 

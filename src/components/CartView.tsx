@@ -1,6 +1,7 @@
 import { useStore } from "@nanostores/preact";
 import { useState } from "preact/hooks";
 import { AnimatePresence, motion } from "framer-motion";
+import { marcaVisible } from "../lib/marca";
 import {
   cartLines,
   cartTotal,
@@ -64,7 +65,7 @@ export default function CartView() {
               <p class="truncate font-medium text-neutral-900 dark:text-neutral-100">
                 {l.producto.nombre}
               </p>
-              <p class="text-sm text-neutral-500 dark:text-neutral-400">{l.producto.marca}</p>
+              <p class="text-sm text-neutral-500 dark:text-neutral-400">Marca: {marcaVisible(l.producto.marca)}</p>
               <p class="text-sm text-neutral-700 dark:text-neutral-300">
                 {l.producto.precio != null ? `${formatearSoles(l.producto.precio)} c/u` : "Precio a confirmar"}
               </p>

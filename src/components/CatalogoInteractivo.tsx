@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "preact/hooks";
 import { motion } from "framer-motion";
 import type { Producto } from "../data/catalog";
 import { coincideProducto } from "../lib/busqueda";
+import { esSinMarca } from "../lib/marca";
 import { IconChevronDown } from "./icons/ui";
 import { DURATION } from "../lib/motion";
 import ProductGrid from "./ProductGrid";
@@ -73,7 +74,8 @@ export default function CatalogoInteractivo({ productos, categorias }: Props) {
   }, [universoCategoria]);
 
   const marcasDisponibles = useMemo(() => {
-    return Array.from(new Set(universoCategoria.map((p) => p.marca))).sort();
+    // "Genérico"/"Sin marca" no son marcas: no se ofrecen como filtro.
+    return Array.from(new Set(universoCategoria.filter((p) => !esSinMarca(p.marca)).map((p) => p.marca))).sort();
   }, [universoCategoria]);
 
   function toggleMarca(m: string) {

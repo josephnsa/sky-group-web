@@ -2,7 +2,9 @@
 import Layout from "../../layouts/Layout.astro";
 import AddToCartButton from "../../components/AddToCartButton";
 import GaleriaProducto from "../../components/GaleriaProducto";
+import BotonConoceMas from "../../components/BotonConoceMas";
 import { getImagenProducto, productos, slugify } from "../../data/catalog";
+import { marcaVisible } from "../../lib/marca";
 
 export function getStaticPaths() {
   return productos.map((p) => ({
@@ -34,13 +36,15 @@ const tieneDetalleTecnico =
       <GaleriaProducto nombre={producto.nombre} imagenes={galeria} video={producto.video} client:load />
 
       <div>
-        <p class="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-          {producto.marca}
+        <p class="text-sm text-neutral-700 dark:text-neutral-300">
+          Marca: <span class="font-bold uppercase text-neutral-900 dark:text-white">{marcaVisible(producto.marca)}</span>
         </p>
         <h1 class="mt-1 text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-white sm:text-3xl">
           {producto.nombre}
         </h1>
-        <p class="mt-1 text-xs text-neutral-400 dark:text-neutral-500">Código: {producto.sku}</p>
+        <p class="mt-1.5 text-sm text-neutral-700 dark:text-neutral-300">
+          Código: <span class="font-semibold text-neutral-900 dark:text-white">{producto.sku}</span>
+        </p>
 
         {
           producto.precio != null && (
@@ -63,8 +67,11 @@ const tieneDetalleTecnico =
           <div class="max-w-xs flex-1">
             <AddToCartButton client:load sku={producto.sku} />
           </div>
+          {producto.enlaceConoceMas && (
+            <BotonConoceMas client:load enlace={producto.enlaceConoceMas} nombre={producto.nombre} />
+          )}
           {
-            tieneDetalleTecnico && (
+            !producto.enlaceConoceMas && tieneDetalleTecnico && (
               <a
                 href="#detalle-tecnico"
                 class="inline-flex items-center gap-1 rounded-md border border-brand-blue px-4 py-2 text-sm font-semibold text-brand-blue transition-colors duration-200 hover:bg-brand-blue/10"

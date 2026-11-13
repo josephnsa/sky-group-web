@@ -29,7 +29,7 @@ export default function BuscadorConSugerencias() {
   }, []);
 
   return (
-    <div ref={raizRef} class="relative hidden flex-1 max-w-md sm:block">
+    <div ref={raizRef} class="relative hidden flex-1 max-w-lg sm:block">
       <form action="/catalogo" method="GET" role="search" class="flex items-center overflow-hidden rounded-md bg-white shadow-sm transition-shadow duration-200 focus-within:ring-2 focus-within:ring-white/70">
         <input
           type="search"
@@ -43,14 +43,14 @@ export default function BuscadorConSugerencias() {
           placeholder="Buscar productos..."
           aria-label="Buscar productos"
           autocomplete="off"
-          class="w-full bg-transparent px-4 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-500 focus:outline-none"
+          class="w-full bg-transparent px-4 py-2.5 text-sm text-neutral-900 sm:py-3 sm:text-base placeholder:text-neutral-500 focus:outline-none"
         />
         <button
           type="submit"
           aria-label="Buscar"
-          class="flex shrink-0 items-center justify-center self-stretch bg-brand-blue-dark px-3.5 text-white transition-colors duration-200 hover:bg-brand-green-dark"
+          class="flex shrink-0 items-center justify-center self-stretch bg-brand-blue-dark px-3.5 text-white transition-colors duration-200 hover:bg-brand-green-dark sm:px-4"
         >
-          <IconSearch class="h-4 w-4" />
+          <IconSearch class="h-5 w-5" />
         </button>
       </form>
 

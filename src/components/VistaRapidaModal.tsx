@@ -4,6 +4,7 @@ import { getImagenProducto, type Producto } from "../data/catalog";
 import { IconClose } from "./icons/ui";
 import { DURATION, EASE_BRAND } from "../lib/motion";
 import AddToCartButton from "./AddToCartButton";
+import { marcaVisible } from "../lib/marca";
 
 interface Props {
   producto: Producto;
@@ -32,7 +33,7 @@ export default function VistaRapidaModal({ producto, onClose }: Props) {
 
   return (
     <motion.div
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4"
       role="dialog"
       aria-modal="true"
       aria-label={`Vista rápida: ${producto.nombre}`}
@@ -73,11 +74,13 @@ export default function VistaRapidaModal({ producto, onClose }: Props) {
           />
 
           <div class="flex flex-col">
-            <p class="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-              {producto.marca}
+            <p class="text-sm text-neutral-700 dark:text-neutral-300">
+              Marca: <span class="font-bold uppercase text-neutral-900 dark:text-white">{marcaVisible(producto.marca)}</span>
             </p>
             <h2 class="mt-1 text-lg font-bold text-neutral-900 dark:text-white">{producto.nombre}</h2>
-            <p class="mt-1 text-xs text-neutral-400 dark:text-neutral-500">Código: {producto.sku}</p>
+            <p class="mt-1.5 text-sm text-neutral-700 dark:text-neutral-300">
+              Código: <span class="font-semibold text-neutral-900 dark:text-white">{producto.sku}</span>
+            </p>
 
             {producto.precio != null && (
               <div class="mt-3 flex items-baseline gap-2">

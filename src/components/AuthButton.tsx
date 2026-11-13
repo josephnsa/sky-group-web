@@ -75,9 +75,9 @@ export default function AuthButton() {
       <button
         type="button"
         onClick={iniciarSesion}
-        class="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-white/90 transition-colors duration-200 hover:bg-white/15 hover:text-white"
+        class="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-white/90 sm:text-base transition-colors duration-200 hover:bg-white/15 hover:text-white"
       >
-        <IconUser class="h-5 w-5" />
+        <IconUser class="h-6 w-6" />
         <span class="hidden sm:inline">Iniciar sesión</span>
       </button>
     );
@@ -99,7 +99,7 @@ export default function AuthButton() {
         ) : (
           <IconUser class="h-6 w-6 text-white" />
         )}
-        <span class="hidden max-w-[8rem] truncate text-sm font-medium text-white sm:inline" title={nombre}>
+        <span class="hidden max-w-[8rem] truncate text-sm font-medium text-white sm:text-base sm:inline" title={nombre}>
           {nombre}
         </span>
         <IconChevronDown class={`hidden h-3.5 w-3.5 text-white/80 transition-transform duration-200 sm:block ${menuAbierto ? "rotate-180" : ""}`} />
