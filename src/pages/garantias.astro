@@ -1,435 +1,381 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import FormularioGarantia from "../components/FormularioGarantia";
-import { IconShield, IconChat } from "../components/icons/ui";
-import { NEGOCIO } from "../consts";
+import { MARCAS, NEGOCIO } from "../consts";
 
-// Contenido tal cual "GARANTIAS - INFO OK.docx" (carpeta PAG WEB SKY del
-// cliente). El documento pide: página nueva al hacer clic en "Garantía en
-// productos" de la franja de confianza, 4 íconos (respaldo, condiciones,
-// tiempo, atención), el detalle de la garantía y al final un botón para
-// solicitarla con un formulario que llegue al WhatsApp 950 486 811.
+// Contenido: "GARANTIAS - INFO OK.docx" (carpeta PAG WEB SKY del cliente).
+// Diseño: guiado por la referencia visual del cliente (portada oscura con
+// vehículo, 4 pilares, "¿Cómo funciona?" en pasos, cuándo aplica / cuándo
+// no, garantías específicas, qué información necesitamos y una franja final
+// de contacto). No se agregó ningún dato que no esté en el documento: por
+// ejemplo, la referencia dice "TACPRO: 1 año de garantía", pero el
+// documento solo habla de "garantía extendida" para todas las marcas.
 
-const ICONOS = [
-  {
-    titulo: "Respaldo",
-    desc: "Nuestros productos cuentan con un estándar certificado y una calidad garantizada para proteger tu inversión.",
-    icono: "escudo",
-  },
-  {
-    titulo: "Condiciones",
-    desc: "Cada producto tiene parámetros y estándares de acuerdo al mercado vigente, los cuales se toman en cuenta para la revisión de la garantía.",
-    icono: "ajustes",
-  },
-  {
-    titulo: "Tiempo",
-    desc: "Todo reclamo debe realizarse en un plazo máximo de 7 días calendario desde la recepción del producto.",
-    icono: "reloj",
-  },
-  {
-    titulo: "Atención personalizada",
-    desc: "Tu asesor comercial autorizado te brindará el soporte y la orientación en todo el proceso de garantías.",
-    icono: "chat",
-  },
-];
+const WHATSAPP = `https://wa.me/${NEGOCIO.whatsappNumero}?text=${encodeURIComponent("Hola SKY Group, quisiera consultar sobre la garantía de un producto.")}`;
 
-const MARCAS_GARANTIA = ["TACPRO", "SPORTS", "BLOX", "SKYLINE", "SKY ACCESORIES", "SKY EQUIPMENT", "SK-PRO ROADSAFE"];
-
-const REQUISITOS = [
-  "Comprobante de pago o documento que permita acreditar la adquisición.",
-  "Información del producto y, cuando corresponda, número de serie, código o modelo.",
-  "Descripción detallada de la falla o inconveniente presentado.",
-  "Fotografías o videos que permitan identificar el problema, cuando resulte necesario.",
-  "Información relacionada con la instalación, uso o mantenimiento del producto, cuando corresponda.",
-];
-
-const NO_CUBIERTOS = [
-  "Uso inadecuado del producto.",
-  "Instalación incorrecta o aplicación realizada de manera distinta a las instrucciones proporcionadas.",
-  "Instalación, modificación, adaptación o manipulación realizada por terceros no autorizados, cuando ello haya ocasionado la falla.",
-  "Daños por golpes, accidentes, choques o factores externos.",
-  "Daños ocasionados por negligencia, mal uso o uso indebido.",
-  "Alteraciones, modificaciones o reparaciones no autorizadas.",
-  "Desgaste natural derivado del uso normal del producto, cuando por su naturaleza se trate de un elemento sujeto a desgaste.",
-  "Falta de mantenimiento cuando este resulte necesario y haya sido informado al consumidor.",
-  "Daños ocasionados por factores externos, condiciones ambientales o eventos ajenos al producto, cuando corresponda.",
-  "Uso del producto en condiciones diferentes a aquellas para las cuales fue diseñado o comercializado.",
-];
-
-const SOLUCIONES = [
-  "Reparación del producto.",
-  "Reposición o cambio del producto.",
-  "Devolución de la contraprestación pagada, cuando legalmente corresponda.",
-  "Otra solución que resulte aplicable de acuerdo con las condiciones de la garantía y la normativa vigente.",
+const PILARES = [
+  { titulo: "Respaldo", desc: "Nuestros productos cuentan con un estándar certificado y una calidad garantizada para proteger tu inversión.", icono: "escudo" },
+  { titulo: "Condiciones", desc: "Cada producto tiene parámetros y estándares de acuerdo al mercado vigente, que se toman en cuenta para la revisión de la garantía.", icono: "ajustes" },
+  { titulo: "Tiempo", desc: "Todo reclamo debe realizarse en un plazo máximo de 7 días calendario desde la recepción del producto.", icono: "reloj" },
+  { titulo: "Atención personalizada", desc: "Tu asesor comercial autorizado te brinda soporte y orientación en todo el proceso de garantías.", icono: "chat" },
 ];
 
 const PASOS = [
-  { titulo: "Solicitud", desc: "Envías tu caso con el formulario o por WhatsApp, con fotos o videos del problema." },
-  { titulo: "Evaluación", desc: "Revisamos el producto para determinar la naturaleza del inconveniente y si está cubierto." },
-  { titulo: "Resultado", desc: "Te comunicamos el resultado y, cuando corresponda, la alternativa de atención aplicable." },
+  { titulo: "Nos contactas", desc: "Cuéntanos qué producto tiene el inconveniente, lo antes posible, con el formulario o por WhatsApp.", icono: "whatsapp" },
+  { titulo: "Revisamos tu información", desc: "Podemos pedirte el comprobante, el código del producto, fotos o videos y datos de instalación o uso.", icono: "documento" },
+  { titulo: "Evaluamos el producto", desc: "Determinamos la naturaleza del inconveniente. Si hace falta una revisión técnica, podemos solicitar el producto.", icono: "lupa" },
+  { titulo: "Te informamos el resultado", desc: "Te comunicamos si corresponde la garantía y cuál es la alternativa de atención aplicable.", icono: "check" },
+];
+
+const CUBRE = [
+  "Defectos de fabricación.",
+  "Fallas de funcionamiento.",
+  "Falta de conformidad respecto de las características, condiciones o especificaciones ofrecidas al momento de la compra.",
+];
+
+const NO_CUBRE = [
+  "Uso inadecuado del producto.",
+  "Instalación incorrecta o distinta a las instrucciones proporcionadas.",
+  "Instalación, modificación, adaptación o manipulación por terceros no autorizados, cuando haya ocasionado la falla.",
+  "Daños por golpes, accidentes, choques o factores externos.",
+  "Negligencia, mal uso o uso indebido.",
+  "Alteraciones, modificaciones o reparaciones no autorizadas.",
+  "Desgaste natural por el uso normal, en elementos sujetos a desgaste.",
+  "Falta de mantenimiento, cuando sea necesario y haya sido informado.",
+  "Factores externos, condiciones ambientales o eventos ajenos al producto.",
+  "Uso en condiciones diferentes a aquellas para las que fue diseñado o comercializado.",
+];
+
+const INFO = [
+  { texto: "Comprobante de pago o documento que acredite la compra.", icono: "documento" },
+  { texto: "Producto y, cuando corresponda, número de serie, código o modelo.", icono: "etiqueta" },
+  { texto: "Descripción detallada de la falla o inconveniente.", icono: "chat" },
+  { texto: "Fotografías o videos del problema, cuando sea necesario.", icono: "camara" },
+  { texto: "Información sobre la instalación, uso o mantenimiento del producto.", icono: "llave" },
+];
+
+const SOLUCIONES = ["Reparación del producto", "Reposición o cambio", "Devolución de lo pagado, cuando legalmente corresponda", "Otra solución aplicable según las condiciones y la normativa"];
+
+// Marcas con garantía extendida (documento). SKY ACCESORIES y SKY EQUIPMENT
+// son líneas de SKY: se muestran junto a su logo.
+const LOGO = Object.fromEntries(MARCAS.map((m) => [m.nombre.toUpperCase(), m.logo]));
+const MARCAS_GARANTIA = [
+  { nombre: "SKY ACCESORIES · SKY EQUIPMENT", logo: LOGO["SKY"] },
+  { nombre: "TACPRO", logo: LOGO["TACPRO"] },
+  { nombre: "SKYLINE", logo: LOGO["SKYLINE"] },
+  { nombre: "SPORTS", logo: LOGO["SPORTS"] },
+  { nombre: "SK-PRO ROADSAFE", logo: LOGO["ROADSAFE"] },
+  { nombre: "BLOX", logo: LOGO["BLOX"] },
+];
+
+const DETALLE = [
+  {
+    titulo: "Tiempo aplicable de garantía",
+    parrafos: [
+      "Todo reclamo debe realizarse en un plazo máximo de 7 días calendario desde la recepción del producto. Posterior a ello, solo se aceptarán devoluciones o cambios por errores o fallas de fábrica que afecten la calidad del producto, siempre y cuando el producto no se encuentre dañado o en mal estado.",
+    ],
+  },
+  {
+    titulo: "Evaluación del producto",
+    parrafos: [
+      "Recibida la solicitud, realizaremos una evaluación del producto para determinar la naturaleza del inconveniente y verificar si corresponde a una falla cubierta por la garantía.",
+      "Cuando por las características del producto sea necesario realizar una revisión técnica, el producto podrá ser solicitado para su inspección.",
+      "La evaluación permitirá determinar si el inconveniente corresponde, entre otros supuestos, a un defecto de fabricación, funcionamiento o falta de conformidad respecto de las características ofrecidas, o si se encuentra relacionado con factores externos al producto.",
+    ],
+  },
+  {
+    titulo: "Instalación de productos",
+    parrafos: [
+      "En aquellos productos que requieran instalación, recomendamos que esta sea realizada siguiendo las instrucciones proporcionadas y, cuando corresponda, por personal con los conocimientos técnicos necesarios.",
+      "Cuando una falla sea consecuencia de una instalación incorrecta, modificación o manipulación ajena al producto, dicha circunstancia podrá ser considerada durante la evaluación de la garantía comercial.",
+      "En productos cuya instalación pueda afectar otros componentes del vehículo, recomendamos verificar previamente la compatibilidad, aplicación y procedimiento de instalación correspondientes.",
+    ],
+  },
+  {
+    titulo: "Plazo de atención",
+    parrafos: [
+      "El tiempo necesario para evaluar y solucionar una solicitud de garantía dependerá de la naturaleza del producto, la complejidad de la falla y, cuando corresponda, la disponibilidad de repuestos o la necesidad de realizar una evaluación técnica especializada.",
+      "Nuestro objetivo es mantener informado al cliente durante el proceso y brindar una respuesta clara respecto del estado de su solicitud.",
+      "Los plazos establecidos para la atención de reclamos mediante el Libro de Reclamaciones se rigen por la normativa vigente y son independientes del proceso técnico de evaluación de una garantía.",
+    ],
+  },
+  {
+    titulo: "Garantía y derechos del consumidor",
+    parrafos: [
+      "La existencia de una garantía comercial no limita ni sustituye los derechos que reconoce la legislación peruana de protección al consumidor.",
+      "De acuerdo con la Ley N.º 29571, Código de Protección y Defensa del Consumidor, las garantías pueden ser legales, explícitas o implícitas. Las garantías legales son de obligatorio cumplimiento y no pueden ser desplazadas por una garantía comercial. Asimismo, las condiciones expresamente ofrecidas por nosotros forman parte de la garantía explícita del producto.",
+      "En determinados supuestos previstos por la legislación, el consumidor puede tener derecho a la reparación, reposición o devolución de la contraprestación pagada, entre otras medidas que correspondan según el caso.",
+    ],
+  },
+  {
+    titulo: "Libro de Reclamaciones",
+    parrafos: [
+      "Si consideras que existe una disconformidad relacionada con el producto o servicio adquirido, puedes presentar un reclamo a través de nuestro Libro de Reclamaciones, disponible en nuestro establecimiento y en esta web.",
+      "Los reclamos y quejas registrados deben ser atendidos y respondidos por escrito dentro del plazo máximo establecido por la normativa vigente, actualmente de quince (15) días hábiles no prorrogables. La presentación de un reclamo no está condicionada a ningún pago.",
+    ],
+    enlace: { texto: "Ir al Libro de Reclamaciones", href: "/libro-de-reclamaciones" },
+  },
 ];
 ---
 
-<Layout title="Garantía en productos" description="Condiciones de garantía de los productos SKY Group y cómo solicitarla">
-  <section class="bg-gradient-to-br from-brand-blue/10 via-white to-brand-green/10 dark:from-brand-blue/15 dark:via-neutral-950 dark:to-brand-green/10">
-    <div class="mx-auto max-w-5xl px-4 py-12 sm:py-16">
-      <p class="text-xs font-semibold uppercase tracking-wider text-brand-blue-dark dark:text-brand-blue">Garantía SKY Group</p>
-      <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white sm:text-4xl lg:text-5xl">
-        Garantía en productos
+<Layout title="Garantía en productos" description="Garantía y respaldo en los productos SKY Group: cobertura, cómo solicitarla y qué información necesitamos">
+  {/* ===== Portada ===== */}
+  <section class="relative isolate overflow-hidden bg-neutral-950 text-white">
+    <img
+      src="/images/garantias/portada.webp"
+      alt=""
+      aria-hidden="true"
+      class="absolute inset-0 -z-10 h-full w-full object-cover object-[65%_center] opacity-95"
+    />
+    <div class="absolute inset-0 -z-10 bg-gradient-to-r from-neutral-950 via-neutral-950/75 to-transparent sm:via-neutral-950/60" aria-hidden="true"></div>
+    <div class="mx-auto max-w-6xl px-4 py-16 sm:py-24">
+      <p class="text-xs font-bold uppercase tracking-[0.2em] text-brand-blue">Garantía SKY Group</p>
+      <h1 class="mt-3 max-w-2xl text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
+        Garantía y respaldo
+        <span class="block bg-gradient-to-r from-brand-blue to-brand-green bg-clip-text text-transparent">en nuestros productos</span>
       </h1>
-      <p class="mt-4 max-w-3xl text-neutral-700 dark:text-neutral-300">
-        Nos comprometemos en ofrecer productos de calidad y un servicio confiable de manera responsable y transparente,
-        mediante proveedores certificados y condiciones con estándares del mercado.
+      <span class="mt-5 block h-1 w-20 rounded-full bg-gradient-to-r from-brand-blue to-brand-green" aria-hidden="true"></span>
+      <p class="mt-5 max-w-xl text-lg font-semibold text-white">Tu compra cuenta con el respaldo de SKY GROUP.</p>
+      <p class="mt-2 max-w-xl text-white/80">
+        Nos comprometemos a ofrecer productos de calidad y un servicio confiable, de manera responsable y transparente, mediante
+        proveedores certificados y condiciones con estándares del mercado.
       </p>
-      <p class="mt-3 max-w-3xl text-neutral-700 dark:text-neutral-300">
-        Nuestro equipo está capacitado y disponible para orientarte en todo el proceso, en el caso requieras este tipo de
-        atención.
-      </p>
-      <a
-        href="#solicitar"
-        class="mt-6 inline-flex items-center gap-2 rounded-md bg-brand-blue px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform hover:scale-105 active:scale-95"
-      >
-        Solicitar garantía
-      </a>
+      <div class="mt-8 flex flex-wrap gap-3">
+        <a href="#solicitar" class="inline-flex items-center gap-2 rounded-md bg-brand-blue px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-blue/30 transition-transform hover:scale-105 active:scale-95">
+          Solicitar garantía
+        </a>
+        <a href={WHATSAPP} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-md border border-white/40 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10">
+          Consultar por WhatsApp
+        </a>
+      </div>
+      <div class="mt-10 inline-flex items-center gap-4 rounded-xl border border-white/15 bg-white/10 px-5 py-3 backdrop-blur">
+        <span class="text-4xl font-extrabold tracking-tight">7</span>
+        <span class="text-sm leading-tight text-white/85">días calendario<br />para presentar tu reclamo</span>
+      </div>
     </div>
   </section>
 
-  <section class="mx-auto max-w-5xl px-4 py-12 sm:py-16">
+  {/* ===== 4 pilares ===== */}
+  <section class="relative z-10 mx-auto -mt-10 max-w-6xl px-4">
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {
-        ICONOS.map((item, i) => (
+        PILARES.map((p, i) => (
           <div
             data-reveal
             style={`transition-delay: ${i * 90}ms`}
-            class="rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
+            class="group rounded-xl border border-neutral-200 bg-white p-6 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
           >
-            <span
-              class={`flex h-12 w-12 items-center justify-center rounded-full text-white ${
-                i % 2 === 0 ? "bg-brand-blue" : "bg-brand-green"
-              }`}
-            >
-              {item.icono === "escudo" && <IconShield class="h-6 w-6" />}
-              {item.icono === "chat" && <IconChat class="h-6 w-6" />}
-              {item.icono === "ajustes" && (
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6" aria-hidden="true">
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
-                </svg>
+            <span class={`flex h-14 w-14 items-center justify-center rounded-full text-white shadow-md transition-transform duration-300 group-hover:scale-110 ${i % 2 === 0 ? "bg-gradient-to-br from-brand-blue to-brand-blue-dark" : "bg-gradient-to-br from-brand-green to-brand-green-dark"}`}>
+              {p.icono === "escudo" && (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-7 w-7" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z" /><path d="m9 12 2 2 4-4" /></svg>
               )}
-              {item.icono === "reloj" && (
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6" aria-hidden="true">
-                  <circle cx="12" cy="12" r="9" />
-                  <path d="M12 7v5l3 2" />
-                </svg>
+              {p.icono === "ajustes" && (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-7 w-7" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" /></svg>
+              )}
+              {p.icono === "reloj" && (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-7 w-7" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+              )}
+              {p.icono === "chat" && (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-7 w-7" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z" /><path d="M8.5 12h.01M12 12h.01M15.5 12h.01" /></svg>
               )}
             </span>
-            <h2 class="mt-4 text-base font-bold uppercase tracking-tight text-neutral-900 dark:text-white">{item.titulo}</h2>
-            <p class="mt-1.5 text-sm text-neutral-600 dark:text-neutral-400">{item.desc}</p>
+            <h2 class="mt-5 text-base font-extrabold uppercase tracking-tight text-neutral-900 dark:text-white">{p.titulo}</h2>
+            <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400">{p.desc}</p>
           </div>
         ))
       }
     </div>
+  </section>
 
-    <div class="mt-12 grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
-      <div class="min-w-0 space-y-10">
-        <div>
-          <h2 class="border-l-4 border-brand-blue pl-3 text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
-            ¿Qué cubre nuestra garantía?
-          </h2>
-          <div class="mt-4 space-y-3 text-neutral-700 dark:text-neutral-300">
-            <p>
-              La garantía cubre los productos que presenten defectos de fabricación, funcionamiento o falta de conformidad
-              respecto de las características, condiciones o especificaciones ofrecidas al momento de la compra, siempre
-              que corresponda según la naturaleza del producto y las condiciones de la garantía aplicable.
-            </p>
-            <p>
-              La garantía ofrecida por nosotros se entiende sin perjuicio de los derechos que correspondan al consumidor
-              conforme a la legislación peruana vigente.
-            </p>
-            <p>
-              La garantía comercial, cuando corresponda, será aplicable durante el plazo y bajo las condiciones informadas
-              para cada producto, ya sea en el comprobante de pago, certificado de garantía, empaque, ficha técnica,
-              publicidad, página web u otro medio en el que se haya informado sus condiciones.
-            </p>
-          </div>
-        </div>
-
-        <div>
-          <h2 class="border-l-4 border-brand-green pl-3 text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
-            Garantías específicas
-          </h2>
-          <p class="mt-4 text-neutral-700 dark:text-neutral-300">
-            Todos los productos de nuestras marcas cuentan con <b>garantía extendida</b>. Para conocer mejor la cobertura
-            aplicable a un producto específico, consulta con nuestros asesores de ventas antes o después de tu compra.
-          </p>
-          <ul class="mt-4 flex flex-wrap gap-2" aria-label="Marcas con garantía extendida">
-            {
-              MARCAS_GARANTIA.map((m) => (
-                <li class="rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs font-bold tracking-wide text-neutral-800 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200">
-                  {m}
-                </li>
-              ))
-            }
-          </ul>
-        </div>
-
-        <div>
-          <h2 class="border-l-4 border-brand-blue pl-3 text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
-            Tiempo aplicable de garantía
-          </h2>
-          <p class="mt-4 text-neutral-700 dark:text-neutral-300">
-            Todo reclamo debe realizarse en un plazo máximo de <b>7 días calendario</b> desde la recepción del producto.
-            Posterior a ello, solo se aceptarán devoluciones o cambios por errores o fallas de fábrica que afecten la
-            calidad del producto, siempre y cuando el producto no se encuentre dañado o en mal estado.
-          </p>
-        </div>
-
-        <div>
-          <h2 class="border-l-4 border-brand-green pl-3 text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
-            ¿Qué hacer si un producto presenta un problema?
-          </h2>
-          <p class="mt-4 text-neutral-700 dark:text-neutral-300">
-            Es un proceso sencillo y transparente. Si consideras que un producto adquirido presenta una falla o
-            inconveniente, te recomendamos comunicarte con nuestro equipo de atención al cliente lo antes posible.
-          </p>
-          <ol class="mt-5 grid gap-3 sm:grid-cols-3">
-            {
-              PASOS.map((p, i) => (
-                <li class="rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
-                  <span class="flex h-7 w-7 items-center justify-center rounded-full bg-brand-blue/10 text-sm font-bold text-brand-blue-dark dark:text-brand-blue">
-                    {i + 1}
-                  </span>
-                  <p class="mt-2 font-semibold text-neutral-900 dark:text-white">{p.titulo}</p>
-                  <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{p.desc}</p>
-                </li>
-              ))
-            }
-          </ol>
-          <p class="mt-5 font-medium text-neutral-900 dark:text-white">Para iniciar una solicitud de garantía, podremos solicitar:</p>
-          <ul class="mt-2 space-y-1.5 text-neutral-700 dark:text-neutral-300">
-            {
-              REQUISITOS.map((r) => (
-                <li class="flex gap-2">
-                  <span class="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-brand-blue" aria-hidden="true" />
-                  {r}
-                </li>
-              ))
-            }
-          </ul>
-          <p class="mt-3 text-sm text-neutral-600 dark:text-neutral-400">
-            La presentación de esta información tiene como finalidad facilitar la identificación del producto y la
-            evaluación técnica del caso.
-          </p>
-        </div>
-
-        <div class="space-y-3">
-          <details class="group rounded-lg border border-neutral-200 p-4 dark:border-neutral-800" open>
-            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-neutral-900 [&::-webkit-details-marker]:hidden dark:text-white">
-              Evaluación del producto
-              <span class="text-brand-blue transition-transform duration-200 group-open:rotate-45" aria-hidden="true">+</span>
-            </summary>
-            <div class="mt-3 space-y-3 text-sm text-neutral-700 dark:text-neutral-300">
-              <p>
-                Recibida la solicitud, realizaremos una evaluación del producto para determinar la naturaleza del
-                inconveniente y verificar si corresponde a una falla cubierta por la garantía.
-              </p>
-              <p>
-                Cuando por las características del producto sea necesario realizar una revisión técnica, el producto podrá
-                ser solicitado para su inspección.
-              </p>
-              <p>
-                La evaluación permitirá determinar si el inconveniente corresponde, entre otros supuestos, a un defecto de
-                fabricación, funcionamiento o falta de conformidad respecto de las características ofrecidas, o si se
-                encuentra relacionado con factores externos al producto.
-              </p>
+  {/* ===== ¿Cómo funciona? ===== */}
+  <section class="mx-auto max-w-6xl px-4 py-16 sm:py-20">
+    <span class="block h-1 w-12 rounded-full bg-gradient-to-r from-brand-blue to-brand-green" aria-hidden="true"></span>
+    <h2 class="mt-3 text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white">¿Cómo funciona?</h2>
+    <p class="mt-2 text-neutral-600 dark:text-neutral-400">Es un proceso sencillo y transparente.</p>
+    <ol class="relative mt-10 grid gap-8 md:grid-cols-4 md:gap-6">
+      <span class="absolute left-[1.35rem] top-6 hidden h-0.5 w-[calc(100%-2.7rem)] bg-gradient-to-r from-brand-blue/40 via-brand-green/40 to-brand-blue/40 md:block" aria-hidden="true"></span>
+      {
+        PASOS.map((p, i) => (
+          <li data-reveal style={`transition-delay: ${i * 120}ms`} class="relative flex gap-4 md:block">
+            <span class={`relative z-10 flex h-11 w-11 flex-none items-center justify-center rounded-full text-sm font-extrabold text-white ring-4 ring-white dark:ring-neutral-950 ${i % 2 === 0 ? "bg-brand-blue" : "bg-brand-green-dark"}`}>
+              {String(i + 1).padStart(2, "0")}
+            </span>
+            <div class="md:mt-5">
+              <h3 class="font-bold text-neutral-900 dark:text-white">{p.titulo}</h3>
+              <p class="mt-1.5 text-sm text-neutral-600 dark:text-neutral-400">{p.desc}</p>
             </div>
-          </details>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
 
-          <details class="group rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
-            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-neutral-900 [&::-webkit-details-marker]:hidden dark:text-white">
-              Casos que no pueden estar cubiertos por la garantía comercial
-              <span class="text-brand-blue transition-transform duration-200 group-open:rotate-45" aria-hidden="true">+</span>
-            </summary>
-            <div class="mt-3 text-sm text-neutral-700 dark:text-neutral-300">
-              <p>
-                Sin perjuicio de los derechos reconocidos por la legislación vigente, la garantía comercial no comprende,
-                cuando corresponda y según la naturaleza de cada producto, los daños o fallas ocasionados por:
-              </p>
-              <ul class="mt-3 space-y-1.5">
-                {
-                  NO_CUBIERTOS.map((c) => (
-                    <li class="flex gap-2">
-                      <span class="mt-1.5 h-1.5 w-1.5 flex-none rounded-full bg-neutral-400" aria-hidden="true" />
-                      {c}
-                    </li>
-                  ))
-                }
-              </ul>
-              <p class="mt-3">
-                Estas condiciones no implican una renuncia a los derechos que correspondan al consumidor conforme a la
-                legislación vigente.
-              </p>
-            </div>
-          </details>
-
-          <details class="group rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
-            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-neutral-900 [&::-webkit-details-marker]:hidden dark:text-white">
-              Instalación de productos
-              <span class="text-brand-blue transition-transform duration-200 group-open:rotate-45" aria-hidden="true">+</span>
-            </summary>
-            <div class="mt-3 space-y-3 text-sm text-neutral-700 dark:text-neutral-300">
-              <p>
-                En aquellos productos que requieran instalación, recomendamos que esta sea realizada siguiendo las
-                instrucciones proporcionadas y, cuando corresponda, por personal con los conocimientos técnicos necesarios.
-              </p>
-              <p>
-                Cuando una falla sea consecuencia de una instalación incorrecta, modificación o manipulación ajena al
-                producto, dicha circunstancia podrá ser considerada durante la evaluación de la garantía comercial.
-              </p>
-              <p>
-                En productos cuya instalación pueda afectar otros componentes del vehículo, recomendamos verificar
-                previamente la compatibilidad, aplicación y procedimiento de instalación correspondientes.
-              </p>
-            </div>
-          </details>
-
-          <details class="group rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
-            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-neutral-900 [&::-webkit-details-marker]:hidden dark:text-white">
-              Resultados de la evaluación
-              <span class="text-brand-blue transition-transform duration-200 group-open:rotate-45" aria-hidden="true">+</span>
-            </summary>
-            <div class="mt-3 text-sm text-neutral-700 dark:text-neutral-300">
-              <p>
-                Una vez realizada la evaluación correspondiente, se comunicará al cliente el resultado y, cuando
-                corresponda, la alternativa de atención aplicable. Dependiendo de las circunstancias del caso, de la
-                naturaleza del producto y de la normativa aplicable, la solución podrá comprender, cuando corresponda:
-              </p>
-              <ul class="mt-3 space-y-1.5">
-                {
-                  SOLUCIONES.map((s) => (
-                    <li class="flex gap-2">
-                      <span class="mt-1.5 h-1.5 w-1.5 flex-none rounded-full bg-brand-green" aria-hidden="true" />
-                      {s}
-                    </li>
-                  ))
-                }
-              </ul>
-              <p class="mt-3">
-                La solución aplicable será determinada considerando las circunstancias particulares del caso y los derechos
-                reconocidos por la legislación peruana.
-              </p>
-            </div>
-          </details>
-
-          <details class="group rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
-            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-neutral-900 [&::-webkit-details-marker]:hidden dark:text-white">
-              Plazo de atención
-              <span class="text-brand-blue transition-transform duration-200 group-open:rotate-45" aria-hidden="true">+</span>
-            </summary>
-            <div class="mt-3 space-y-3 text-sm text-neutral-700 dark:text-neutral-300">
-              <p>
-                El tiempo necesario para evaluar y solucionar una solicitud de garantía dependerá de la naturaleza del
-                producto, la complejidad de la falla y, cuando corresponda, la disponibilidad de repuestos o la necesidad
-                de realizar una evaluación técnica especializada.
-              </p>
-              <p>
-                Nuestro objetivo es mantener informado al cliente durante el proceso y brindar una respuesta clara respecto
-                del estado de su solicitud.
-              </p>
-              <p>
-                Los plazos establecidos para la atención de reclamos mediante el Libro de Reclamaciones se rigen por la
-                normativa vigente y son independientes del proceso técnico de evaluación de una garantía.
-              </p>
-            </div>
-          </details>
-
-          <details class="group rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
-            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-neutral-900 [&::-webkit-details-marker]:hidden dark:text-white">
-              Garantía y derechos del consumidor
-              <span class="text-brand-blue transition-transform duration-200 group-open:rotate-45" aria-hidden="true">+</span>
-            </summary>
-            <div class="mt-3 space-y-3 text-sm text-neutral-700 dark:text-neutral-300">
-              <p>
-                La existencia de una garantía comercial no limita ni sustituye los derechos que reconoce la legislación
-                peruana de protección al consumidor.
-              </p>
-              <p>
-                De acuerdo con la Ley N.º 29571, Código de Protección y Defensa del Consumidor, las garantías pueden ser
-                legales, explícitas o implícitas. Las garantías legales son de obligatorio cumplimiento y no pueden ser
-                desplazadas por una garantía comercial. Asimismo, las condiciones expresamente ofrecidas por nosotros
-                forman parte de la garantía explícita del producto.
-              </p>
-              <p>
-                En determinados supuestos previstos por la legislación, el consumidor puede tener derecho a la reparación,
-                reposición o devolución de la contraprestación pagada, entre otras medidas que correspondan según el caso.
-              </p>
-            </div>
-          </details>
-
-          <details class="group rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
-            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-neutral-900 [&::-webkit-details-marker]:hidden dark:text-white">
-              Libro de Reclamaciones
-              <span class="text-brand-blue transition-transform duration-200 group-open:rotate-45" aria-hidden="true">+</span>
-            </summary>
-            <div class="mt-3 space-y-3 text-sm text-neutral-700 dark:text-neutral-300">
-              <p>
-                Si consideras que existe una disconformidad relacionada con el producto o servicio adquirido, puedes
-                presentar un reclamo a través de nuestro
-                <a href="/libro-de-reclamaciones" class="font-semibold text-brand-blue-dark underline dark:text-brand-blue">Libro de Reclamaciones</a>,
-                disponible en nuestro establecimiento y en esta web.
-              </p>
-              <p>
-                Los reclamos y quejas registrados en el Libro de Reclamaciones deben ser atendidos y respondidos por escrito
-                dentro del plazo máximo establecido por la normativa vigente, actualmente de quince (15) días hábiles no
-                prorrogables. La presentación de un reclamo no está condicionada a ningún pago.
-              </p>
-            </div>
-          </details>
-        </div>
-
-        <div class="rounded-lg bg-neutral-50 p-6 dark:bg-neutral-900">
-          <h2 class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">Nuestro compromiso</h2>
-          <p class="mt-3 text-neutral-700 dark:text-neutral-300">
-            En SKY GROUP buscamos que cada solicitud sea atendida de manera objetiva, transparente y respetuosa, procurando
-            brindar una solución adecuada de acuerdo con la naturaleza del producto, las condiciones ofrecidas y la
-            normativa vigente. Nuestro objetivo es mantener una relación de confianza con nuestros clientes antes, durante
-            y después de la compra.
-          </p>
-          <p class="mt-3 text-sm text-neutral-600 dark:text-neutral-400">
-            Para consultar las condiciones específicas de garantía, el plazo, la cobertura y las condiciones aplicables a un
-            producto determinado, comunícate con tu asesor de ventas autorizado o con nuestro equipo de atención al cliente.
-          </p>
-        </div>
+  {/* ===== Cuándo aplica / cuándo no ===== */}
+  <section class="mx-auto grid max-w-6xl gap-6 px-4 lg:grid-cols-2">
+    <div data-reveal class="rounded-2xl border border-brand-green/30 bg-brand-green/5 p-6 sm:p-8 dark:bg-brand-green/10">
+      <div class="flex items-center gap-3">
+        <span class="flex h-11 w-11 items-center justify-center rounded-full bg-brand-green-dark text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>
+        </span>
+        <h2 class="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-white">¿Qué cubre la garantía?</h2>
       </div>
+      <p class="mt-4 text-sm text-neutral-700 dark:text-neutral-300">
+        Productos que presenten, según su naturaleza y las condiciones de la garantía aplicable:
+      </p>
+      <ul class="mt-4 space-y-3">
+        {
+          CUBRE.map((c) => (
+            <li class="flex gap-3 text-sm text-neutral-800 dark:text-neutral-200">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="mt-0.5 h-5 w-5 flex-none text-brand-green-dark dark:text-brand-green" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 14.2-4-4 1.4-1.4 2.6 2.6 5.6-5.6 1.4 1.4Z" /></svg>
+              {c}
+            </li>
+          ))
+        }
+      </ul>
+      <p class="mt-6 rounded-lg border border-brand-green/30 bg-white/70 px-4 py-3 text-xs text-neutral-700 dark:bg-neutral-900/60 dark:text-neutral-300">
+        La garantía comercial aplica durante el plazo y bajo las condiciones informadas para cada producto (comprobante, certificado,
+        empaque, ficha técnica, publicidad o esta web), sin perjuicio de tus derechos según la legislación peruana.
+      </p>
+    </div>
 
-      <aside class="lg:sticky lg:top-40 lg:self-start">
-        <div class="rounded-lg border-t-4 border-t-brand-blue border-x border-b border-neutral-200 p-5 dark:border-x-neutral-800 dark:border-b-neutral-800">
-          <p class="text-sm font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Plazo para reclamar</p>
-          <p class="mt-1 text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-white">7 días</p>
-          <p class="text-sm text-neutral-600 dark:text-neutral-400">calendario desde la recepción del producto.</p>
-          <a
-            href="#solicitar"
-            class="mt-4 flex w-full items-center justify-center rounded-md bg-brand-blue px-4 py-2.5 text-sm font-semibold text-white transition-transform hover:scale-105 active:scale-95"
-          >
-            Solicitar garantía
-          </a>
-          <p class="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
-            Atención de garantías por WhatsApp: <span class="font-semibold text-neutral-800 dark:text-neutral-200">{NEGOCIO.telefono}</span>
-          </p>
-        </div>
-      </aside>
+    <div data-reveal style="transition-delay: 120ms" class="rounded-2xl border border-neutral-200 bg-neutral-50 p-6 sm:p-8 dark:border-neutral-800 dark:bg-neutral-900">
+      <div class="flex items-center gap-3">
+        <span class="flex h-11 w-11 items-center justify-center rounded-full bg-neutral-700 text-white dark:bg-neutral-600">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="h-6 w-6" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+        </span>
+        <h2 class="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-white">¿Cuándo no aplica?</h2>
+      </div>
+      <p class="mt-4 text-sm text-neutral-700 dark:text-neutral-300">La garantía comercial no comprende daños o fallas ocasionados por:</p>
+      <ul class="mt-4 grid gap-2.5">
+        {
+          NO_CUBRE.map((c) => (
+            <li class="flex gap-3 text-sm text-neutral-700 dark:text-neutral-300">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="mt-0.5 h-5 w-5 flex-none text-neutral-400" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="m9 9 6 6M15 9l-6 6" /></svg>
+              {c}
+            </li>
+          ))
+        }
+      </ul>
+      <p class="mt-5 text-xs text-neutral-500 dark:text-neutral-400">Estas condiciones no implican una renuncia a los derechos que correspondan al consumidor conforme a la legislación vigente.</p>
     </div>
   </section>
 
+  {/* ===== Garantías específicas + qué información necesitamos ===== */}
+  <section class="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:py-20 lg:grid-cols-2">
+    <div>
+      <span class="block h-1 w-12 rounded-full bg-gradient-to-r from-brand-blue to-brand-green" aria-hidden="true"></span>
+      <h2 class="mt-3 text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-white">Garantías específicas</h2>
+      <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+        Todos los productos de nuestras marcas cuentan con <b class="text-neutral-900 dark:text-white">garantía extendida</b>. Para conocer la
+        cobertura de un producto específico, consulta con nuestros asesores antes o después de tu compra.
+      </p>
+      <ul class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {
+          MARCAS_GARANTIA.map((m, i) => (
+            <li data-reveal style={`transition-delay: ${i * 70}ms`} class="flex flex-col items-center gap-2 rounded-xl border border-neutral-200 bg-white p-4 text-center transition-shadow hover:shadow-md dark:border-neutral-800">
+              <img src={m.logo} alt={m.nombre} loading="lazy" class="h-10 w-full object-contain" />
+              <span class="text-[11px] font-bold leading-tight tracking-wide text-neutral-600">{m.nombre}</span>
+              <span class="rounded-full bg-brand-green/15 px-2 py-0.5 text-[11px] font-semibold text-brand-green-dark">Garantía extendida</span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+    <div>
+      <span class="block h-1 w-12 rounded-full bg-gradient-to-r from-brand-blue to-brand-green" aria-hidden="true"></span>
+      <h2 class="mt-3 text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-white">¿Qué información necesitamos?</h2>
+      <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400">Así podemos ayudarte más rápido. Para iniciar una solicitud podremos pedirte:</p>
+      <ul class="mt-6 grid gap-3 sm:grid-cols-2">
+        {
+          INFO.map((d, i) => (
+            <li data-reveal style={`transition-delay: ${i * 70}ms`} class="flex items-start gap-3 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
+              <span class="flex h-9 w-9 flex-none items-center justify-center rounded-lg bg-brand-blue/10 text-brand-blue-dark dark:text-brand-blue">
+                {d.icono === "documento" && <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><path d="M14 3v6h6M8 13h8M8 17h5" /></svg>}
+                {d.icono === "etiqueta" && <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z" /><circle cx="7.5" cy="7.5" r="1.5" /></svg>}
+                {d.icono === "chat" && <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z" /></svg>}
+                {d.icono === "camara" && <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>}
+                {d.icono === "llave" && <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4Z" /></svg>}
+              </span>
+              <span class="text-sm text-neutral-700 dark:text-neutral-300">{d.texto}</span>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="mt-6 text-sm font-semibold text-neutral-900 dark:text-white">Según el resultado de la evaluación, la solución puede ser:</p>
+      <ul class="mt-3 flex flex-wrap gap-2">
+        {SOLUCIONES.map((s) => <li class="rounded-full border border-brand-blue/30 bg-brand-blue/5 px-3 py-1 text-xs font-medium text-brand-blue-dark dark:text-brand-blue">{s}</li>)}
+      </ul>
+    </div>
+  </section>
+
+  {/* ===== Detalle legal (acordeones) ===== */}
+  <section class="mx-auto max-w-4xl px-4 pb-16">
+    <h2 class="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-white">Condiciones en detalle</h2>
+    <div class="mt-5 divide-y divide-neutral-200 overflow-hidden rounded-xl border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
+      {
+        DETALLE.map((d) => (
+          <details class="group bg-white open:bg-neutral-50 dark:bg-neutral-950 dark:open:bg-neutral-900">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 font-semibold text-neutral-900 [&::-webkit-details-marker]:hidden dark:text-white">
+              {d.titulo}
+              <span class="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-brand-blue/10 text-brand-blue-dark transition-transform duration-200 group-open:rotate-45 dark:text-brand-blue" aria-hidden="true">+</span>
+            </summary>
+            <div class="space-y-3 px-5 pb-5 text-sm text-neutral-700 dark:text-neutral-300">
+              {d.parrafos.map((t) => <p>{t}</p>)}
+              {d.enlace && <a href={d.enlace.href} class="inline-block font-semibold text-brand-blue-dark underline dark:text-brand-blue">{d.enlace.texto}</a>}
+            </div>
+          </details>
+        ))
+      }
+    </div>
+    <div class="mt-8 rounded-xl border-l-4 border-brand-blue bg-neutral-50 p-5 dark:bg-neutral-900">
+      <p class="font-bold text-neutral-900 dark:text-white">Nuestro compromiso</p>
+      <p class="mt-2 text-sm text-neutral-700 dark:text-neutral-300">
+        En SKY GROUP buscamos que cada solicitud sea atendida de manera objetiva, transparente y respetuosa, procurando brindar una
+        solución adecuada de acuerdo con la naturaleza del producto, las condiciones ofrecidas y la normativa vigente. Nuestro objetivo
+        es mantener una relación de confianza con nuestros clientes antes, durante y después de la compra.
+      </p>
+    </div>
+  </section>
+
+  {/* ===== Formulario ===== */}
   <section id="solicitar" class="scroll-mt-40 border-t border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900/50">
-    <div class="mx-auto max-w-3xl px-4 py-12 sm:py-16">
-      <h2 class="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">Solicitar garantía</h2>
+    <div class="mx-auto max-w-3xl px-4 py-14 sm:py-16">
+      <span class="block h-1 w-12 rounded-full bg-gradient-to-r from-brand-blue to-brand-green" aria-hidden="true"></span>
+      <h2 class="mt-3 text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white">Solicitar garantía</h2>
       <p class="mt-2 text-neutral-700 dark:text-neutral-300">
         Completa el formulario y se abrirá WhatsApp con tu solicitud lista para enviar a nuestro equipo de garantías.
       </p>
-      <div class="mt-6 rounded-lg border border-neutral-200 bg-white p-5 sm:p-6 dark:border-neutral-800 dark:bg-neutral-900">
+      <div class="mt-6 rounded-xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6 dark:border-neutral-800 dark:bg-neutral-900">
         <FormularioGarantia client:load numeroWhatsapp={NEGOCIO.whatsappNumero} />
       </div>
     </div>
+  </section>
+
+  {/* ===== Franja final de contacto ===== */}
+  <section class="relative isolate overflow-hidden bg-neutral-950 text-white">
+    <div class="absolute inset-0 -z-10 bg-gradient-to-r from-brand-blue-dark/40 via-neutral-950 to-brand-green-dark/30" aria-hidden="true"></div>
+    <div class="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-12 md:flex-row md:items-center md:justify-between">
+      <div class="flex items-start gap-4">
+        <span class="flex h-12 w-12 flex-none items-center justify-center rounded-full border border-brand-blue/50 text-brand-blue">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6" aria-hidden="true"><path d="M3 14v-2a9 9 0 0 1 18 0v2" /><path d="M21 15a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2zM3 15a2 2 0 0 0 2 2h1v-6H5a2 2 0 0 0-2 2zM18 17v1a3 3 0 0 1-3 3h-3" /></svg>
+        </span>
+        <div>
+          <p class="text-xl font-extrabold tracking-tight">¿Tienes un inconveniente con tu producto?</p>
+          <p class="mt-1 text-sm text-white/75">No dudes en comunicarte con nosotros. Estamos para ayudarte.</p>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-3">
+        <a href={WHATSAPP} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-2.5 text-sm font-bold uppercase tracking-wide text-white transition-transform hover:scale-105 active:scale-95">
+          Consultar por WhatsApp
+        </a>
+        <a href="/contacto" class="inline-flex items-center gap-2 rounded-full border border-white/50 px-5 py-2.5 text-sm font-bold uppercase tracking-wide text-white transition-colors hover:bg-white/10">
+          Contactar a SKY Group
+        </a>
+      </div>
+    </div>
+    <p class="mx-auto max-w-6xl border-t border-white/10 px-4 py-4 text-xs text-white/60">
+      Las condiciones de garantía pueden variar según el producto, marca y naturaleza de la compra. La cobertura aplicable será
+      determinada de acuerdo con las condiciones correspondientes y la evaluación del caso.
+    </p>
   </section>
 </Layout>
