@@ -75,7 +75,7 @@ export default function AuthButton() {
       <button
         type="button"
         onClick={iniciarSesion}
-        class="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-white/90 sm:text-base transition-colors duration-200 hover:bg-white/15 hover:text-white"
+        class="flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-white/90 sm:px-3 sm:text-base transition-colors duration-200 hover:bg-white/15 hover:text-white"
       >
         <IconUser class="h-6 w-6" />
         <span class="hidden sm:inline">Iniciar sesión</span>

@@ -76,19 +76,23 @@ export default function BotonConoceMas({ enlace, nombre }: Props) {
             transition={{ duration: DURATION.base }}
           >
             <motion.div
-              class={`flex max-h-full w-full flex-col overflow-hidden rounded-lg bg-white shadow-xl dark:bg-neutral-900 ${
-                video.vertical ? "" : "max-w-3xl"
-              }`}
-              // Vertical (TikTok): el ancho sale del alto disponible para que
-              // el video 9:16 entre completo sin bandas negras en pantallas
-              // bajas (8rem = barra del título + "Ver en TikTok" + márgenes).
-              style={video.vertical ? { maxWidth: "min(360px, calc((100dvh - 8rem) * 9 / 16))" } : undefined}
+              class="flex w-full flex-col overflow-hidden rounded-lg bg-white shadow-xl dark:bg-neutral-900"
+              // El ancho sale del alto disponible para que la ventana completa
+              // (título + video + botón) entre siempre en la pantalla, sea un
+              // celular, una laptop baja o un monitor grande, y con cualquier
+              // zoom del navegador. 8rem = márgenes (2rem) + barra del título
+              // (3rem) + barra inferior (3rem), ambas de alto fijo.
+              style={{
+                maxWidth: video.vertical
+                  ? "min(400px, calc((100dvh - 8rem) * 9 / 16), calc(100vw - 2rem))"
+                  : "min(56rem, calc((100dvh - 8rem) * 16 / 9), calc(100vw - 2rem))",
+              }}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: DURATION.base, ease: EASE_BRAND }}
             >
-              <div class="flex items-center justify-between gap-3 border-b border-neutral-200 px-4 py-2.5 dark:border-neutral-800">
+              <div class="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-neutral-200 pl-4 pr-2 dark:border-neutral-800">
                 <p class="min-w-0 truncate text-sm font-semibold text-neutral-900 dark:text-white">{nombre}</p>
                 <button
                   ref={cerrarRef}
@@ -114,13 +118,13 @@ export default function BotonConoceMas({ enlace, nombre }: Props) {
               {/* Respaldo visible: el reproductor insertado depende de TikTok y a
               veces no carga (red, región o bloqueadores); este botón siempre
               lleva al video en la app o la web de la plataforma. */}
-              <div class="flex items-center justify-between gap-3 px-4 py-2.5">
-                <p class="text-xs text-neutral-500 dark:text-neutral-400">¿No se reproduce?</p>
+              <div class="flex h-12 shrink-0 items-center justify-between gap-2 px-3">
+                <p class="min-w-0 truncate text-xs text-neutral-500 dark:text-neutral-400">¿No carga?</p>
                 <a
                   href={enlace}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="inline-flex items-center gap-1.5 rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-semibold text-white transition-transform hover:scale-105 active:scale-95 dark:bg-white dark:text-neutral-900"
+                  class="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-semibold text-white transition-transform hover:scale-105 active:scale-95 dark:bg-white dark:text-neutral-900"
                 >
                   Ver en {video.plataforma}
                 </a>

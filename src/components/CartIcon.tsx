@@ -26,7 +26,7 @@ export default function CartIcon() {
   return (
     <a
       href="/carrito"
-      class="relative inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-white/90 sm:text-base transition-colors duration-200 hover:bg-white/15 hover:text-white"
+      class="relative inline-flex items-center gap-2 rounded-md px-2 py-2 sm:px-3 text-sm font-medium text-white/90 sm:text-base transition-colors duration-200 hover:bg-white/15 hover:text-white"
       aria-label={`Carrito de compras, ${count} productos`}
     >
       <IconCart class="h-6 w-6" />
