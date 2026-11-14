@@ -9,14 +9,15 @@ import sitemap from '@astrojs/sitemap';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://sky.com.pe',
+  site: 'https://www.sky.com.pe',
   integrations: [
     preact(),
     sitemap({
       // Las URLs de categorías anteriores solo redirigen a la nueva
       // (src/data/redirecciones-categorias.ts): no se indexan.
       filter: (page) =>
-        !/\/catalogo\/(4x4-off-road|electronica-y-tecnologia-vehicular|auxilio-vehicular|remolque|seguros|molduras-y-protectores|mantenimiento-y-herramientas|accesorios-tuning-y-decoracion|para-trabajo-y-negocio)\/?$/.test(page),
+        !/\/catalogo\/(4x4-off-road|electronica-y-tecnologia-vehicular|auxilio-vehicular|remolque|seguros|molduras-y-protectores|mantenimiento-y-herramientas|accesorios-tuning-y-decoracion|para-trabajo-y-negocio)\/?$/.test(page) &&
+        !/\/admin(\/|$)/.test(page),
     }),
     AstroPWA({
       registerType: 'autoUpdate',
