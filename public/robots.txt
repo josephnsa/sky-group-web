@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://tu-dominio.pe/sitemap-index.xml
+Sitemap: https://www.sky.com.pe/sitemap-index.xml

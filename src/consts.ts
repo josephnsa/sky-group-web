@@ -10,7 +10,7 @@ export const SITE = {
   // antes de tener esta información real).
   descripcion:
     "Líderes en innovación, importación y comercialización de accesorios y equipamiento vehicular.",
-  url: "https://sky.com.pe",
+  url: "https://www.sky.com.pe",
 };
 
 export const NEGOCIO = {
