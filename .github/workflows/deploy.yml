@@ -6,9 +6,10 @@ on:
   workflow_dispatch:
   # Publicación automática de lo que se cambia en el panel de administración:
   # cada 15 minutos se compara la huella de los datos de Supabase con la de la
-  # web publicada y, solo si cambió algo, se vuelve a publicar.
+  # web publicada y, solo si cambió algo, se vuelve a publicar. Minutos poco
+  # concurridos: GitHub retrasa o salta las tareas de los minutos :00/:15/:30/:45.
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "7,22,37,52 * * * *"
 
 permissions:
   contents: read
