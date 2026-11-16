@@ -90,6 +90,18 @@ async function cargarDatos() {
   if (errorProductos) console.error("Error cargando productos desde Supabase:", errorProductos.message);
   if (errorCarrusel) console.error("Error cargando carrusel desde Supabase:", errorCarrusel.message);
 
+  // Al PUBLICAR (GitHub Actions) sí se detiene: si Supabase está caído o
+  // pausado, publicar dejaría la web sin productos. Fallando aquí, la
+  // publicación se cancela y sigue en línea la versión anterior.
+  if (
+    process.env.GITHUB_ACTIONS &&
+    (errorCategorias || errorProductos || !filasCategorias?.length || !filasProductos?.length)
+  ) {
+    throw new Error(
+      "Supabase no respondió con categorías y productos: se cancela la publicación para no dejar la web vacía.",
+    );
+  }
+
   const categorias = (filasCategorias ?? []) as CategoriaFila[];
   const nombrePorSlug = new Map(categorias.map((c) => [c.slug, c.nombre] as const));
 
