@@ -1,6 +1,7 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import { configuracionSitio as c } from "../data/configuracion";
+import { TEXTO_MAYORISTA_DEFECTO, VIDEO_MAYORISTA_DEFECTO, VIDEO_TIENDA_DEFECTO } from "../data/textos-defecto";
 import { youtubeEmbedUrl } from "../lib/youtube";
 
 // Números específicos de esta página (distintos al WhatsApp general del
@@ -14,12 +15,11 @@ function linkWhatsapp(numero: string, mensaje: string) {
 
 const linkTienda = linkWhatsapp(NUMERO_TIENDA, "Hola, quisiera hacer una consulta.");
 
-const TEXTO_MAYORISTA_DEFECTO =
-  "También atendemos pedidos al por mayor para negocios y distribuidores. Escríbenos por WhatsApp para coordinar precios y condiciones según el volumen que necesites.";
+
 const textoMayorista = c.atencionMayoristaTexto || TEXTO_MAYORISTA_DEFECTO;
 
-const VIDEO_TIENDA_DEFECTO = "https://www.youtube.com/watch?v=V9vEBGVuvmc";
-const VIDEO_MAYORISTA_DEFECTO = "https://www.youtube.com/watch?v=D9HPNanT_iU";
+
+
 const embedTienda = youtubeEmbedUrl(c.atencionTiendaYoutube || VIDEO_TIENDA_DEFECTO);
 const embedMayorista = youtubeEmbedUrl(c.atencionMayoristaYoutube || VIDEO_MAYORISTA_DEFECTO);
 ---
