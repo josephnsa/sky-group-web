@@ -1,6 +1,7 @@
 import { useEffect, useState } from "preact/hooks";
 import AdminGate from "./AdminGate";
 import { configuracionAdmin, subirImagen, type ConfiguracionSitio } from "../../lib/supabase-admin";
+import { SelectorArchivo } from "./ui";
 
 const VACIO = {
   telefono: "",
@@ -181,7 +182,7 @@ function Panel() {
   return (
     <form onSubmit={guardar} class="max-w-2xl space-y-6">
       <p class="text-sm text-neutral-600 dark:text-neutral-400">
-        Estos datos aparecen en el pie de página (footer) de todo el sitio. Un cambio acá
+        Estos datos aparecen en el pie de página (footer) de todo el sitio. Un cambio aquí
         requiere volver a publicar el sitio para que se vea en vivo, igual que con
         productos y categorías.
       </p>
@@ -226,7 +227,7 @@ function Panel() {
             </div>
             {valores.length === 0 && (
               <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                Sin editar todavía — el sitio muestra los 5 valores actuales por defecto. Agregá uno para empezar a personalizarlos.
+                Sin editar todavía — el sitio muestra los 5 valores actuales por defecto. Agrega uno para empezar a personalizarlos.
               </p>
             )}
             <div class="mt-2 space-y-3">
@@ -242,11 +243,18 @@ function Panel() {
                     ) : (
                       <div class="h-16 w-16 rounded-md bg-neutral-200 dark:bg-neutral-800" />
                     )}
+                    <label
+                      for={`imagen-valor-${i}`}
+                      class="mt-1 block w-16 cursor-pointer rounded bg-brand-blue py-1 text-center text-[11px] font-semibold text-white hover:bg-brand-blue-dark"
+                    >
+                      Cambiar
+                    </label>
                     <input
+                      id={`imagen-valor-${i}`}
                       type="file"
                       accept="image/*"
                       onChange={(e) => actualizarValor(i, { archivo: (e.target as HTMLInputElement).files?.[0] ?? null })}
-                      class="mt-1 w-16 text-xs text-neutral-500"
+                      class="sr-only"
                     />
                   </div>
                   <div class="min-w-0 flex-1 space-y-1.5">
@@ -294,7 +302,7 @@ function Panel() {
 
       <div>
         <p class="text-sm font-semibold text-neutral-900 dark:text-white">Página "Atención por WhatsApp"</p>
-        <p class="text-xs text-neutral-500 dark:text-neutral-400">Enlaces de YouTube (pegá la URL normal, ej. https://www.youtube.com/watch?v=...) y texto de atención al por mayor.</p>
+        <p class="text-xs text-neutral-500 dark:text-neutral-400">Enlaces de YouTube (pega la URL normal, ej. https://www.youtube.com/watch?v=...) y texto de atención al por mayor.</p>
         <div class="mt-2 space-y-3">
           <CampoTexto label="Video: Atención en tienda" value={form.atencion_tienda_youtube} onInput={(v) => campo("atencion_tienda_youtube", v)} />
           <CampoTexto label="Video: Atención al por mayor" value={form.atencion_mayorista_youtube} onInput={(v) => campo("atencion_mayorista_youtube", v)} />
@@ -306,15 +314,16 @@ function Panel() {
       <div class="grid gap-6 sm:grid-cols-2">
         <div>
           <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300" htmlFor="logo-footer">
-            Logo del footer (opcional — dejá vacío para mantener el actual)
+            Logo del footer (opcional)
           </label>
-          {logoActual && <img src={logoActual} alt="" class="mt-2 h-9 w-auto rounded bg-neutral-900 p-1" />}
-          <input
+          <SelectorArchivo
             id="logo-footer"
-            type="file"
             accept="image/*"
-            onChange={(e) => setArchivoLogo((e.target as HTMLInputElement).files?.[0] ?? null)}
-            class="mt-2 block w-full text-sm text-neutral-700 dark:text-neutral-300"
+            tipo="imagen"
+            archivo={archivoLogo}
+            onElegir={setArchivoLogo}
+            actual={logoActual}
+            clasePrevia="h-12 w-auto max-w-[10rem] bg-neutral-900 object-contain p-1"
           />
           <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
             Recomendado: PNG con fondo transparente, versión blanca del logo (el footer es oscuro).
@@ -323,15 +332,16 @@ function Panel() {
 
         <div>
           <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300" htmlFor="fachada-footer">
-            Foto de fachada (opcional — dejá vacío para mantener la actual)
+            Foto de fachada (opcional)
           </label>
-          {fachadaActual && <img src={fachadaActual} alt="" class="mt-2 h-16 w-full rounded object-cover" />}
-          <input
+          <SelectorArchivo
             id="fachada-footer"
-            type="file"
             accept="image/*"
-            onChange={(e) => setArchivoFachada((e.target as HTMLInputElement).files?.[0] ?? null)}
-            class="mt-2 block w-full text-sm text-neutral-700 dark:text-neutral-300"
+            tipo="imagen"
+            archivo={archivoFachada}
+            onElegir={setArchivoFachada}
+            actual={fachadaActual}
+            clasePrevia="h-16 w-40 object-cover"
           />
           <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
             Recomendado: horizontal (~3:1), buena luz — se muestra recortada como banda.

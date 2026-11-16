@@ -5,6 +5,7 @@ import {
   subirImagen,
   type CarouselSlideAdmin,
 } from "../../lib/supabase-admin";
+import { SelectorArchivo, useAvisoBreve, useConfirmar } from "./ui";
 
 export default function AdminCarrusel() {
   return (
@@ -26,6 +27,8 @@ function Panel() {
   // id !== null mientras se edita una diapositiva existente en vez de crear
   // una nueva — mismo patrón ya usado en Productos y Categorías.
   const [editando, setEditando] = useState<CarouselSlideAdmin | null>(null);
+  const { confirmar, dialogo } = useConfirmar();
+  const { avisar, aviso } = useAvisoBreve();
 
   async function cargar() {
     setCargando(true);
@@ -59,7 +62,10 @@ function Panel() {
 
   async function guardar(e: Event) {
     e.preventDefault();
-    if (!editando && !archivo) return;
+    if (!editando && !archivo) {
+      setError("Elige una imagen para agregar.");
+      return;
+    }
     setGuardando(true);
     setError(null);
     try {
@@ -79,8 +85,10 @@ function Panel() {
           activo: true,
         });
       }
+      const eraEdicion = Boolean(editando);
       cancelarEdicion();
       await cargar();
+      avisar(eraEdicion ? "Imagen del carrusel actualizada" : "Imagen agregada al carrusel");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al guardar.");
     } finally {
@@ -109,9 +117,10 @@ function Panel() {
   }
 
   async function borrar(slide: CarouselSlideAdmin) {
-    if (!confirm("¿Borrar esta imagen del carrusel?")) return;
+    if (!(await confirmar("Borrar imagen del carrusel", "La imagen deja de mostrarse en la página de inicio. Esto no se puede deshacer; si solo quieres ocultarla, usa \"Activa\" para desactivarla."))) return;
     await carruselAdmin.borrar(slide.id);
     await cargar();
+    avisar("Imagen borrada del carrusel");
   }
 
   const slidesOrdenados = [...slides].sort((a, b) => a.orden - b.orden);
@@ -130,29 +139,19 @@ function Panel() {
           )}
         </div>
 
-        {/* Vista previa: la imagen ya elegida (si acabás de seleccionar un
-        archivo nuevo) o la que ya tiene guardada esta diapositiva (si estás
-        editando) — para que quede clarísimo qué se va a subir/reemplazar,
-        todo dentro del mismo formulario, sin ningún campo de URL. */}
-        {(previa || editando?.imagen_url) && (
-          <img
-            src={previa ?? editando!.imagen_url}
-            alt=""
-            class="h-32 w-full rounded-md border border-neutral-200 object-cover dark:border-neutral-800"
-          />
-        )}
-
         <div>
           <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300" htmlFor="imagen-carrusel">
-            {editando ? "Subir una imagen nueva (opcional)" : "Imagen"}
+            Imagen
           </label>
-          <input
+          <SelectorArchivo
             id="imagen-carrusel"
-            type="file"
             accept="image/*"
-            required={!editando}
-            onChange={(e) => elegirArchivo((e.target as HTMLInputElement).files?.[0] ?? null)}
-            class="mt-1 block w-full text-sm text-neutral-700 dark:text-neutral-300"
+            tipo="imagen"
+            archivo={archivo}
+            onElegir={elegirArchivo}
+            actual={editando?.imagen_url}
+            requerido={!editando}
+            clasePrevia="h-24 w-full max-w-xs object-cover"
           />
           <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
             Recomendado: 2400×900px o similar, panorámica (aprox. 2.6:1 de ancho a alto) —
@@ -174,10 +173,10 @@ function Panel() {
             class="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
           />
           <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-            Si completás esto, aparece un botón "Ver todo" sobre la imagen que lleva a esa
-            página al hacer clic — por ejemplo, subí una foto de Iluminación y poné
+            Si completas esto, aparece un botón "Ver todo" sobre la imagen que lleva a esa
+            página al hacer clic — por ejemplo, sube una foto de Iluminación y pon
             <code class="mx-1 rounded bg-neutral-100 px-1 dark:bg-neutral-800">/catalogo/iluminacion</code>
-            para que el botón lleve directo a esa categoría. Dejalo vacío para que la imagen
+            para que el botón lleve directo a esa categoría. Déjalo vacío para que la imagen
             se muestre sola, sin ningún botón encima.
           </p>
         </div>
@@ -197,7 +196,7 @@ function Panel() {
         <h2 class="mb-1 font-semibold text-neutral-900 dark:text-white">Imágenes actuales</h2>
         <p class="mb-3 text-sm text-neutral-500 dark:text-neutral-400">
           El número redondo indica el orden — la <strong>1</strong> es la primera que se ve al
-          cargar la página. Usá ▲▼ para reordenar.
+          cargar la página. Usa ▲▼ para reordenar.
         </p>
         {cargando ? (
           <p class="text-sm text-neutral-500">Cargando...</p>
@@ -277,6 +276,8 @@ function Panel() {
           </ul>
         )}
       </div>
+      {dialogo}
+      {aviso}
     </div>
   );
 }

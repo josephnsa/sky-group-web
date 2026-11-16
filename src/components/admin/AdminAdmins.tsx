@@ -1,6 +1,7 @@
 import { useEffect, useState } from "preact/hooks";
 import AdminGate from "./AdminGate";
 import { adminsGestion, correoActual, type AdminUsuario } from "../../lib/supabase-admin";
+import { useAvisoBreve, useConfirmar } from "./ui";
 
 export default function AdminAdmins() {
   return (
@@ -21,6 +22,8 @@ function Panel() {
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [email, setEmail] = useState("");
+  const { confirmar, dialogo } = useConfirmar();
+  const { avisar, aviso } = useAvisoBreve();
 
   async function cargar() {
     setCargando(true);
@@ -43,6 +46,7 @@ function Panel() {
       await adminsGestion.agregar(email);
       setEmail("");
       await cargar();
+      avisar(`${email} ya puede entrar al panel`);
     } catch (err) {
       // El correo ya podría estar en la lista (columna `email` es única).
       setError(err instanceof Error ? err.message : "Error al agregar.");
@@ -52,12 +56,13 @@ function Panel() {
   }
 
   async function quitar(admin: AdminUsuario) {
-    if (!confirm(`¿Quitar a ${admin.email} del rol de administrador?`)) return;
+    if (!(await confirmar(`Quitar a ${admin.email}`, "Esta persona ya no podrá entrar al panel de administración.", "Quitar"))) return;
     try {
       await adminsGestion.quitar(admin.id);
       await cargar();
+      avisar(`${admin.email} ya no es administrador`);
     } catch {
-      alert("No se pudo quitar.");
+      avisar("No se pudo quitar. Inténtalo de nuevo.", true);
     }
   }
 
@@ -132,6 +137,8 @@ function Panel() {
           </ul>
         )}
       </div>
+      {dialogo}
+      {aviso}
     </div>
   );
 }

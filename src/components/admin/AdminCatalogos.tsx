@@ -2,6 +2,7 @@ import { useEffect, useState } from "preact/hooks";
 import AdminGate from "./AdminGate";
 import { catalogosAdmin, subirImagen, type CatalogoAdmin } from "../../lib/supabase-admin";
 import { generarMiniaturaPdf } from "../../lib/pdf-thumbnail";
+import { Paginacion, SelectorArchivo, useAvisoBreve, useConfirmar, usePaginacion } from "./ui";
 
 export default function AdminCatalogos() {
   return (
@@ -23,6 +24,9 @@ function Panel() {
   const [archivoPdf, setArchivoPdf] = useState<File | null>(null);
   const [previaMiniatura, setPreviaMiniatura] = useState<string | null>(null);
   const [editandoId, setEditandoId] = useState<string | null>(null);
+  const { confirmar, dialogo } = useConfirmar();
+  const { avisar, aviso } = useAvisoBreve();
+  const pag = usePaginacion(catalogos, 8);
 
   async function cargar() {
     setCargando(true);
@@ -78,7 +82,10 @@ function Panel() {
   async function guardar(e: Event) {
     e.preventDefault();
     if (!nombre.trim() || !descripcion.trim()) return;
-    if (!editandoId && !archivoPdf) return;
+    if (!editandoId && !archivoPdf) {
+      setError("Elige el archivo PDF del catálogo.");
+      return;
+    }
     setGuardando(true);
     setError(null);
     try {
@@ -110,8 +117,10 @@ function Panel() {
           orden: catalogos.length,
         });
       }
+      const eraEdicion = Boolean(editandoId);
       cancelarEdicion();
       await cargar();
+      avisar(eraEdicion ? "Catálogo actualizado" : "Catálogo agregado");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al guardar.");
     } finally {
@@ -120,9 +129,10 @@ function Panel() {
   }
 
   async function borrar(c: CatalogoAdmin) {
-    if (!confirm(`¿Borrar el catálogo "${c.nombre}"?`)) return;
+    if (!(await confirmar(`Borrar el catálogo "${c.nombre}"`, "Deja de aparecer en la página de catálogos. Esto no se puede deshacer."))) return;
     await catalogosAdmin.borrar(c.id);
     await cargar();
+    avisar("Catálogo borrado");
   }
 
   if (noMigrado) {
@@ -170,16 +180,18 @@ function Panel() {
           />
         </div>
 
-        <div class="flex gap-4">
-          <div class="flex-1">
+        <div class="flex flex-wrap gap-4 sm:flex-nowrap">
+          <div class="min-w-0 flex-1">
             <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              Archivo PDF {editandoId && "(opcional — dejá vacío para mantener el actual)"}
+              Archivo PDF
             </label>
-            <input
-              type="file"
+            <SelectorArchivo
+              id="pdf-catalogo"
               accept="application/pdf"
-              onChange={(e) => alElegirPdf((e.target as HTMLInputElement).files?.[0] ?? null)}
-              class="mt-1 block w-full text-sm text-neutral-700 dark:text-neutral-300"
+              tipo="pdf"
+              archivo={archivoPdf}
+              onElegir={alElegirPdf}
+              actual={editandoId ? catalogos.find((c) => c.id === editandoId)?.archivo_url : null}
             />
             <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
               La miniatura de portada se genera sola a partir de la primera página del PDF.
@@ -216,7 +228,7 @@ function Panel() {
           <p class="text-sm text-neutral-500">Cargando...</p>
         ) : (
           <ul class="space-y-3">
-            {catalogos.map((c) => (
+            {pag.visibles.map((c) => (
               <li key={c.id} class="flex items-center gap-4 rounded-lg border border-neutral-200 p-3 dark:border-neutral-800">
                 {c.portada_url ? (
                   <img src={c.portada_url} alt="" class="h-16 w-12 flex-none rounded-md object-cover" />
@@ -245,7 +257,10 @@ function Panel() {
             ))}
           </ul>
         )}
+        <Paginacion {...pag} nombre="catálogos" />
       </div>
+      {dialogo}
+      {aviso}
     </div>
   );
 }

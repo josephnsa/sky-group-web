@@ -1,6 +1,7 @@
 import { useEffect, useState } from "preact/hooks";
 import AdminGate from "./AdminGate";
 import { reclamosAdmin, type Reclamo } from "../../lib/reclamos";
+import { Paginacion, usePaginacion } from "./ui";
 
 export default function AdminReclamos() {
   return (
@@ -73,6 +74,7 @@ function Panel() {
   const [cargando, setCargando] = useState(true);
   const [abierto, setAbierto] = useState<string | null>(null);
   const [soloPendientes, setSoloPendientes] = useState(false);
+  const [busqueda, setBusqueda] = useState("");
 
   async function cargar() {
     setCargando(true);
@@ -89,12 +91,16 @@ function Panel() {
     await cargar();
   }
 
-  const lista = soloPendientes ? reclamos.filter((r) => r.estado === "pendiente") : reclamos;
+  const texto = busqueda.trim().toLowerCase();
+  const lista = reclamos
+    .filter((r) => !soloPendientes || r.estado === "pendiente")
+    .filter((r) => !texto || [r.codigo, r.nombre, r.documento, r.descripcion_bien, r.correo, r.telefono].some((v) => (v ?? "").toLowerCase().includes(texto)));
+  const pag = usePaginacion(lista, 10, [soloPendientes, texto]);
   const pendientes = reclamos.filter((r) => r.estado === "pendiente").length;
 
   return (
     <div class="space-y-6">
-      <div class="flex items-center justify-between">
+      <div class="flex flex-wrap items-center justify-between gap-3">
         <p class="text-sm text-neutral-600 dark:text-neutral-400">
           {reclamos.length} reclamo{reclamos.length !== 1 && "s"} en total
           {pendientes > 0 && (
@@ -103,7 +109,15 @@ function Panel() {
             </span>
           )}
         </p>
-        <div class="flex items-center gap-4">
+        <div class="flex flex-wrap items-center gap-4">
+          <input
+            id="buscar-reclamos"
+            type="search"
+            placeholder="Buscar por código, nombre o DNI..."
+            value={busqueda}
+            onInput={(e) => setBusqueda((e.target as HTMLInputElement).value)}
+            class="w-56 rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+          />
           <label class="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
             <input
               type="checkbox"
@@ -129,7 +143,7 @@ function Panel() {
         <p class="text-sm text-neutral-500 dark:text-neutral-400">No hay reclamos para mostrar.</p>
       ) : (
         <ul class="space-y-3">
-          {lista.map((r) => {
+          {pag.visibles.map((r) => {
             const expandido = abierto === r.id;
             return (
               <li
@@ -206,6 +220,7 @@ function Panel() {
           })}
         </ul>
       )}
+      <Paginacion {...pag} nombre="reclamos" />
     </div>
   );
 }

@@ -12,6 +12,16 @@ import {
   type SubcategoriaAdmin,
   type TipoAdmin,
 } from "../../lib/supabase-admin";
+import {
+  GestorFotos,
+  Paginacion,
+  SelectorArchivo,
+  fotosDesdeUrls,
+  urlsFinales,
+  useAvisoBreve,
+  usePaginacion,
+  type FotoItem,
+} from "./ui";
 
 function slugify(texto: string) {
   return texto
@@ -119,15 +129,18 @@ function Panel() {
   const [escribiendoNuevoTipo, setEscribiendoNuevoTipo] = useState(false);
   const [archivoFichaTecnica, setArchivoFichaTecnica] = useState<File | null>(null);
   const [quitarFichaTecnica, setQuitarFichaTecnica] = useState(false);
-  const [archivosProducto, setArchivosProducto] = useState<File[]>([]);
+  const [fotosProducto, setFotosProducto] = useState<FotoItem[]>([]);
   const [archivoVideoProducto, setArchivoVideoProducto] = useState<File | null>(null);
+  const [quitarVideo, setQuitarVideo] = useState(false);
   const [guardandoProducto, setGuardandoProducto] = useState(false);
   const [errorProducto, setErrorProducto] = useState<string | null>(null);
 
   // --- filtro único de la tabla (busca en categoría, subcategoría y producto a la vez) ---
   const [filtro, setFiltro] = useState("");
   const [vista, setVista] = useState<"categorias" | "productos">("categorias");
-  const [paginaProductos, setPaginaProductos] = useState(1);
+  const [filtroCategoria, setFiltroCategoria] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState<"" | "activo" | "inactivo">("");
+  const { avisar, aviso: avisoBreve } = useAvisoBreve();
 
   // --- diálogos propios (reemplazan confirm()/alert() del navegador) ---
   const [confirmacion, setConfirmacion] = useState<{
@@ -160,10 +173,6 @@ function Panel() {
   useEffect(() => {
     cargar();
   }, []);
-
-  useEffect(() => {
-    setPaginaProductos(1);
-  }, [filtro, vista]);
 
   // ===== Categoría =====
 
@@ -209,7 +218,7 @@ function Panel() {
   function agregarProductoNuevo() {
     const sku = productoRapido.sku.trim().toUpperCase();
     if (!sku || !productoRapido.nombre.trim() || !productoRapido.marca.trim()) {
-      setErrorProductoRapido("Completá al menos SKU, nombre y marca antes de agregarlo a la lista.");
+      setErrorProductoRapido("Completa al menos SKU, nombre y marca antes de agregarlo a la lista.");
       return;
     }
     if (productosNuevos.some((p) => p.sku === sku)) {
@@ -236,6 +245,7 @@ function Panel() {
         if (archivoCategoria) cambios.foto_url = await subirImagen(archivoCategoria, "categorias");
         await categoriasAdmin.actualizar(catEditandoSlug, cambios);
         cancelarCategoria();
+        avisar(`Categoría "${cambios.nombre}" guardada`);
       } else {
         const slug = slugify(nombreCategoria);
         const foto_url = archivoCategoria ? await subirImagen(archivoCategoria, "categorias") : null;
@@ -274,6 +284,7 @@ function Panel() {
         cancelarCategoria();
         // Deja la categoría recién creada expandida para completar lo que haga falta (fotos, descripción, etc.).
         setExpandida(slug);
+        avisar(`Categoría "${nombreCategoria.trim()}" creada`);
       }
       await cargar();
     } catch (err) {
@@ -453,6 +464,8 @@ function Panel() {
   }
 
   const productosFiltrados = productos.filter((p) => {
+    if (filtroCategoria && p.categoria_slug !== filtroCategoria) return false;
+    if (filtroEstado && (filtroEstado === "activo") !== p.activo) return false;
     const texto = normalizar(filtro);
     if (!texto) return true;
     const nombreCat = categorias.find((c) => c.slug === p.categoria_slug)?.nombre ?? "";
@@ -465,13 +478,15 @@ function Panel() {
     );
   });
 
-  const PRODUCTOS_POR_PAGINA = 20;
-  const totalPaginasProductos = Math.max(1, Math.ceil(productosFiltrados.length / PRODUCTOS_POR_PAGINA));
-  const paginaProductosSegura = Math.min(paginaProductos, totalPaginasProductos);
-  const productosPagina = productosFiltrados.slice(
-    (paginaProductosSegura - 1) * PRODUCTOS_POR_PAGINA,
-    paginaProductosSegura * PRODUCTOS_POR_PAGINA,
-  );
+  // Paginación de cada lista del panel.
+  const pagCategorias = usePaginacion(categoriasFiltradas, 10, [filtro]);
+  const pagProductos = usePaginacion(productosFiltrados, 15, [filtro, vista, filtroCategoria, filtroEstado]);
+  const [paginaProdsCategoria, setPaginaProdsCategoria] = useState(1);
+  const [paginaProdsSub, setPaginaProdsSub] = useState(1);
+  useEffect(() => setPaginaProdsCategoria(1), [expandida, filtro]);
+  useEffect(() => setPaginaProdsSub(1), [subExpandidaId]);
+  const POR_PAGINA_LISTA = 8;
+  const pagina = <T,>(lista: T[], n: number) => lista.slice((n - 1) * POR_PAGINA_LISTA, n * POR_PAGINA_LISTA);
 
   function campoProducto<K extends keyof typeof PRODUCTO_VACIO>(clave: K, valor: (typeof PRODUCTO_VACIO)[K]) {
     setProdForm((f) => ({ ...f, [clave]: valor }));
@@ -481,8 +496,9 @@ function Panel() {
     setProdFormCategoriaSlug(categoriaSlug);
     setProdEditandoSku(null);
     setProdForm({ ...PRODUCTO_VACIO, subcategoria: subcategoria ?? "" });
-    setArchivosProducto([]);
+    setFotosProducto([]);
     setArchivoVideoProducto(null);
+    setQuitarVideo(false);
     setArchivoFichaTecnica(null);
     setQuitarFichaTecnica(false);
     setEscribiendoNuevaSub(false);
@@ -494,8 +510,9 @@ function Panel() {
     setProdFormCategoriaSlug(p.categoria_slug);
     setProdEditandoSku(p.sku);
     setProdForm(productoAFormulario(p));
-    setArchivosProducto([]);
+    setFotosProducto(fotosDesdeUrls([p.imagen, ...(p.imagenes ?? [])]));
     setArchivoVideoProducto(null);
+    setQuitarVideo(false);
     setArchivoFichaTecnica(null);
     setQuitarFichaTecnica(false);
     setEscribiendoNuevaSub(false);
@@ -508,8 +525,9 @@ function Panel() {
     setProdFormCategoriaSlug(null);
     setProdEditandoSku(null);
     setProdForm(PRODUCTO_VACIO);
-    setArchivosProducto([]);
+    setFotosProducto([]);
     setArchivoVideoProducto(null);
+    setQuitarVideo(false);
     setArchivoFichaTecnica(null);
     setQuitarFichaTecnica(false);
     setEscribiendoNuevaSub(false);
@@ -616,7 +634,8 @@ function Panel() {
         ...(urlFicha ? { ficha_tecnica_url: urlFicha } : quitarFichaTecnica && original?.ficha_tecnica_url ? { ficha_tecnica_url: null } : {}),
       };
 
-      const urlsFotos = archivosProducto.length > 0 ? await Promise.all(archivosProducto.map((a) => subirImagen(a, "productos"))) : null;
+      // Fotos en el orden elegido: la 1 es la principal, el resto arma la galería.
+      const urlsFotos = await urlsFinales(fotosProducto, (a) => subirImagen(a, "productos"));
       const urlVideo = archivoVideoProducto ? await subirImagen(archivoVideoProducto, "productos") : null;
 
       if (prodEditandoSku) {
@@ -624,27 +643,32 @@ function Panel() {
           ...datosComunes,
           sku: prodForm.sku.trim().toUpperCase(),
         };
-        if (urlsFotos) {
-          cambios.imagen = urlsFotos[0];
+        const fotosAntes = [original?.imagen, ...(original?.imagenes ?? [])].filter(Boolean);
+        if (JSON.stringify(fotosAntes) !== JSON.stringify(urlsFotos)) {
+          cambios.imagen = urlsFotos[0] ?? null;
           cambios.imagenes = urlsFotos.slice(1);
         }
         if (urlVideo) cambios.video_url = urlVideo;
+        else if (quitarVideo && original?.video_url) cambios.video_url = null;
         await productosAdmin.actualizar(prodEditandoSku, cambios);
       } else {
         await productosAdmin.crear({
           sku: prodForm.sku.trim().toUpperCase(),
-          imagen: urlsFotos ? urlsFotos[0] : null,
-          imagenes: urlsFotos ? urlsFotos.slice(1) : null,
+          imagen: urlsFotos[0] ?? null,
+          imagenes: urlsFotos.length > 1 ? urlsFotos.slice(1) : null,
           video_url: urlVideo,
           activo: true,
           ...datosComunes,
         });
       }
 
+      const nombreGuardado = prodForm.nombre.trim();
+      const eraEdicion = Boolean(prodEditandoSku);
       cancelarProducto();
       await cargar();
+      avisar(eraEdicion ? `Cambios guardados en "${nombreGuardado}"` : `Producto "${nombreGuardado}" agregado`);
     } catch (err) {
-      setErrorProducto(err instanceof Error ? err.message : "Error al guardar. Revisá que el SKU no exista ya.");
+      setErrorProducto(err instanceof Error ? err.message : "Error al guardar. Revisa que el SKU no exista ya.");
     } finally {
       setGuardandoProducto(false);
     }
@@ -653,12 +677,14 @@ function Panel() {
   async function alternarActivoProducto(p: ProductoAdmin) {
     await productosAdmin.actualizar(p.sku, { activo: !p.activo });
     await cargar();
+    avisar(p.activo ? `"${p.nombre}" ya no se muestra en la web` : `"${p.nombre}" ahora se muestra en la web`);
   }
 
   function borrarProducto(p: ProductoAdmin) {
-    pedirConfirmacion(`Borrar "${p.nombre}"`, `SKU ${p.sku}. Esto no se puede deshacer — si solo querés ocultarlo del catálogo, usá "Desactivar" en vez de borrarlo.`, async () => {
+    pedirConfirmacion(`Borrar "${p.nombre}"`, `SKU ${p.sku}. Esto no se puede deshacer. Si solo quieres ocultarlo del catálogo, usa "Desactivar" en vez de borrarlo.`, async () => {
       await productosAdmin.borrar(p.sku);
       await cargar();
+      avisar(`Producto "${p.nombre}" borrado`);
     });
   }
 
@@ -711,17 +737,19 @@ function Panel() {
 
             <div>
               <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300" htmlFor="foto-categoria">
-                Foto {catEditandoSlug && "(opcional — dejá vacío para mantener la actual)"}
+                Foto
               </label>
-              <input
+              <SelectorArchivo
                 id="foto-categoria"
-                type="file"
                 accept="image/*"
-                onChange={(e) => setArchivoCategoria((e.target as HTMLInputElement).files?.[0] ?? null)}
-                class="mt-1 block w-full text-sm text-neutral-700 dark:text-neutral-300"
+                tipo="imagen"
+                archivo={archivoCategoria}
+                onElegir={setArchivoCategoria}
+                actual={catEditandoSlug ? categorias.find((c) => c.slug === catEditandoSlug)?.foto_url : null}
+                clasePrevia="h-20 w-20 rounded-full object-cover"
               />
               <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                Recomendado: cuadrada, mínimo 500×500px — se muestra recortada en un círculo.
+                Recomendado: cuadrada, mínimo 500×500 px. Se muestra recortada en un círculo.
               </p>
             </div>
 
@@ -1025,12 +1053,16 @@ function Panel() {
                     onInput={(e) => setProductoRapido((f) => ({ ...f, precio: (e.target as HTMLInputElement).value }))}
                     class="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
                   />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setProductoRapido((f) => ({ ...f, archivo: (e.target as HTMLInputElement).files?.[0] ?? null }))}
-                    class="text-xs text-neutral-700 dark:text-neutral-300"
-                  />
+                  <div class="sm:col-span-2">
+                    <SelectorArchivo
+                      id="foto-producto-rapido"
+                      accept="image/*"
+                      tipo="imagen"
+                      archivo={productoRapido.archivo}
+                      onElegir={(archivo) => setProductoRapido((f) => ({ ...f, archivo }))}
+                      clasePrevia="h-14 w-14 object-cover"
+                    />
+                  </div>
                 </div>
 
                 {errorProductoRapido && <p class="mt-1.5 text-xs text-red-600 dark:text-red-400">{errorProductoRapido}</p>}
@@ -1092,7 +1124,7 @@ function Panel() {
         </div>
         <p class="mb-3 text-sm text-neutral-500 dark:text-neutral-400">
           {vista === "categorias"
-            ? "Tocá una fila para ver y administrar sus subcategorías y productos."
+            ? "Haz clic en una fila para ver y administrar sus subcategorías y productos."
             : "Todos los productos del catálogo, sin importar la categoría."}
         </p>
 
@@ -1135,7 +1167,7 @@ function Panel() {
                 </tr>
               </thead>
               <tbody>
-                {categoriasFiltradas.map((c) => {
+                {pagCategorias.visibles.map((c) => {
                   const subsDeEsta = subcategoriasDe(c.slug);
                   const prodsDeEsta = productosDe(c.slug);
                   const estaExpandida = expandida === c.slug;
@@ -1395,8 +1427,9 @@ function Panel() {
                                             {prods.length === 0 ? (
                                           <p class="text-sm text-neutral-500 dark:text-neutral-400">Ningún producto usa "{sub.nombre}" todavía.</p>
                                         ) : (
+                                          <>
                                           <ul class="space-y-2">
-                                            {prods.map((p) => (
+                                            {pagina(prods, paginaProdsSub).map((p) => (
                                               <li
                                                 key={p.sku}
                                                 class="flex items-center gap-3 rounded-md border border-neutral-200 bg-white p-2 dark:border-neutral-700 dark:bg-neutral-900"
@@ -1409,7 +1442,7 @@ function Panel() {
                                                 <div class="min-w-0 flex-1">
                                                   <p class="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">{p.nombre}</p>
                                                   <p class="truncate text-xs text-neutral-500 dark:text-neutral-400">
-                                                    {p.sku} · {p.marca}{p.tipo ? ` · ${p.tipo}` : ""} · {p.precio != null ? `S/ ${p.precio}` : "Sin precio"}
+                                                    {p.sku} · {p.marca}{p.tipo ? ` · ${p.tipo}` : ""} · {p.precio != null ? `S/ ${Number(p.precio).toFixed(2)}` : "Sin precio"}
                                                   </p>
                                                 </div>
                                                 <button
@@ -1429,6 +1462,8 @@ function Panel() {
                                               </li>
                                             ))}
                                           </ul>
+                                          <Paginacion pagina={paginaProdsSub} setPagina={setPaginaProdsSub} total={prods.length} porPagina={POR_PAGINA_LISTA} nombre="productos" />
+                                          </>
                                         )}
                                           </>
                                         );
@@ -1485,7 +1520,7 @@ function Panel() {
                           {prodsDeEsta.length > 0 && prodsMostrados.length === 0 && (
                             <p class="text-sm text-neutral-500 dark:text-neutral-400">Ningún producto coincide con el filtro.</p>
                           )}
-                          {prodsMostrados.map((p) => (
+                          {pagina(prodsMostrados, paginaProdsCategoria).map((p) => (
                             <li
                               key={p.sku}
                               class={`flex items-center gap-3 rounded-md border p-2.5 dark:border-neutral-800 ${
@@ -1500,7 +1535,7 @@ function Panel() {
                               <div class="min-w-0 flex-1">
                                 <p class="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">{p.nombre}</p>
                                 <p class="truncate text-xs text-neutral-500 dark:text-neutral-400">
-                                  {p.sku} · {p.marca} · {p.precio != null ? `S/ ${p.precio}` : "Sin precio"}
+                                  {p.sku} · {p.marca} · {p.precio != null ? `S/ ${Number(p.precio).toFixed(2)}` : "Sin precio"}
                                 </p>
                               </div>
                               <button
@@ -1531,6 +1566,7 @@ function Panel() {
                             </li>
                           ))}
                         </ul>
+                        <Paginacion pagina={paginaProdsCategoria} setPagina={setPaginaProdsCategoria} total={prodsMostrados.length} porPagina={POR_PAGINA_LISTA} nombre="productos" />
                       </div>
                             </div>
                           </td>
@@ -1541,8 +1577,53 @@ function Panel() {
                 })}
               </tbody>
             </table>
+            <div class="border-t border-neutral-200 px-4 pb-3 dark:border-neutral-800">
+              <Paginacion {...pagCategorias} nombre="categorías" />
+            </div>
           </div>
         ))}
+
+        {vista === "productos" && (
+          <div class="mb-3 flex flex-wrap gap-2">
+            <select
+              id="filtro-categoria-admin"
+              aria-label="Filtrar por categoría"
+              value={filtroCategoria}
+              onInput={(e) => setFiltroCategoria((e.target as HTMLSelectElement).value)}
+              class="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+            >
+              <option value="">Todas las categorías</option>
+              {categorias.map((c) => (
+                <option value={c.slug}>
+                  {c.nombre} ({productosDe(c.slug).length})
+                </option>
+              ))}
+            </select>
+            <select
+              id="filtro-estado-admin"
+              aria-label="Filtrar por estado"
+              value={filtroEstado}
+              onInput={(e) => setFiltroEstado((e.target as HTMLSelectElement).value as typeof filtroEstado)}
+              class="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+            >
+              <option value="">Activos e inactivos</option>
+              <option value="activo">Solo activos</option>
+              <option value="inactivo">Solo inactivos</option>
+            </select>
+            {(filtroCategoria || filtroEstado) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setFiltroCategoria("");
+                  setFiltroEstado("");
+                }}
+                class="text-xs font-semibold text-brand-blue-dark hover:underline dark:text-brand-blue"
+              >
+                Quitar filtros
+              </button>
+            )}
+          </div>
+        )}
 
         {vista === "productos" && (
           cargando ? (
@@ -1564,7 +1645,7 @@ function Panel() {
                     </tr>
                   </thead>
                   <tbody>
-                    {productosPagina.map((p) => (
+                    {pagProductos.visibles.map((p) => (
                       <tr
                         key={p.sku}
                         class={`border-b border-neutral-100 last:border-0 dark:border-neutral-800 ${p.activo ? "" : "opacity-60"}`}
@@ -1589,7 +1670,7 @@ function Panel() {
                           {p.subcategoria}
                           {p.tipo && <span class="block text-xs text-neutral-500 dark:text-neutral-500">{p.tipo}</span>}
                         </td>
-                        <td class="px-4 py-3 text-neutral-600 dark:text-neutral-400">{p.precio != null ? `S/ ${p.precio}` : "Sin precio"}</td>
+                        <td class="whitespace-nowrap px-4 py-3 text-neutral-600 dark:text-neutral-400">{p.precio != null ? `S/ ${Number(p.precio).toFixed(2)}` : "Sin precio"}</td>
                         <td class="px-4 py-3">
                           <button
                             type="button"
@@ -1627,29 +1708,7 @@ function Panel() {
                 </table>
               </div>
 
-              {totalPaginasProductos > 1 && (
-                <div class="mt-3 flex items-center justify-between text-sm">
-                  <button
-                    type="button"
-                    disabled={paginaProductosSegura <= 1}
-                    onClick={() => setPaginaProductos((p) => Math.max(1, p - 1))}
-                    class="rounded-md bg-neutral-100 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition-colors duration-200 hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
-                  >
-                    ← Anterior
-                  </button>
-                  <span class="text-xs text-neutral-500 dark:text-neutral-400">
-                    Página {paginaProductosSegura} de {totalPaginasProductos} · {productosFiltrados.length} producto{productosFiltrados.length !== 1 && "s"}
-                  </span>
-                  <button
-                    type="button"
-                    disabled={paginaProductosSegura >= totalPaginasProductos}
-                    onClick={() => setPaginaProductos((p) => Math.min(totalPaginasProductos, p + 1))}
-                    class="rounded-md bg-neutral-100 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition-colors duration-200 hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
-                  >
-                    Siguiente →
-                  </button>
-                </div>
-              )}
+              <Paginacion {...pagProductos} nombre="productos" />
             </>
           )
         )}
@@ -1658,23 +1717,30 @@ function Panel() {
       {prodFormAbierto && prodFormCategoriaSlug && (
         <div class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-3 sm:items-center sm:p-4">
           <form
+            id="form-producto"
             onSubmit={guardarProducto}
-            class="my-4 max-h-[92vh] w-full max-w-xl space-y-4 overflow-y-auto rounded-xl bg-white p-4 shadow-xl sm:my-8 sm:p-5 dark:bg-neutral-900"
+            class="my-4 max-h-[92vh] w-full max-w-2xl space-y-4 overflow-y-auto rounded-xl bg-white px-4 pb-0 shadow-xl sm:my-8 sm:px-6 dark:bg-neutral-900"
           >
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-sm font-semibold text-neutral-900 dark:text-white">
-                  {prodEditandoSku ? `Editando: ${prodEditandoSku}` : "Nuevo producto"}
+            <div class="sticky top-0 z-10 -mx-4 flex items-center justify-between gap-3 border-b border-neutral-200 bg-white px-4 py-3 sm:-mx-6 sm:px-6 dark:border-neutral-800 dark:bg-neutral-900">
+              <div class="min-w-0">
+                <p class="truncate text-base font-semibold text-neutral-900 dark:text-white">
+                  {prodEditandoSku ? `Editar producto · ${prodEditandoSku}` : "Nuevo producto"}
                 </p>
                 <p class="text-xs text-neutral-500 dark:text-neutral-400">
                   Categoría: {categorias.find((c) => c.slug === prodFormCategoriaSlug)?.nombre}
                 </p>
               </div>
-              <button type="button" onClick={cancelarProducto} class="text-xs text-neutral-500 hover:underline dark:text-neutral-400">
-                Cancelar
+              <button
+                type="button"
+                onClick={cancelarProducto}
+                aria-label="Cerrar sin guardar"
+                class="flex h-9 w-9 flex-none items-center justify-center rounded-full text-lg text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+              >
+                ✕
               </button>
             </div>
 
+            <p class="text-xs font-semibold uppercase tracking-wide text-brand-blue-dark dark:text-brand-blue">1. Datos básicos</p>
             <div class="grid gap-3 sm:grid-cols-2">
               <CampoTexto label="SKU" value={prodForm.sku} onInput={(v) => campoProducto("sku", v)} required />
               <div>
@@ -1755,6 +1821,35 @@ function Panel() {
               />
             </div>
 
+            <p class="border-t border-neutral-200 pt-4 text-xs font-semibold uppercase tracking-wide text-brand-blue-dark dark:border-neutral-800 dark:text-brand-blue">
+              2. Fotos y video
+            </p>
+            <div>
+              <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300" htmlFor="fotos-producto">
+                Fotos
+              </label>
+              <GestorFotos id="fotos-producto" fotos={fotosProducto} onCambiar={setFotosProducto} />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300" htmlFor="video-producto">
+                Video (opcional)
+              </label>
+              <SelectorArchivo
+                id="video-producto"
+                accept="video/*"
+                tipo="video"
+                archivo={archivoVideoProducto}
+                onElegir={setArchivoVideoProducto}
+                actual={productos.find((p) => p.sku === prodEditandoSku)?.video_url}
+                quitarActual={quitarVideo}
+                onQuitarActual={setQuitarVideo}
+              />
+            </div>
+
+            <p class="border-t border-neutral-200 pt-4 text-xs font-semibold uppercase tracking-wide text-brand-blue-dark dark:border-neutral-800 dark:text-brand-blue">
+              3. Descripción y ficha técnica
+            </p>
             <div>
               <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Descripción</label>
               <textarea
@@ -1796,27 +1891,17 @@ function Panel() {
               <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300" htmlFor="ficha-tecnica">
                 Ficha técnica en PDF (opcional)
               </label>
-              <input
+              <SelectorArchivo
                 id="ficha-tecnica"
-                type="file"
                 accept="application/pdf"
-                onChange={(e) => setArchivoFichaTecnica((e.target as HTMLInputElement).files?.[0] ?? null)}
-                class="mt-1 block w-full text-sm text-neutral-700 dark:text-neutral-300"
+                tipo="pdf"
+                archivo={archivoFichaTecnica}
+                onElegir={setArchivoFichaTecnica}
+                actual={productos.find((p) => p.sku === prodEditandoSku)?.ficha_tecnica_url}
+                quitarActual={quitarFichaTecnica}
+                onQuitarActual={setQuitarFichaTecnica}
               />
-              {(() => {
-                const actual = productos.find((p) => p.sku === prodEditandoSku)?.ficha_tecnica_url;
-                if (archivoFichaTecnica) return <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">PDF elegido: {archivoFichaTecnica.name}</p>;
-                if (!actual) return <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">En la ficha del producto aparece el botón "Descargar ficha técnica (PDF)".</p>;
-                return (
-                  <div class="mt-1 flex flex-wrap items-center gap-3 text-xs">
-                    <a href={actual} target="_blank" rel="noopener noreferrer" class="text-brand-blue-dark underline dark:text-brand-blue">Ver PDF actual</a>
-                    <label class="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
-                      <input type="checkbox" checked={quitarFichaTecnica} onChange={(e) => setQuitarFichaTecnica((e.target as HTMLInputElement).checked)} />
-                      Quitar la ficha técnica
-                    </label>
-                  </div>
-                );
-              })()}
+              <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">En la ficha del producto aparece el botón "Descargar ficha técnica (PDF)".</p>
             </div>
 
             <div>
@@ -1837,56 +1922,37 @@ function Panel() {
               </p>
             </div>
 
-            <div>
-              <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                Fotos (podés elegir varias) {prodEditandoSku && "— opcional, dejá vacío para mantener las actuales"}
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => setArchivosProducto(Array.from((e.target as HTMLInputElement).files ?? []))}
-                class="mt-1 block w-full text-sm text-neutral-700 dark:text-neutral-300"
-              />
-              <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                La primera foto es la principal; el resto arma la galería.
-                {archivosProducto.length > 0 && ` (${archivosProducto.length} elegidas)`}
-              </p>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                Video (opcional) {prodEditandoSku && "— dejá vacío para mantener el actual"}
-              </label>
-              <input
-                type="file"
-                accept="video/*"
-                onChange={(e) => setArchivoVideoProducto((e.target as HTMLInputElement).files?.[0] ?? null)}
-                class="mt-1 block w-full text-sm text-neutral-700 dark:text-neutral-300"
-              />
-              {archivoVideoProducto && (
-                <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">Video elegido: {archivoVideoProducto.name}</p>
-              )}
-            </div>
-
+            <p class="border-t border-neutral-200 pt-4 text-xs font-semibold uppercase tracking-wide text-brand-blue-dark dark:border-neutral-800 dark:text-brand-blue">
+              4. Visibilidad
+            </p>
             <label class="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
               <input
                 type="checkbox"
                 checked={prodForm.destacado}
                 onChange={(e) => campoProducto("destacado", (e.target as HTMLInputElement).checked)}
               />
-              Mostrar en "Productos destacados" de Home
+              Mostrar en "Productos destacados" de la página de inicio
             </label>
 
-            {errorProducto && <p class="text-sm text-red-600 dark:text-red-400">{errorProducto}</p>}
-
-            <button
-              type="submit"
-              disabled={guardandoProducto}
-              class="w-full rounded-md bg-brand-blue px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-brand-blue-dark disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {guardandoProducto ? "Guardando..." : prodEditandoSku ? "Guardar cambios" : "Agregar producto"}
-            </button>
+            <div class="sticky bottom-0 -mx-4 border-t border-neutral-200 bg-white px-4 py-3 sm:-mx-6 sm:px-6 dark:border-neutral-800 dark:bg-neutral-900">
+              {errorProducto && <p class="mb-2 text-sm text-red-600 dark:text-red-400">{errorProducto}</p>}
+              <div class="flex gap-2">
+                <button
+                  type="button"
+                  onClick={cancelarProducto}
+                  class="rounded-md px-4 py-2.5 text-sm font-semibold text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={guardandoProducto}
+                  class="flex-1 rounded-md bg-brand-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-brand-blue-dark disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {guardandoProducto ? "Guardando..." : prodEditandoSku ? "Guardar cambios" : "Agregar producto"}
+                </button>
+              </div>
+            </div>
           </form>
         </div>
       )}
@@ -1937,6 +2003,7 @@ function Panel() {
           </div>
         </div>
       )}
+      {avisoBreve}
     </div>
   );
 }
