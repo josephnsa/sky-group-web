@@ -65,3 +65,14 @@
     animation: none;
   }
 }
+
+/* Protección básica de fotos y videos: sin arrastrarlos fuera de la página ni
+   el menú "Guardar imagen" al mantener presionado en iPhone/iPad. El clic
+   derecho y el menú de Android se bloquean en Layout.astro. */
+img,
+video {
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}

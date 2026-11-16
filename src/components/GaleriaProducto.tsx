@@ -97,6 +97,9 @@ export default function GaleriaProducto({ nombre, imagenes, video }: Props) {
           src={video}
           controls
           autoplay
+          // Sin botón de descarga ni ventana flotante en el reproductor.
+          controlsList="nodownload noplaybackrate"
+          disablePictureInPicture
           class="w-full rounded-lg border border-neutral-200 dark:border-neutral-800"
         />
       ) : (

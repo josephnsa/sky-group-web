@@ -106,6 +106,22 @@ const jsonLd = datosEstructurados ? (Array.isArray(datosEstructurados) ? datosEs
       });
     </script>
     <script is:inline>
+      // Protección básica de las fotos y videos de la web: sin menú "Guardar
+      // imagen" (clic derecho o mantener presionado en Android) y sin
+      // arrastrarlas al escritorio. Delegado en document para que funcione
+      // también después de las transiciones de página.
+      document.addEventListener('contextmenu', (e) => {
+        const t = e.target instanceof Element ? e.target : null;
+        if (t && t.closest('img, video, picture, [data-proteger-imagen]')) e.preventDefault();
+      });
+      document.addEventListener('dragstart', (e) => {
+        const t = e.target instanceof Element ? e.target : null;
+        // El panel usa arrastrar para ordenar las fotos de un producto: ahí se permite.
+        if (t && t.closest('[data-gestor-fotos]')) return;
+        if (t && t.closest('img, video, picture')) e.preventDefault();
+      });
+    </script>
+    <script is:inline>
       // Mega-menu "Categorías" de escritorio: al pasar el mouse/foco por una
       // fila de la columna izquierda, se muestra el panel de subcategorías
       // correspondiente a la derecha (referencia: tirerack.com "Shop
