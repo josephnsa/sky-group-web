@@ -202,6 +202,7 @@ const jsonLd = datosEstructurados ? (Array.isArray(datosEstructurados) ? datosEs
       <slot />
     </main>
     <Footer />
-    <WhatsAppFlotante />
+    {/* En el panel el botón flotante de WhatsApp no aporta y tapaba botones en el celular. */}
+    {!Astro.url.pathname.startsWith("/admin") && <WhatsAppFlotante />}
   </body>
 </html>
