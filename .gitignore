@@ -51,3 +51,8 @@ client_secret*.json
 PAG WEB SKY/
 PAG WEB SKY-*.zip
 Sin t*tulo*.pdf
+
+# Claves y tokens locales (nunca al repositorio)
+token*.txt
+*token*.txt
+*.token
