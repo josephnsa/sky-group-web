@@ -4,6 +4,7 @@ import CatalogoInteractivo from "../../../components/CatalogoInteractivo";
 import { iconoDeCategoria } from "../../../components/icons/categorias";
 import { getCategorias, getProductosPorCategoria, getFotoCategoria } from "../../../data/catalog";
 import { REDIRECCIONES_CATEGORIAS } from "../../../data/redirecciones-categorias";
+import { migasJsonLd } from "../../../lib/seo";
 
 export function getStaticPaths() {
   const categorias = getCategorias();
@@ -44,7 +45,12 @@ const foto = getFotoCategoria(nombreCategoria);
     </body>
   </html>
 ) : (
-<Layout title={nombreCategoria}>
+<Layout
+  title={nombreCategoria}
+  description={`${nombreCategoria} para tu vehículo: ${subcategorias.slice(0, 4).join(", ")}${subcategorias.length > 4 ? " y más" : ""}. ${productos.length} producto${productos.length !== 1 ? "s" : ""} SKY Group con envíos a todo el Perú.`}
+  imagen={foto ?? undefined}
+  datosEstructurados={migasJsonLd([["Inicio", "/"], ["Catálogo", "/catalogo/"], [nombreCategoria, `/catalogo/${categoria}/`]])}
+>
   <div class="border-b border-neutral-200 bg-gradient-to-r from-brand-blue/10 to-brand-green/10 dark:border-neutral-800 dark:from-brand-blue/5 dark:to-brand-green/5">
     <div class="mx-auto max-w-7xl px-4 py-10">
       <nav class="text-sm text-neutral-500 dark:text-neutral-400">
@@ -52,7 +58,7 @@ const foto = getFotoCategoria(nombreCategoria);
       </nav>
       <div class="mt-2 flex items-center gap-3">
         {foto ? (
-          <img src={foto} alt="" aria-hidden="true" class="h-11 w-11 flex-none rounded-full object-cover ring-1 ring-black/5" />
+          <img src={foto} alt={`Categoría ${nombreCategoria}`} class="h-11 w-11 flex-none rounded-full object-cover ring-1 ring-black/5" />
         ) : (
           <span class="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-brand-blue text-white">
             <Icono class="h-6 w-6" />

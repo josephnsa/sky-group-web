@@ -2,11 +2,16 @@
 import Layout from "../../layouts/Layout.astro";
 import CatalogoInteractivo from "../../components/CatalogoInteractivo";
 import { getCategorias, productos } from "../../data/catalog";
+import { migasJsonLd } from "../../lib/seo";
 
 const categorias = getCategorias().map((c) => c.categoria);
 ---
 
-<Layout title="Catálogo">
+<Layout
+  title="Catálogo de accesorios vehiculares"
+  description={`Catálogo SKY Group: ${productos.length} accesorios y equipos para tu vehículo en ${categorias.length} categorías. Cotiza por WhatsApp y recibe en todo el Perú.`}
+  datosEstructurados={migasJsonLd([["Inicio", "/"], ["Catálogo", "/catalogo/"]])}
+>
   <div class="border-b border-neutral-200 bg-gradient-to-r from-brand-blue/10 to-brand-green/10 dark:border-neutral-800 dark:from-brand-blue/5 dark:to-brand-green/5">
     <div class="mx-auto max-w-7xl px-4 py-10">
       <h1 class="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white sm:text-4xl lg:text-5xl">Catálogo</h1>

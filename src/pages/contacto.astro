@@ -2,6 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import ContactoForm from "../components/ContactoForm";
 import { NEGOCIO, SUCURSALES } from "../consts";
+import { negocioJsonLd } from "../lib/seo";
 
 // Embed de Google Maps sin necesitar API key: el formato "?q=<dirección>
 // &output=embed" es público y puede vivir en un <iframe> directo, a
@@ -14,7 +15,11 @@ const mapaEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(direcci
 const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(direccionMapa)}&navigate=yes`;
 ---
 
-<Layout title="Contacto">
+<Layout
+  title="Contacto"
+  description={`Contacta a SKY Group por WhatsApp ${NEGOCIO.telefono} o visítanos en ${SUCURSALES[0].direccion}. Horario: ${SUCURSALES[0].horario}.`}
+  datosEstructurados={negocioJsonLd()}
+>
   <section class="mx-auto max-w-3xl px-4 py-12 sm:py-16">
     <h1 class="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white sm:text-4xl lg:text-5xl">Contacto</h1>
 

@@ -159,7 +159,7 @@ export default function PromoCarousel({ slidesIniciales }: Props) {
             mismo criterio ya validado con el banner real de SKY Group. */}
             <img
               src={d.imagen_url}
-              alt={d.titulo ?? ""}
+              alt={d.titulo || "Promoción SKY Group"}
               draggable={false}
               class="relative h-full w-full select-none object-contain"
             />

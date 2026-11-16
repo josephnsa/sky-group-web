@@ -132,7 +132,7 @@ export default function GaleriaProducto({ nombre, imagenes, video }: Props) {
                   : "border-neutral-200 hover:border-neutral-300 dark:border-neutral-800 dark:hover:border-neutral-700"
               }`}
             >
-              <img src={src} alt="" class="h-full w-full object-cover" />
+              <img src={src} alt={`${nombre}: miniatura`} class="h-full w-full object-cover" />
             </button>
           ))}
           {video && (
@@ -239,7 +239,7 @@ export default function GaleriaProducto({ nombre, imagenes, video }: Props) {
                     i === visor ? "border-brand-blue opacity-100" : "border-transparent opacity-60 hover:opacity-100"
                   }`}
                 >
-                  <img src={src} alt="" class="h-full w-full object-cover" />
+                  <img src={src} alt={`${nombre}: miniatura`} class="h-full w-full object-cover" />
                 </button>
               ))}
             </div>

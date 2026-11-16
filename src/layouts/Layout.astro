@@ -6,13 +6,30 @@ import Footer from "../components/Footer.astro";
 import WhatsAppFlotante from "../components/WhatsAppFlotante.astro";
 import { NEGOCIO, SITE } from "../consts";
 
+import { absoluta, resumen } from "../lib/seo";
+
 interface Props {
   title?: string;
   description?: string;
+  /** Imagen para la vista previa al compartir (ruta o URL). Por defecto, la de la marca. */
+  imagen?: string;
+  /** "product" en las fichas de producto. */
+  tipo?: "website" | "product";
+  /** Páginas que no deben aparecer en Google (panel, carrito). */
+  noindex?: boolean;
+  /** Datos estructurados schema.org (uno o varios objetos). */
+  datosEstructurados?: object | object[];
 }
 
-const { title, description = SITE.descripcion } = Astro.props;
+const { title, description = SITE.descripcion, imagen, tipo = "website", noindex = false, datosEstructurados } = Astro.props;
 const tituloCompleto = title ? `${title} | ${SITE.nombre}` : SITE.nombre;
+const descripcion = resumen(description || SITE.descripcion);
+// Dirección oficial de la página (con barra final, igual que el mapa del sitio).
+const ruta = Astro.url.pathname.endsWith("/") || Astro.url.pathname.includes(".") ? Astro.url.pathname : `${Astro.url.pathname}/`;
+const canonica = absoluta(ruta);
+const imagenCompartir = absoluta(imagen || "/images/og/sky-group.jpg");
+const esImagenDeMarca = !imagen;
+const jsonLd = datosEstructurados ? (Array.isArray(datosEstructurados) ? datosEstructurados : [datosEstructurados]) : [];
 ---
 
 <!doctype html>
@@ -55,9 +72,27 @@ const tituloCompleto = title ? `${title} | ${SITE.nombre}` : SITE.nombre;
         <script src="/registerSW.js" is:inline></script>
       )
     }
-    <meta name="description" content={description} />
+    <meta name="description" content={descripcion} />
     <meta name="generator" content={Astro.generator} />
     <title>{tituloCompleto}</title>
+    <link rel="canonical" href={canonica} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <!-- Vista previa al compartir (WhatsApp, Facebook, LinkedIn, X) -->
+    <meta property="og:site_name" content={SITE.nombre} />
+    <meta property="og:locale" content="es_PE" />
+    <meta property="og:type" content={tipo === "product" ? "product" : "website"} />
+    <meta property="og:title" content={tituloCompleto} />
+    <meta property="og:description" content={descripcion} />
+    <meta property="og:url" content={canonica} />
+    <meta property="og:image" content={imagenCompartir} />
+    {esImagenDeMarca && <meta property="og:image:width" content="1200" />}
+    {esImagenDeMarca && <meta property="og:image:height" content="630" />}
+    <meta property="og:image:alt" content={title ?? SITE.nombre} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={tituloCompleto} />
+    <meta name="twitter:description" content={descripcion} />
+    <meta name="twitter:image" content={imagenCompartir} />
+    {jsonLd.map((d) => <script type="application/ld+json" set:html={JSON.stringify(d)} />)}
     <ClientRouter />
     <script is:inline>
       // Delegado en document para que sobreviva a las transiciones de página

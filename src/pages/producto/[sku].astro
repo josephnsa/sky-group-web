@@ -4,7 +4,8 @@ import AddToCartButton from "../../components/AddToCartButton";
 import GaleriaProducto from "../../components/GaleriaProducto";
 import BotonConoceMas from "../../components/BotonConoceMas";
 import { getImagenProducto, productos } from "../../data/catalog";
-import { marcaVisible } from "../../lib/marca";
+import { esSinMarca, marcaVisible } from "../../lib/marca";
+import { migasJsonLd, productoJsonLd } from "../../lib/seo";
 
 export function getStaticPaths() {
   return productos.map((p) => ({
@@ -22,7 +23,21 @@ const tieneDetalleTecnico =
   (producto.especificaciones && producto.especificaciones.length > 0);
 ---
 
-<Layout title={producto.nombre} description={producto.descripcion}>
+<Layout
+  title={producto.nombre}
+  description={producto.descripcion || `${producto.nombre}${esSinMarca(producto.marca) ? "" : ` ${producto.marca}`} (código ${producto.sku}). Cotiza por WhatsApp con SKY Group, envíos a todo el Perú.`}
+  imagen={galeria[0]}
+  tipo="product"
+  datosEstructurados={[
+    productoJsonLd({ ...producto, precio: producto.precio ?? null }, galeria, esSinMarca(producto.marca) ? null : marcaVisible(producto.marca)),
+    migasJsonLd([
+      ["Inicio", "/"],
+      ["Catálogo", "/catalogo/"],
+      [producto.categoria, `/catalogo/${producto.categoriaSlug}/`],
+      [producto.nombre, `/producto/${producto.sku}/`],
+    ]),
+  ]}
+>
   <section class="mx-auto max-w-5xl px-4 py-12 sm:py-16">
     <nav class="text-sm text-neutral-500 dark:text-neutral-400">
       <a href="/catalogo" class="hover:underline">Catálogo</a> /{" "}

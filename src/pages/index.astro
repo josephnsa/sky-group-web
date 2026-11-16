@@ -9,13 +9,18 @@ import { IconArrowRight, IconWhatsapp, IconChat } from "../components/icons/ui";
 import { iconoDeCategoria } from "../components/icons/categorias";
 import { getCategorias, getDestacados, getFotoCategoria, carruselSlides } from "../data/catalog";
 import { NEGOCIO, SITE } from "../consts";
+import { negocioJsonLd, sitioJsonLd } from "../lib/seo";
 
 const destacados = getDestacados();
 const categorias = getCategorias();
 const mensajeWa = encodeURIComponent(`Hola ${NEGOCIO.razonSocial}, quisiera hacer una consulta.`);
 ---
 
-<Layout>
+<Layout
+  description="SKY Group: importadores de accesorios y equipamiento vehicular en Lima. Iluminación LED, equipamiento exterior, seguridad y más, con envíos a todo el Perú y atención por WhatsApp."
+  datosEstructurados={[negocioJsonLd(), sitioJsonLd()]}
+>
+  <h1 class="sr-only">SKY Group: accesorios y equipamiento vehicular en Lima y todo el Perú</h1>
   {
     /* El carrusel va primero, pegado al header — como en gpc.pe, donde el
     carrusel ES el hero (no hay una sección estática separada antes). El
@@ -111,8 +116,7 @@ const mensajeWa = encodeURIComponent(`Hola ${NEGOCIO.razonSocial}, quisiera hace
                 <div class="aspect-square w-full max-w-[110px] overflow-hidden rounded-full ring-1 ring-neutral-200 dark:ring-neutral-700">
                   <img
                     src={foto}
-                    alt=""
-                    aria-hidden="true"
+                    alt={`Categoría ${c.categoria}`}
                     loading="lazy"
                     class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
                   />
