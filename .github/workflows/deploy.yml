@@ -4,6 +4,11 @@ on:
   push:
     branches: [master]
   workflow_dispatch:
+  # Publicación automática de lo que se cambia en el panel de administración:
+  # cada 15 minutos se compara la huella de los datos de Supabase con la de la
+  # web publicada y, solo si cambió algo, se vuelve a publicar.
+  schedule:
+    - cron: "*/15 * * * *"
 
 permissions:
   contents: read
@@ -15,7 +20,35 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  revisar:
+    runs-on: ubuntu-latest
+    outputs:
+      cambio: ${{ steps.comparar.outputs.cambio }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Comparar datos con la web publicada
+        id: comparar
+        env:
+          PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
+          PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          actual=$(node scripts/huella-datos.mjs)
+          publicada=$(curl -fsSL "https://www.sky.com.pe/huella-datos.txt?t=$(date +%s)" || echo "sin-huella")
+          echo "Datos: $actual | Publicada: $publicada"
+          if [ "$actual" != "$publicada" ]; then echo "cambio=true" >> "$GITHUB_OUTPUT"; else echo "cambio=false" >> "$GITHUB_OUTPUT"; fi
+
   build:
+    needs: revisar
+    if: github.event_name != 'schedule' || needs.revisar.outputs.cambio == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -29,8 +62,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Huella de los datos publicados
+        run: node scripts/huella-datos.mjs > huella-datos.txt
+        env:
+          PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
+          PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
+
       - name: Build
-        run: npm run build
+        run: npm run build && cp huella-datos.txt dist/huella-datos.txt
         env:
           PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
           PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
