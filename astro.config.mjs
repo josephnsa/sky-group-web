@@ -58,8 +58,12 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,jpg,jpeg,webp,woff2}'],
-        navigateFallback: '/',
+        // Las páginas HTML NO se guardan por adelantado: si se guardaban, después
+        // de cada publicación el navegador seguía mostrando la versión vieja
+        // (incluido el panel de administración). Ahora las páginas se piden
+        // primero a internet (ver runtimeCaching) y la copia solo se usa sin conexión.
+        globPatterns: ['**/*.{js,css,svg,png,jpg,jpeg,webp,woff2}'],
+        navigateFallback: null,
         // Sin esto, un service worker nuevo se queda "esperando" hasta que
         // se cierren TODAS las pestañas de la versión vieja antes de
         // activarse — con una pestaña abierta durante horas mientras se
@@ -71,6 +75,20 @@ export default defineConfig({
         clientsClaim: true,
         cleanupOutdatedCaches: true,
         runtimeCaching: [
+          {
+            // El panel siempre desde internet: nunca una versión guardada.
+            urlPattern: ({ url, request }) => request.mode === 'navigate' && url.pathname.startsWith('/admin'),
+            handler: 'NetworkOnly',
+          },
+          {
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'paginas',
+              networkTimeoutSeconds: 5,
+              expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 7 },
+            },
+          },
           {
             urlPattern: ({ request }) => request.destination === 'image',
             handler: 'CacheFirst',
