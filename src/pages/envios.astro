@@ -1,6 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { NEGOCIO } from "../consts";
+import { configuracionSitio } from "../data/configuracion";
 
 // Contenido: "ENVIOS A TODO EL PERU - INFO OK.docx" (carpeta PAG WEB SKY).
 // El documento pide que "se vea visual y bonito y con información al mismo
@@ -8,7 +8,7 @@ import { NEGOCIO } from "../consts";
 // y el envío a provincias como un recorrido en pasos. Mismo lenguaje visual
 // que /garantias.
 
-const WHATSAPP = `https://wa.me/${NEGOCIO.whatsappNumero}?text=${encodeURIComponent("Hola SKY Group, quisiera consultar sobre el envío de un pedido.")}`;
+const WHATSAPP = `https://wa.me/${configuracionSitio.whatsappNumero}?text=${encodeURIComponent("Hola SKY Group, quisiera consultar sobre el envío de un pedido.")}`;
 
 const DATOS = [
   { valor: "Gratis", titulo: "Retiro en tienda", desc: "Av. México 1028, La Victoria, Lima." },

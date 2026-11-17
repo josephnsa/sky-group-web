@@ -7,6 +7,7 @@ import WhatsAppFlotante from "../components/WhatsAppFlotante.astro";
 import { NEGOCIO, SITE } from "../consts";
 
 import { absoluta, resumen } from "../lib/seo";
+import { configuracionSitio } from "../data/configuracion";
 
 interface Props {
   title?: string;
@@ -54,6 +55,9 @@ const jsonLd = datosEstructurados ? (Array.isArray(datosEstructurados) ? datosEs
     <link rel="icon" href="/icons/favicon-64.png" type="image/png" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <meta name="theme-color" content="#00afef" />
+    {/* Número de WhatsApp editable desde /admin/configuracion; lo leen los
+    componentes del navegador (carrito) vía src/lib/whatsapp.ts. */}
+    <meta name="sky-whatsapp" content={configuracionSitio.whatsappNumero} />
     <link rel="manifest" href="/manifest.webmanifest" />
     {
       /* @vite-pwa/astro no inyecta automáticamente el registro del service

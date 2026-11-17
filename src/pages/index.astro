@@ -9,6 +9,7 @@ import { IconArrowRight, IconWhatsapp, IconChat } from "../components/icons/ui";
 import { iconoDeCategoria } from "../components/icons/categorias";
 import { getCategorias, getDestacados, getFotoCategoria, carruselSlides } from "../data/catalog";
 import { NEGOCIO, SITE } from "../consts";
+import { configuracionSitio } from "../data/configuracion";
 import { negocioJsonLd, sitioJsonLd } from "../lib/seo";
 
 const destacados = getDestacados();
@@ -26,7 +27,7 @@ const mensajeWa = encodeURIComponent(`Hola ${NEGOCIO.razonSocial}, quisiera hace
     carrusel ES el hero (no hay una sección estática separada antes). El
     hero con el auto 3D se mantiene, pero ahora es la sección siguiente. */
   }
-  <PromoCarousel client:visible slidesIniciales={carruselSlides} />
+  <PromoCarousel client:visible slidesIniciales={carruselSlides} numeroWhatsapp={configuracionSitio.whatsappNumero} />
 
   {
     /* Ocultado a pedido del usuario (2026-09-05) — "esa sección de momento
@@ -76,7 +77,7 @@ const mensajeWa = encodeURIComponent(`Hola ${NEGOCIO.razonSocial}, quisiera hace
             <IconArrowRight class="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
           </a>
           <a
-            href={`https://wa.me/${NEGOCIO.whatsappNumero}?text=${mensajeWa}`}
+            href={`https://wa.me/${configuracionSitio.whatsappNumero}?text=${mensajeWa}`}
             target="_blank"
             rel="noopener noreferrer"
             class="inline-flex items-center gap-2 rounded-md bg-green-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-black/10 transition-[transform,background-color] duration-200 hover:scale-105 hover:bg-green-700 active:scale-95"

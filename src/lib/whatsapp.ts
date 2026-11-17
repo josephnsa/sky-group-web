@@ -45,8 +45,16 @@ export function construirMensajePedido(lineas: CartLine[], total: number) {
   return `${encabezado}${SALTO}${SALTO}${items}${SALTO}${SALTO}${pie}`;
 }
 
+// Número de WhatsApp de la empresa: el que se guardó en /admin/configuracion
+// (Layout.astro lo publica en <meta name="sky-whatsapp">). Fuera del
+// navegador o si falta la etiqueta, se usa el de consts.ts.
+export function numeroWhatsapp() {
+  const meta = typeof document !== "undefined" ? document.querySelector('meta[name="sky-whatsapp"]')?.getAttribute("content") : null;
+  return (meta || NEGOCIO.whatsappNumero).replace(/\D/g, "");
+}
+
 export function construirEnlaceWhatsApp(lineas: CartLine[], total: number) {
   const mensaje = construirMensajePedido(lineas, total);
-  const numero = NEGOCIO.whatsappNumero.replace(/\D/g, "");
+  const numero = numeroWhatsapp();
   return `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
 }

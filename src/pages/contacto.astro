@@ -2,6 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import ContactoForm from "../components/ContactoForm";
 import { NEGOCIO, SUCURSALES } from "../consts";
+import { configuracionSitio } from "../data/configuracion";
 import { negocioJsonLd } from "../lib/seo";
 
 // Embed de Google Maps sin necesitar API key: el formato "?q=<dirección>
@@ -36,7 +37,7 @@ const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(direccionMapa)}&navi
       <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-400">Tel: {SUCURSALES[0].telefono}</p>
       <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-400">Correo: {NEGOCIO.correo}</p>
       <a
-        href={`https://wa.me/${NEGOCIO.whatsappNumero}`}
+        href={`https://wa.me/${configuracionSitio.whatsappNumero}`}
         target="_blank"
         rel="noopener noreferrer"
         class="mt-3 inline-block rounded-md bg-green-600 px-5 py-2 text-sm font-semibold text-white hover:bg-green-700"

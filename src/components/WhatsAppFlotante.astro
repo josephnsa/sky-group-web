@@ -1,5 +1,6 @@
 ---
 import { NEGOCIO } from "../consts";
+import { configuracionSitio } from "../data/configuracion";
 
 const mensaje = encodeURIComponent(
   `Hola ${NEGOCIO.razonSocial}, quisiera hacer una consulta.`,
@@ -7,7 +8,7 @@ const mensaje = encodeURIComponent(
 ---
 
 <a
-  href={`https://wa.me/${NEGOCIO.whatsappNumero}?text=${mensaje}`}
+  href={`https://wa.me/${configuracionSitio.whatsappNumero}?text=${mensaje}`}
   target="_blank"
   rel="noopener noreferrer"
   aria-label="Escribir por WhatsApp"

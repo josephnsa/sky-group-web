@@ -7,6 +7,16 @@
 import { supabase } from "../lib/supabase";
 import { NEGOCIO, REDES_SOCIALES, SUCURSALES } from "../consts";
 
+// Número de WhatsApp listo para wa.me: solo dígitos y con el código de Perú.
+// Si el admin escribe "950 486 811" (sin 51) se completa solo; si el campo
+// queda vacío o no parece un número válido, se usa el de consts.ts.
+function normalizarWhatsapp(valor: unknown) {
+  const digitos = String(valor ?? "").replace(/\D/g, "");
+  if (digitos.length === 9) return `51${digitos}`;
+  if (digitos.length >= 10 && digitos.length <= 15) return digitos;
+  return NEGOCIO.whatsappNumero;
+}
+
 async function cargar() {
   let fila: Record<string, any> | null = null;
   try {
@@ -22,7 +32,7 @@ async function cargar() {
     correo: fila?.correo || NEGOCIO.correo,
     direccion: fila?.direccion || SUCURSALES[0].direccion,
     horario: fila?.horario || SUCURSALES[0].horario,
-    whatsappNumero: fila?.whatsapp_numero || NEGOCIO.whatsappNumero,
+    whatsappNumero: normalizarWhatsapp(fila?.whatsapp_numero),
     facebook: fila?.facebook ?? REDES_SOCIALES.facebook,
     instagram: fila?.instagram ?? REDES_SOCIALES.instagram,
     tiktok: fila?.tiktok ?? REDES_SOCIALES.tiktok,

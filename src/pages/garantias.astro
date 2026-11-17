@@ -1,7 +1,8 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import FormularioGarantia from "../components/FormularioGarantia";
-import { MARCAS, NEGOCIO } from "../consts";
+import { MARCAS } from "../consts";
+import { configuracionSitio } from "../data/configuracion";
 
 // Contenido: "GARANTIAS - INFO OK.docx" (carpeta PAG WEB SKY del cliente).
 // Diseño: guiado por la referencia visual del cliente (portada oscura con
@@ -11,7 +12,7 @@ import { MARCAS, NEGOCIO } from "../consts";
 // ejemplo, la referencia dice "TACPRO: 1 año de garantía", pero el
 // documento solo habla de "garantía extendida" para todas las marcas.
 
-const WHATSAPP = `https://wa.me/${NEGOCIO.whatsappNumero}?text=${encodeURIComponent("Hola SKY Group, quisiera consultar sobre la garantía de un producto.")}`;
+const WHATSAPP = `https://wa.me/${configuracionSitio.whatsappNumero}?text=${encodeURIComponent("Hola SKY Group, quisiera consultar sobre la garantía de un producto.")}`;
 
 const PILARES = [
   { titulo: "Respaldo", desc: "Nuestros productos cuentan con un estándar certificado y una calidad garantizada para proteger tu inversión.", icono: "escudo" },
@@ -374,7 +375,7 @@ const DETALLE = [
         Completa el formulario y se abrirá WhatsApp con tu solicitud lista para enviar a nuestro equipo de garantías.
       </p>
       <div class="mt-6 rounded-xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6 dark:border-neutral-800 dark:bg-neutral-900">
-        <FormularioGarantia client:load numeroWhatsapp={NEGOCIO.whatsappNumero} />
+        <FormularioGarantia client:load numeroWhatsapp={configuracionSitio.whatsappNumero} />
       </div>
     </div>
   </section>

@@ -8,6 +8,7 @@ type BannerSlide = DiapositivaCarrusel;
 
 interface Props {
   slidesIniciales: BannerSlide[];
+  numeroWhatsapp?: string;
 }
 
 const INTERVALO_MS = 5000;
@@ -37,7 +38,7 @@ const mensajeWa = encodeURIComponent(`Hola ${NEGOCIO.razonSocial}, quisiera hace
 // Con la imagen ya en el HTML inicial, se ve al instante. La contrapartida
 // (igual que con categorías/productos) es que un cambio del admin necesita
 // un rebuild del sitio para publicarse, no aparece solo al recargar.
-export default function PromoCarousel({ slidesIniciales }: Props) {
+export default function PromoCarousel({ slidesIniciales, numeroWhatsapp = NEGOCIO.whatsappNumero }: Props) {
   const [diapositivas] = useState<BannerSlide[]>(slidesIniciales);
   const [indice, setIndice] = useState(0);
   const [enPausa, setEnPausa] = useState(false);
@@ -180,7 +181,7 @@ export default function PromoCarousel({ slidesIniciales }: Props) {
                       <IconArrowRight class="h-4 w-4" />
                     </a>
                     <a
-                      href={`https://wa.me/${NEGOCIO.whatsappNumero}?text=${mensajeWa}`}
+                      href={`https://wa.me/${numeroWhatsapp}?text=${mensajeWa}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       draggable={false}
