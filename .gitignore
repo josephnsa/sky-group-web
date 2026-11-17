@@ -1,5 +1,6 @@
 # build output
 dist/
+dist-*/
 dev-dist/
 # generated types
 .astro/
@@ -13,46 +14,37 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-
 # environment variables
 .env
-.env.production
+.env.*
 
-# macOS-specific files
+# OS / editor
 .DS_Store
-
-# jetbrains setting folder
+Thumbs.db
 .idea/
+.vscode/
 
-# secretos y credenciales — nunca deben subirse
-client_secret_*.json
+# secretos y credenciales: nunca deben subirse
 *.pem
 *.key
-
-# documentos fuente del negocio (planificación interna, no código del sitio;
-# ya procesados hacia public/images/ y src/data/catalog.ts)
-PRESENTACION SKY GROUP 2026.pptx
-CATEGORIA PRODUCTOS.xlsx
-ImagenCarruselprincipal.jpg
-image.png
-fachada de negocio.png
-/imagenes/
-PAG WEB SKY-*.zip
-_pagweb_extraido/
-_pagweb_extraido2/
-Sin título 18.pdf
-
-# herramientas locales, no parte del sitio
-
-# Material y archivos locales que no son parte del sitio (nunca subir)
-credenciales*.txt
-*credencial*
-client_secret*.json
-PAG WEB SKY/
-PAG WEB SKY-*.zip
-Sin t*tulo*.pdf
-
-# Claves y tokens locales (nunca al repositorio)
-token*.txt
-*token*.txt
 *.token
+client_secret*.json
+*credencial*
+*token*.txt
+
+# material local (documentación interna, archivos del negocio): no se versiona
+/privado/
+/*.pdf
+/*.png
+/*.jpg
+/*.pptx
+/*.xlsx
+/*.docx
+/*.zip
+/*.txt
+/*.csv
+/*.md
+!/README.md
+/imagenes/
+/PAG WEB*/
+/_pagweb_extraido*/
