@@ -176,7 +176,7 @@ function Panel() {
       setArchivoFachada(null);
       setGuardado(true);
       await cargar();
-      avisar("Configuración guardada. Se verá en la web en unos 15 a 20 minutos.");
+      avisar("Configuración guardada. Se verá en la web en 1 a 2 minutos.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al guardar.");
       avisar("No se pudo guardar. Revisa el mensaje en rojo.", true);
@@ -200,7 +200,7 @@ function Panel() {
     <form onSubmit={guardar} class="max-w-3xl space-y-3">
       <p class="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
         Cada sección muestra el texto que se ve hoy en la web. Abre la que necesites, cambia lo que quieras y pulsa
-        <b> Guardar cambios</b>. Los cambios se ven en la web en unos 15 a 20 minutos.
+        <b> Guardar cambios</b>. Los cambios se ven en la web en 1 a 2 minutos.
       </p>
 
       <Seccion titulo="Datos de contacto" desc="Teléfono, correo, WhatsApp, dirección y horario. Aparecen en el pie de página y en Contacto." abierta>
