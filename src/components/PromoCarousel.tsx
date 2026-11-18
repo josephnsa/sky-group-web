@@ -107,7 +107,9 @@ export default function PromoCarousel({ slidesIniciales, numeroWhatsapp = NEGOCI
   return (
     <div
       data-testid="promo-carousel"
-      class="relative aspect-[16/9] w-full overflow-hidden sm:aspect-[2458/910]"
+      class={`relative w-full overflow-hidden sm:aspect-[2458/910] ${
+        diapositivas.some((d) => d.enlace) ? "aspect-[16/9]" : "aspect-[2458/910]"
+      }`}
       onMouseEnter={() => setEnPausa(true)}
       onMouseLeave={() => setEnPausa(false)}
       ref={contenedorRef}
@@ -206,7 +208,7 @@ export default function PromoCarousel({ slidesIniciales, numeroWhatsapp = NEGOCI
               type="button"
               aria-label={`Ir a la diapositiva ${i + 1}`}
               onClick={() => irA(i)}
-              class={`pointer-events-auto h-2 rounded-full transition-all duration-300 ${
+              class={`pointer-events-auto relative h-2 rounded-full transition-all duration-300 after:absolute after:-inset-x-1 after:-inset-y-2 after:content-[''] ${
                 i === indice ? "w-6 bg-white" : "w-2 bg-white/50 hover:bg-white/75"
               }`}
             />

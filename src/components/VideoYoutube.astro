@@ -1,0 +1,49 @@
+---
+// Muestra la miniatura del video y carga el reproductor de YouTube recién
+// cuando la persona lo toca: así la página no descarga el reproductor
+// completo solo por pasar cerca del video.
+interface Props {
+  embed: string;
+  titulo: string;
+}
+
+const { embed, titulo } = Astro.props;
+const id = embed.split("/embed/")[1]?.slice(0, 11) ?? "";
+---
+
+<div class="mt-4 aspect-video overflow-hidden rounded-lg bg-black">
+  <button
+    type="button"
+    data-video-youtube={embed}
+    data-titulo={titulo}
+    aria-label={`Reproducir: ${titulo}`}
+    class="group relative h-full w-full"
+  >
+    <img
+      src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`}
+      alt=""
+      loading="lazy"
+      class="h-full w-full object-cover"
+    />
+    <span
+      class="absolute left-1/2 top-1/2 flex h-14 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl bg-red-600 shadow-lg transition-transform duration-200 group-hover:scale-110"
+      aria-hidden="true"
+    >
+      <svg viewBox="0 0 24 24" class="ml-1 h-7 w-7 fill-white"><path d="M8 5v14l11-7z"></path></svg>
+    </span>
+  </button>
+</div>
+
+<script>
+  document.addEventListener("click", (e) => {
+    const boton = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-video-youtube]");
+    if (!boton) return;
+    const iframe = document.createElement("iframe");
+    iframe.src = `${boton.dataset.videoYoutube}?autoplay=1`;
+    iframe.title = boton.dataset.titulo ?? "Video";
+    iframe.className = "h-full w-full";
+    iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+    iframe.allowFullscreen = true;
+    boton.replaceWith(iframe);
+  });
+</script>

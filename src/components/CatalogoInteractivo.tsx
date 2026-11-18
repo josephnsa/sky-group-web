@@ -305,12 +305,12 @@ export default function CatalogoInteractivo({ productos, categorias }: Props) {
             <label class="block text-xs font-semibold uppercase text-neutral-500 dark:text-neutral-400">Marca</label>
             <div class="mt-1 max-h-48 space-y-1 overflow-y-auto rounded-md border border-neutral-200 p-2 dark:border-neutral-700">
               {marcasDisponibles.map((m) => (
-                <label key={m} class="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
+                <label key={m} class="flex items-center gap-2 py-1 text-sm text-neutral-700 dark:text-neutral-300">
                   <input
                     type="checkbox"
                     checked={marcas.includes(m)}
                     onChange={() => toggleMarca(m)}
-                    class="accent-brand-blue"
+                    class="h-4 w-4 accent-brand-blue"
                   />
                   {m}
                 </label>
@@ -319,7 +319,7 @@ export default function CatalogoInteractivo({ productos, categorias }: Props) {
           </div>
         )}
 
-        <label class="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
+        <label class="flex items-center gap-2 py-1 text-sm text-neutral-700 dark:text-neutral-300">
           <input
             type="checkbox"
             checked={soloOfertas}
@@ -327,7 +327,7 @@ export default function CatalogoInteractivo({ productos, categorias }: Props) {
               setPagina(1);
               setSoloOfertas((e.target as HTMLInputElement).checked);
             }}
-            class="accent-brand-blue"
+            class="h-4 w-4 accent-brand-blue"
           />
           Solo ofertas
         </label>

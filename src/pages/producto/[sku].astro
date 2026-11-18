@@ -21,11 +21,18 @@ const galeria = [getImagenProducto(producto), ...(producto.imagenes ?? [])];
 const tieneDetalleTecnico =
   (producto.compatibilidad && producto.compatibilidad.length > 0) ||
   (producto.especificaciones && producto.especificaciones.length > 0);
+// Las descripciones cortas se completan para que Google muestre un resumen útil.
+const descripcionBase = producto.descripcion?.trim();
+const descripcionSeo = descripcionBase
+  ? descripcionBase.length < 110
+    ? `${descripcionBase.replace(/\.?$/, ".")} ${producto.categoria}: envíos a todo el Perú y atención por WhatsApp con SKY Group.`
+    : descripcionBase
+  : `${producto.nombre}${esSinMarca(producto.marca) ? "" : ` ${producto.marca}`} (código ${producto.sku}). Cotiza por WhatsApp con SKY Group, envíos a todo el Perú.`;
 ---
 
 <Layout
   title={producto.nombre}
-  description={producto.descripcion || `${producto.nombre}${esSinMarca(producto.marca) ? "" : ` ${producto.marca}`} (código ${producto.sku}). Cotiza por WhatsApp con SKY Group, envíos a todo el Perú.`}
+  description={descripcionSeo}
   imagen={galeria[0]}
   tipo="product"
   datosEstructurados={[
