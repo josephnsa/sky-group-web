@@ -58,11 +58,20 @@ export const SUCURSALES = [
 // oficial (diapositiva 8). Se muestran en Nosotros y en Inicio.
 export const MARCAS = [
   // Marca propia: "MARCA SKY - mayoría de productos de accesorios para vehículos" (presentación 2026, diapositiva 8).
-  { nombre: "SKY", logo: "/images/brand/marcas/sky.png", desc: "Accesorios para vehículos de marca propia" },
+  {
+    nombre: "SKY",
+    logo: "/images/brand/marcas/sky.png",
+    desc: "Accesorios para vehículos de marca propia",
+    // En Inicio y Nosotros la tarjeta de SKY muestra sus dos líneas.
+    lineas: [
+      { nombre: "SKY ACCESSORIES", logo: "/images/brand/marcas/sky-accessories.png", desc: "Cobertores, plumillas, cubre volantes, medidor de aire y más" },
+      { nombre: "SKY EQUIPMENT", logo: "/images/brand/marcas/sky-equipment.png", desc: "Estribos de aluminio, antivuelcos, defensas de acero, molduras de capot y más" },
+    ],
+  },
   { nombre: "TACPRO", logo: "/images/brand/marcas/tacpro.png", desc: "Focos y faros LED de alta gama" },
   { nombre: "SKYLINE", logo: "/images/brand/marcas/skyline.png", desc: "Barras transversales, parrillas, porta equipajes y tapas de tolva" },
   { nombre: "SPORTS", logo: "/images/brand/marcas/sports.png", desc: "Accesorios tuning" },
-  { nombre: "RoadSafe", logo: "/images/brand/marcas/roadsafe.png", desc: "Auxilio vehicular: gatas, compresoras, kits de emergencia y cables para batería" },
+  { nombre: "RoadSafe", logo: "/images/brand/marcas/roadsafe.png", desc: "Cinturón de seguridad y cintas reflectivas" },
   // Logo en "PAG WEB SKY/LOGOS/LOGOS BLOX"; listada entre las marcas con garantía extendida (GARANTIAS - INFO OK.docx).
-  { nombre: "BLOX", logo: "/images/brand/marcas/blox.png", desc: "Tuercas y seguros deportivos" },
+  { nombre: "BLOX", logo: "/images/brand/marcas/blox.png", desc: "Tuercas para aro y tapas de pitón" },
 ]; // TODO: agregar más marcas si el negocio trabaja otras
