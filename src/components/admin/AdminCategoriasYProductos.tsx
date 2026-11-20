@@ -1,6 +1,7 @@
 import { Fragment } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import AdminGate from "./AdminGate";
+import DescripcionProducto from "../DescripcionProducto";
 import {
   categoriasAdmin,
   productosAdmin,
@@ -2303,14 +2304,25 @@ function Panel() {
               4. Descripción y ficha técnica
             </p>
             <div>
-              <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Descripción</label>
+              <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300" htmlFor="descripcion-producto">Descripción</label>
               <textarea
+                id="descripcion-producto"
                 required
-                rows={3}
+                rows={8}
                 value={prodForm.descripcion}
                 onInput={(e) => campoProducto("descripcion", (e.target as HTMLTextAreaElement).value)}
                 class="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
               />
+              <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                Cada línea es un párrafo. Empieza una línea con <strong>-</strong> para hacer una viñeta. Una línea corta que termina en{" "}
+                <strong>:</strong> (por ejemplo "Beneficios:") sale como subtítulo.
+              </p>
+              {prodForm.descripcion.trim() && (
+                <div data-vista-previa-descripcion class="mt-3 rounded-md border border-dashed border-neutral-300 bg-neutral-50 p-3 dark:border-neutral-700 dark:bg-neutral-900/60">
+                  <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Vista previa</p>
+                  <DescripcionProducto texto={prodForm.descripcion} compacto />
+                </div>
+              )}
             </div>
 
             <div>

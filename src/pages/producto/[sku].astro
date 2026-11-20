@@ -6,6 +6,7 @@ import BotonConoceMas from "../../components/BotonConoceMas";
 import { getImagenProducto, productos } from "../../data/catalog";
 import { esSinMarca, marcaVisible } from "../../lib/marca";
 import { migasJsonLd, productoJsonLd } from "../../lib/seo";
+import DescripcionProducto from "../../components/DescripcionProducto";
 
 export function getStaticPaths() {
   return productos.map((p) => ({
@@ -87,7 +88,7 @@ const descripcionSeo = descripcionBase
           )
         }
 
-        <p class="mt-4 text-neutral-700 dark:text-neutral-300">{producto.descripcion}</p>
+        <div class="mt-4"><DescripcionProducto texto={producto.descripcion} /></div>
 
         <div class="mt-6 flex flex-wrap items-end gap-3">
           <div class="max-w-xs flex-1">

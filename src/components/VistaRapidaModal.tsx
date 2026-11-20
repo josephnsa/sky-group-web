@@ -5,6 +5,7 @@ import { IconClose } from "./icons/ui";
 import { DURATION, EASE_BRAND } from "../lib/motion";
 import AddToCartButton from "./AddToCartButton";
 import { marcaVisible } from "../lib/marca";
+import DescripcionProducto from "./DescripcionProducto";
 
 interface Props {
   producto: Producto;
@@ -95,7 +96,7 @@ export default function VistaRapidaModal({ producto, onClose }: Props) {
               </div>
             )}
 
-            <p class="mt-3 text-sm text-neutral-600 dark:text-neutral-300">{producto.descripcion}</p>
+            <div class="mt-3"><DescripcionProducto texto={producto.descripcion} compacto /></div>
 
             {producto.compatibilidad && producto.compatibilidad.length > 0 && (
               <div class="mt-3 flex flex-wrap gap-1.5">
