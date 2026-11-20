@@ -7,10 +7,6 @@ import { HISTORIA_DEFECTO, MISION_DEFECTO, VALORES_DEFECTO, VISION_DEFECTO } fro
 // Misión, Visión, Valores e Historia: texto real de "PRESENTACION SKY
 // GROUP 2026.pptx" (diapositivas 5, 6 y 7) — usado como fallback si nadie
 // editó estos campos todavía desde /admin/configuracion.
-
-
-
-
 const mision = c.mision || MISION_DEFECTO;
 const vision = c.vision || VISION_DEFECTO;
 const historia = c.historia || HISTORIA_DEFECTO;
@@ -18,10 +14,8 @@ const historia = c.historia || HISTORIA_DEFECTO;
 // Imágenes referenciales, fijas por ahora — el negocio las va a reemplazar
 // directamente subiendo sus propias fotos a estas rutas (no editable desde
 // el admin a propósito, para mantener esto simple).
-const misionImagen = "/images/categorias/equipamiento-exterior.webp";
-const visionImagen = "/images/hero/auto-real.webp";
+const heroImagen = "/images/hero/auto-real.webp";
 const historiaImagen = "/images/nosotros/fachada.webp";
-
 
 const VALORES = c.valores && c.valores.length > 0 ? c.valores : VALORES_DEFECTO;
 
@@ -29,76 +23,126 @@ const VALORES = c.valores && c.valores.length > 0 ? c.valores : VALORES_DEFECTO;
 // (diapositiva 17), con descripciones tal cual las trae la fuente donde
 // las hay.
 const RAZONES = [
-  { titulo: "Amplio portafolio de productos", desc: "Productos y soluciones para diferentes tipos de vehículos." },
-  { titulo: "Atención personalizada", desc: "Asesoría para ayudarte a encontrar el producto adecuado." },
-  { titulo: "Calidad y funcionalidad", desc: "Productos seleccionados para responder a diferentes necesidades." },
-  { titulo: "Venta mayorista y minorista", desc: "Atendemos tanto a clientes particulares como a negocios y distribuidores." },
-  { titulo: "Distribución nacional", desc: "Distribuimos nuestros productos a todo el Perú y fronteras." },
-  { titulo: "Experiencia en el sector automotriz", desc: "Trayectoria dedicada al mercado automotriz peruano." },
+  { titulo: "Amplio portafolio de productos", desc: "Productos y soluciones para diferentes tipos de vehículos.", icono: "caja" },
+  { titulo: "Atención personalizada", desc: "Asesoría para ayudarte a encontrar el producto adecuado.", icono: "chat" },
+  { titulo: "Calidad y funcionalidad", desc: "Productos seleccionados para responder a diferentes necesidades.", icono: "medalla" },
+  { titulo: "Venta mayorista y minorista", desc: "Atendemos tanto a clientes particulares como a negocios y distribuidores.", icono: "tienda" },
+  { titulo: "Distribución nacional", desc: "Distribuimos nuestros productos a todo el Perú y fronteras.", icono: "camion" },
+  { titulo: "Experiencia en el sector automotriz", desc: "Trayectoria dedicada al mercado automotriz peruano.", icono: "auto" },
 ];
+
+// Trazos de íconos (24×24, estilo línea). El ícono de cada valor se elige por
+// su título; si el negocio agrega un valor nuevo desde el panel, usa "estrella".
+const ICONOS: Record<string, string> = {
+  diana: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+  ojo: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  manos: '<path d="M11 17l2 2a1 1 0 0 0 1.4 0l3.6-3.6a1 1 0 0 0 0-1.4L13 9"/><path d="M14 6l-2-2-6 6 4 4"/><path d="M3 13l3 3"/><path d="M21 13l-3 3"/>',
+  medalla: '<circle cx="12" cy="9" r="6"/><path d="M8.5 14 7 22l5-3 5 3-1.5-8"/>',
+  chat: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>',
+  foco: '<path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V16h8v-1.3A7 7 0 0 0 12 2z"/>',
+  escudo: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>',
+  estrella: '<path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/>',
+  caja: '<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/>',
+  tienda: '<path d="M3 9l1.5-5h15L21 9"/><path d="M4 9v11h16V9"/><path d="M3 9h18"/><path d="M9 20v-6h6v6"/>',
+  camion: '<path d="M1 4h14v12H1z"/><path d="M15 9h4l3 3v4h-7z"/><circle cx="5.5" cy="18.5" r="2"/><circle cx="18.5" cy="18.5" r="2"/>',
+  auto: '<path d="M5 17H3v-5l2-5h14l2 5v5h-2"/><path d="M3 12h18"/><circle cx="7.5" cy="17" r="2"/><circle cx="16.5" cy="17" r="2"/>',
+};
+const iconoValor = (titulo: string) => {
+  const t = titulo.toLowerCase();
+  if (t.includes("compromiso")) return "manos";
+  if (t.includes("calidad")) return "medalla";
+  if (t.includes("servicio")) return "chat";
+  if (t.includes("innova")) return "foco";
+  if (t.includes("confian")) return "escudo";
+  return "estrella";
+};
+const svg = (nombre: string) =>
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6" aria-hidden="true">${ICONOS[nombre]}</svg>`;
 ---
 
 <Layout title="Nosotros" description="Conoce a SKY Group: misión, visión, valores e historia de la empresa importadora de accesorios y equipamiento vehicular en Lima, Perú.">
-  <section class="bg-gradient-to-br from-brand-blue to-brand-green">
-    <div class="mx-auto max-w-3xl px-4 py-16 text-center text-white sm:py-24">
-      <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl">Nosotros</h1>
-      <p class="mt-3 text-white/90">
-        Somos una empresa peruana líder en la importación, comercialización
-        y distribución de accesorios y equipamiento para vehículos, con
-        atención directa y personalizada por WhatsApp para clientes
-        mayoristas y minoristas.
-      </p>
-    </div>
-  </section>
-
-  <section class="mx-auto grid max-w-5xl gap-6 px-4 py-12 sm:grid-cols-2 sm:py-16">
-    <div data-reveal class="overflow-hidden rounded-lg border-t-4 border-t-brand-blue border-x border-b border-x-neutral-200 border-b-neutral-200 dark:border-x-neutral-800 dark:border-b-neutral-800 dark:bg-neutral-900">
-      <img src={misionImagen} alt="Camioneta con equipamiento exterior SKY Group" class="h-36 w-full object-cover" loading="lazy" />
-      <div class="p-6">
-        <h2 class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">Misión</h2>
-        <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400">{mision}</p>
-      </div>
-    </div>
-    <div data-reveal style="transition-delay: 120ms" class="overflow-hidden rounded-lg border-t-4 border-t-brand-green border-x border-b border-x-neutral-200 border-b-neutral-200 dark:border-x-neutral-800 dark:border-b-neutral-800 dark:bg-neutral-900">
-      <img src={visionImagen} alt="Auto equipado con accesorios" class="h-36 w-full object-cover" loading="lazy" />
-      <div class="p-6">
-        <h2 class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">Visión</h2>
-        <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400">{vision}</p>
+  <section class="relative isolate overflow-hidden bg-gradient-to-br from-brand-blue to-brand-green">
+    <img src={heroImagen} alt="" class="absolute inset-y-0 right-0 -z-10 hidden h-full w-3/5 object-cover sm:block" />
+    <div class="absolute inset-0 -z-10 hidden bg-gradient-to-r from-brand-blue from-40% via-brand-blue/80 to-brand-green/10 sm:block"></div>
+    <div class="mx-auto max-w-6xl px-4 py-16 text-white sm:py-24">
+      <div class="max-w-xl">
+        <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl">Nosotros</h1>
+        <span class="mt-4 block h-1 w-16 rounded-full bg-white/80"></span>
+        <p class="mt-4 text-white/90 sm:text-lg">
+          Somos una empresa peruana líder en la importación, comercialización
+          y distribución de accesorios y equipamiento para vehículos, con
+          atención directa y personalizada por WhatsApp para clientes
+          mayoristas y minoristas.
+        </p>
       </div>
     </div>
   </section>
 
-  <section class="mx-auto max-w-5xl px-4 pb-12 sm:pb-16">
-    <div class="grid gap-6 sm:grid-cols-[1fr_auto] sm:items-center">
-      <div>
+  <section class="mx-auto grid max-w-6xl gap-6 px-4 py-12 sm:grid-cols-2 sm:py-16">
+    {
+      [
+        { titulo: "Misión", texto: mision, icono: "diana", color: "blue" },
+        { titulo: "Visión", texto: vision, icono: "ojo", color: "green" },
+      ].map((b, i) => (
+        <div
+          data-reveal
+          style={`transition-delay: ${i * 120}ms`}
+          class="flex gap-5 rounded-lg border border-neutral-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-900"
+        >
+          <span
+            class={`flex h-14 w-14 flex-none items-center justify-center rounded-full ${
+              b.color === "blue" ? "bg-brand-blue/10 text-brand-blue-dark dark:text-brand-blue" : "bg-brand-green/15 text-brand-green-dark dark:text-brand-green"
+            }`}
+            set:html={svg(b.icono).replace("h-6 w-6", "h-7 w-7")}
+          />
+          <div>
+            <h2 class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">{b.titulo}</h2>
+            <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400">{b.texto}</p>
+            <span class={`mt-4 block h-1 w-12 rounded-full ${b.color === "blue" ? "bg-brand-blue" : "bg-brand-green"}`}></span>
+          </div>
+        </div>
+      ))
+    }
+  </section>
+
+  <section class="mx-auto max-w-6xl px-4 pb-12 sm:pb-16">
+    <div class="grid items-center gap-8 overflow-hidden rounded-lg bg-neutral-50 sm:grid-cols-2 dark:bg-neutral-900">
+      <div class="p-6 sm:p-10">
         <h2 class="border-l-4 border-brand-green pl-3 text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">Nuestra historia</h2>
-        <p data-reveal class="mt-4 max-w-3xl text-sm text-neutral-600 dark:text-neutral-400">{historia}</p>
+        <p data-reveal class="mt-4 text-sm leading-relaxed text-neutral-600 sm:text-base dark:text-neutral-400">{historia}</p>
       </div>
-      <img
-        src={historiaImagen}
-        alt="Fachada de la tienda SKY Group en Av. México, La Victoria"
-        class="h-40 w-full rounded-lg object-cover sm:h-32 sm:w-48"
-        loading="lazy"
-      />
+      <div class="relative h-56 sm:h-full sm:min-h-72">
+        <img
+          src={historiaImagen}
+          alt="Fachada de la tienda SKY Group en Av. México, La Victoria"
+          class="absolute inset-0 h-full w-full object-cover"
+          loading="lazy"
+        />
+      </div>
     </div>
   </section>
 
-  <section class="mx-auto max-w-5xl px-4 pb-12 sm:pb-16">
+  <section class="mx-auto max-w-6xl px-4 pb-12 sm:pb-16">
     <h2 class="border-l-4 border-brand-blue pl-3 text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">Valores</h2>
-    <div class="mt-4 grid gap-4 sm:grid-cols-3">
+    <div class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
       {
         VALORES.map((v, i) => (
-          <div data-reveal style={`transition-delay: ${i * 100}ms`} class="overflow-hidden rounded-lg bg-neutral-50 dark:bg-neutral-900">
+          <div
+            data-reveal
+            style={`transition-delay: ${i * 90}ms`}
+            class="flex flex-col items-center overflow-hidden rounded-lg border border-neutral-200 bg-white text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-900"
+          >
             {v.imagen ? (
-              <img src={v.imagen} alt="" class="h-32 w-full object-cover" loading="lazy" />
+              <img src={v.imagen} alt="" class="h-28 w-full object-cover" loading="lazy" />
             ) : (
               <span
-                class={`mt-5 ml-5 block h-1.5 w-8 rounded-full ${
-                  i % 3 === 0 ? "bg-brand-blue" : i % 3 === 1 ? "bg-brand-green" : "bg-brand-gray"
+                class={`mt-6 flex h-12 w-12 items-center justify-center rounded-full ${
+                  i % 2 === 0 ? "bg-brand-blue/10 text-brand-blue-dark dark:text-brand-blue" : "bg-brand-green/15 text-brand-green-dark dark:text-brand-green"
                 }`}
+                set:html={svg(iconoValor(v.titulo))}
               />
             )}
-            <div class="p-5 pt-3">
+            <div class="p-4 pt-3">
               <p class="font-semibold text-neutral-900 dark:text-white">{v.titulo}</p>
               <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{v.desc}</p>
             </div>
@@ -108,20 +152,25 @@ const RAZONES = [
     </div>
   </section>
 
-  <section class="mx-auto max-w-5xl px-4 pb-12 sm:pb-16">
-    <h2 class="border-l-4 border-brand-green pl-3 text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">¿Por qué elegirnos?</h2>
-    <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {
-        RAZONES.map((r, i) => (
-          <div data-reveal style={`transition-delay: ${i * 90}ms`} class="flex gap-3 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
-            <span class={`mt-1 h-2 w-2 flex-none rounded-full ${i % 2 === 0 ? "bg-brand-blue" : "bg-brand-green"}`} />
-            <div>
-              <p class="font-semibold text-neutral-900 dark:text-white">{r.titulo}</p>
-              <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{r.desc}</p>
+  <section class="mx-auto max-w-6xl px-4 pb-12 sm:pb-16">
+    <div class="rounded-lg bg-neutral-900 p-6 text-white sm:p-10 dark:border dark:border-neutral-800">
+      <h2 class="border-l-4 border-brand-green pl-3 text-2xl font-bold tracking-tight">¿Por qué elegirnos?</h2>
+      <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {
+          RAZONES.map((r, i) => (
+            <div data-reveal style={`transition-delay: ${i * 90}ms`} class="flex gap-4">
+              <span
+                class={`flex h-11 w-11 flex-none items-center justify-center rounded-full ${i % 2 === 0 ? "bg-brand-blue/15 text-brand-blue" : "bg-brand-green/15 text-brand-green"}`}
+                set:html={svg(r.icono)}
+              />
+              <div>
+                <p class="font-semibold">{r.titulo}</p>
+                <p class="mt-1 text-sm text-neutral-400">{r.desc}</p>
+              </div>
             </div>
-          </div>
-        ))
-      }
+          ))
+        }
+      </div>
     </div>
   </section>
 

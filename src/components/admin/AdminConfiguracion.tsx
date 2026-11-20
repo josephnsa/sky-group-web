@@ -300,7 +300,7 @@ function Panel() {
         />
       </Seccion>
 
-      <Seccion titulo={'Página "Atención por WhatsApp"'} desc="Videos de YouTube (pega el enlace normal del video) y el texto de atención al por mayor.">
+      <Seccion titulo={'Página "Atención por WhatsApp"'} desc="Videos de YouTube o TikTok (pega el enlace normal del video) y el texto de atención al por mayor.">
         <CampoTexto label="Video: Atención en tienda" value={form.atencion_tienda_youtube} onInput={(v) => campo("atencion_tienda_youtube", v)} />
         <CampoTexto label="Video: Atención al por mayor" value={form.atencion_mayorista_youtube} onInput={(v) => campo("atencion_mayorista_youtube", v)} />
         <CampoTextarea label="Texto de atención al por mayor" value={form.atencion_mayorista_texto} onInput={(v) => campo("atencion_mayorista_texto", v)} />

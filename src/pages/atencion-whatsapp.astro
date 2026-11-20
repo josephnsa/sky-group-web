@@ -4,6 +4,8 @@ import { configuracionSitio as c } from "../data/configuracion";
 import { TEXTO_MAYORISTA_DEFECTO, VIDEO_MAYORISTA_DEFECTO, VIDEO_TIENDA_DEFECTO } from "../data/textos-defecto";
 import { youtubeEmbedUrl } from "../lib/youtube";
 import VideoYoutube from "../components/VideoYoutube.astro";
+import VideoTiktok from "../components/VideoTiktok.astro";
+import { videoEmbebible } from "../lib/enlaces";
 
 // Números específicos de esta página (distintos al WhatsApp general del
 // resto del sitio) — tienda tiene uno, ventas al por mayor tiene dos.
@@ -21,8 +23,17 @@ const textoMayorista = c.atencionMayoristaTexto || TEXTO_MAYORISTA_DEFECTO;
 
 
 
-const embedTienda = youtubeEmbedUrl(c.atencionTiendaYoutube || VIDEO_TIENDA_DEFECTO);
-const embedMayorista = youtubeEmbedUrl(c.atencionMayoristaYoutube || VIDEO_MAYORISTA_DEFECTO);
+// El campo del panel acepta enlaces de YouTube o de TikTok.
+const urlTienda = c.atencionTiendaYoutube || VIDEO_TIENDA_DEFECTO;
+const urlMayorista = c.atencionMayoristaYoutube || VIDEO_MAYORISTA_DEFECTO;
+const tiktok = (url: string) => {
+  const v = videoEmbebible(url);
+  return v?.plataforma === "TikTok" ? v.embedUrl : null;
+};
+const tiktokTienda = tiktok(urlTienda);
+const tiktokMayorista = tiktok(urlMayorista);
+const embedTienda = tiktokTienda ? null : youtubeEmbedUrl(urlTienda);
+const embedMayorista = tiktokMayorista ? null : youtubeEmbedUrl(urlMayorista);
 ---
 
 <Layout title="Atención por WhatsApp" description="Cotiza y compra directo por WhatsApp con SKY Group: atención en tienda y ventas al por mayor, con envíos a todo el Perú.">
@@ -38,7 +49,11 @@ const embedMayorista = youtubeEmbedUrl(c.atencionMayoristaYoutube || VIDEO_MAYOR
         producto que te interesa y te ayudamos a coordinar todo por WhatsApp.
       </p>
       {
-        embedTienda && <VideoYoutube embed={embedTienda} titulo="Video de atención en tienda" />
+        tiktokTienda ? (
+          <VideoTiktok embed={tiktokTienda} enlace={urlTienda} titulo="Video de atención en tienda" />
+        ) : (
+          embedTienda && <VideoYoutube embed={embedTienda} titulo="Video de atención en tienda" />
+        )
       }
       <a
         href={linkTienda}
@@ -54,7 +69,11 @@ const embedMayorista = youtubeEmbedUrl(c.atencionMayoristaYoutube || VIDEO_MAYOR
       <p class="font-semibold text-neutral-900 dark:text-white">Atención al por mayor</p>
       <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400">{textoMayorista}</p>
       {
-        embedMayorista && <VideoYoutube embed={embedMayorista} titulo="Video de atención al por mayor" />
+        tiktokMayorista ? (
+          <VideoTiktok embed={tiktokMayorista} enlace={urlMayorista} titulo="Video de atención al por mayor" />
+        ) : (
+          embedMayorista && <VideoYoutube embed={embedMayorista} titulo="Video de atención al por mayor" />
+        )
       }
       <div class="mt-4 flex flex-wrap gap-3">
         {

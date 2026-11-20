@@ -1,0 +1,34 @@
+---
+// Video de TikTok insertado con el reproductor oficial (formato vertical 9:16).
+// No arranca solo: la persona lo inicia. Debajo queda un enlace de respaldo
+// por si el reproductor no carga (red, región o bloqueadores).
+interface Props {
+  embed: string;
+  enlace: string;
+  titulo: string;
+}
+
+const { embed, enlace, titulo } = Astro.props;
+const src = embed.replace("autoplay=1", "autoplay=0");
+---
+
+<div class="mt-4 flex flex-col items-center">
+  <div class="relative aspect-[9/16] w-full max-w-[325px] overflow-hidden rounded-lg bg-black">
+    <iframe
+      src={src}
+      title={titulo}
+      loading="lazy"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share"
+      allowfullscreen
+      class="absolute inset-0 h-full w-full"
+    ></iframe>
+  </div>
+  <a
+    href={enlace}
+    target="_blank"
+    rel="noopener noreferrer"
+    class="mt-2 text-xs font-medium text-neutral-500 underline-offset-2 hover:underline dark:text-neutral-400"
+  >
+    ¿No carga? Ver en TikTok
+  </a>
+</div>
