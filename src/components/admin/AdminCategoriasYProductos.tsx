@@ -621,6 +621,14 @@ function Panel() {
     setEscribiendoNuevoTipo(false);
   }
 
+  function elegirCategoriaProducto(slug: string) {
+    // Al cambiar de categoría, la subcategoría y el tipo elegidos ya no corresponden.
+    setProdFormCategoriaSlug(slug);
+    setProdForm((f) => ({ ...f, subcategoria: "", tipo: "" }));
+    setEscribiendoNuevaSub(false);
+    setEscribiendoNuevoTipo(false);
+  }
+
   async function elegirSubcategoriaProducto(valor: string) {
     // Al cambiar de subcategoría, el tipo elegido ya no corresponde.
     campoProducto("tipo", "");
@@ -684,7 +692,11 @@ function Panel() {
 
   async function guardarProducto(e: Event) {
     e.preventDefault();
-    if (!prodForm.sku.trim() || !prodForm.nombre.trim() || !prodFormCategoriaSlug) return;
+    if (!prodFormCategoriaSlug) {
+      setErrorProducto("Elige la categoría del producto.");
+      return;
+    }
+    if (!prodForm.sku.trim() || !prodForm.nombre.trim()) return;
     const categoriaSlug = prodFormCategoriaSlug;
     if (ubicacionesForm.some((u) => !u.categoria_slug || !u.subcategoria.trim())) {
       setErrorProducto("En Categorías adicionales, elige la categoría y la subcategoría de cada fila, o quita la fila.");
@@ -829,13 +841,22 @@ function Panel() {
 
   return (
     <div class="space-y-8">
-      <button
-        type="button"
-        onClick={() => setCatFormAbierto(true)}
-        class="inline-flex items-center gap-1.5 rounded-md bg-brand-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-brand-blue-dark"
-      >
-        + Agregar categoría
-      </button>
+      <div class="flex flex-wrap gap-3">
+        <button
+          type="button"
+          onClick={() => setCatFormAbierto(true)}
+          class="inline-flex items-center gap-1.5 rounded-md bg-brand-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-brand-blue-dark"
+        >
+          + Agregar categoría
+        </button>
+        <button
+          type="button"
+          onClick={() => agregarProducto("")}
+          class="inline-flex items-center gap-1.5 rounded-md border border-brand-blue px-4 py-2.5 text-sm font-semibold text-brand-blue-dark transition-colors duration-200 hover:bg-brand-blue/10 dark:text-brand-blue"
+        >
+          + Agregar producto
+        </button>
+      </div>
 
       {catFormAbierto && (
         <div class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-3 sm:items-center sm:p-4">
@@ -1913,7 +1934,7 @@ function Panel() {
         )}
       </div>
 
-      {prodFormAbierto && prodFormCategoriaSlug && (
+      {prodFormAbierto && prodFormCategoriaSlug !== null && (
         <div class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-3 sm:items-center sm:p-4">
           <form
             id="form-producto"
@@ -1926,7 +1947,7 @@ function Panel() {
                   {prodEditandoSku ? `Editar producto · ${prodEditandoSku}` : "Nuevo producto"}
                 </p>
                 <p class="text-xs text-neutral-500 dark:text-neutral-400">
-                  Categoría: {categorias.find((c) => c.slug === prodFormCategoriaSlug)?.nombre}
+                  {prodFormCategoriaSlug ? `Categoría: ${nombreDeCategoria(prodFormCategoriaSlug)}` : "Empieza eligiendo la categoría"}
                 </p>
               </div>
               <button
@@ -1941,17 +1962,39 @@ function Panel() {
 
             <p class="text-xs font-semibold uppercase tracking-wide text-brand-blue-dark dark:text-brand-blue">1. Datos básicos</p>
             <div class="grid gap-3 sm:grid-cols-2">
-              <CampoTexto label="SKU" value={prodForm.sku} onInput={(v) => campoProducto("sku", v)} required />
+              <div>
+                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300" htmlFor="categoria-producto">
+                  Categoría
+                </label>
+                <select
+                  id="categoria-producto"
+                  required
+                  value={prodFormCategoriaSlug}
+                  onInput={(e) => elegirCategoriaProducto((e.target as HTMLSelectElement).value)}
+                  class="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                >
+                  <option value="" disabled>
+                    Elegir categoría
+                  </option>
+                  {categorias.map((c) => (
+                    <option value={c.slug}>
+                      {c.nombre}
+                      {c.activo === false ? " (inactiva)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div>
                 <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Subcategoría</label>
                 <select
                   required={!escribiendoNuevaSub}
+                  disabled={!prodFormCategoriaSlug}
                   value={escribiendoNuevaSub ? NUEVA_SUBCATEGORIA : prodForm.subcategoria}
                   onInput={(e) => elegirSubcategoriaProducto((e.target as HTMLSelectElement).value)}
-                  class="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                  class="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
                 >
                   <option value="" disabled>
-                    Elegir subcategoría
+                    {prodFormCategoriaSlug ? "Elegir subcategoría" : "Primero elige la categoría"}
                   </option>
                   {subcategoriasDe(prodFormCategoriaSlug).map((s) => (
                     <option value={s.nombre}>{s.nombre}</option>
@@ -2004,6 +2047,7 @@ function Panel() {
                   />
                 )}
               </div>
+              <CampoTexto label="SKU" value={prodForm.sku} onInput={(v) => campoProducto("sku", v)} required />
               <CampoTexto label="Nombre" value={prodForm.nombre} onInput={(v) => campoProducto("nombre", v)} required />
               <CampoTexto label="Marca" value={prodForm.marca} onInput={(v) => campoProducto("marca", v)} required />
               <CampoTexto
@@ -2033,7 +2077,9 @@ function Panel() {
                     <div class="min-w-0">
                       <p class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Categorías adicionales (opcional)</p>
                       <p class="text-xs text-neutral-500 dark:text-neutral-400">
-                        El producto también se mostrará en estas categorías. Su categoría principal es {nombreDeCategoria(prodFormCategoriaSlug)}.
+                        {prodFormCategoriaSlug
+                          ? `El producto también se mostrará en estas categorías. Su categoría principal es ${nombreDeCategoria(prodFormCategoriaSlug)}.`
+                          : "El producto también se mostrará en estas categorías, además de la que elijas arriba."}
                       </p>
                     </div>
                     <button
