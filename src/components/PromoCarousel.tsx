@@ -48,6 +48,14 @@ export default function PromoCarousel({ slidesIniciales, numeroWhatsapp = NEGOCI
   // render para reflejar el rango de arrastre completo de la tira — ver
   // más abajo por qué esto es el fix real del bug de arrastre.
   const [ancho, setAncho] = useState(0);
+  // Proporción real (ancho/alto) de cada imagen, medida al cargar. Sirve para
+  // decidir si la imagen llena todo el carrusel o se muestra entera.
+  const [proporciones, setProporciones] = useState<Record<string, number>>({});
+  const medir = (id: string | number, img: HTMLImageElement | null) => {
+    if (!img || !img.complete || !img.naturalWidth) return;
+    const r = img.naturalWidth / img.naturalHeight;
+    setProporciones((prev) => (prev[String(id)] === r ? prev : { ...prev, [String(id)]: r }));
+  };
   const contenedorRef = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);
   const reducirMovimiento = useRef(
@@ -150,7 +158,17 @@ export default function PromoCarousel({ slidesIniciales, numeroWhatsapp = NEGOCI
           }
         }}
       >
-        {diapositivas.map((d) => (
+        {diapositivas.map((d) => {
+          // Si la imagen tiene casi la misma forma que el carrusel (hasta 12 %
+          // de diferencia), la llena por completo (object-cover): así no quedan
+          // franjas vacías a los costados y solo se recorta un borde mínimo. Si
+          // es muy distinta (por ejemplo cuadrada), se muestra entera
+          // (object-contain) para no cortar textos ni logos.
+          const caja = contenedorRef.current;
+          const rCaja = caja && caja.clientHeight ? caja.clientWidth / caja.clientHeight : 2458 / 910;
+          const rImg = proporciones[String(d.id)];
+          const llenar = rImg !== undefined && Math.abs(rImg - rCaja) / rCaja <= 0.12;
+          return (
           <div
             key={d.id}
             class="relative h-full w-full flex-none overflow-hidden"
@@ -164,7 +182,10 @@ export default function PromoCarousel({ slidesIniciales, numeroWhatsapp = NEGOCI
               src={d.imagen_url}
               alt={d.titulo || "Promoción SKY Group"}
               draggable={false}
-              class="relative h-full w-full select-none object-contain"
+              ref={(el) => medir(d.id, el)}
+              onLoad={(e) => medir(d.id, e.currentTarget as HTMLImageElement)}
+              data-ajuste={llenar ? "llenar" : "entera"}
+              class={`relative h-full w-full select-none ${llenar ? "object-cover" : "object-contain"}`}
             />
             {/* Sin enlace, la imagen se muestra sola (pura imagen, sin
             degradado ni botones) — con enlace, aparece el botón "Ver todo"
@@ -197,7 +218,8 @@ export default function PromoCarousel({ slidesIniciales, numeroWhatsapp = NEGOCI
               </>
             )}
           </div>
-        ))}
+          );
+        })}
       </motion.div>
 
       {diapositivas.length > 1 && (
