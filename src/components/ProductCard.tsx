@@ -33,7 +33,7 @@ export default function ProductCard({ producto, onVistaRapida }: Props) {
     : 0;
 
   return (
-    <div class="group flex flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-brand dark:border-neutral-800 dark:bg-neutral-900 dark:hover:shadow-none">
+    <div class="group flex h-full flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-brand dark:border-neutral-800 dark:bg-neutral-900 dark:hover:shadow-none">
       <div class="relative aspect-square overflow-hidden bg-neutral-100 dark:bg-neutral-800">
         <a
           href={`/producto/${producto.sku}`}
@@ -93,7 +93,7 @@ export default function ProductCard({ producto, onVistaRapida }: Props) {
           </div>
         )}
         <div class="mt-auto pt-2">
-          <AddToCartButton sku={producto.sku} />
+          <AddToCartButton sku={producto.sku} compacto />
         </div>
       </div>
     </div>
