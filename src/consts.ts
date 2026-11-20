@@ -64,12 +64,12 @@ export const MARCAS = [
     desc: "Accesorios para vehículos de marca propia",
     // En Inicio y Nosotros la tarjeta de SKY muestra sus dos líneas.
     lineas: [
-      { nombre: "SKY ACCESSORIES", logo: "/images/brand/marcas/sky-accessories.png", desc: "Cobertores, plumillas, cubre volantes, medidor de aire y más" },
-      { nombre: "SKY EQUIPMENT", logo: "/images/brand/marcas/sky-equipment.png", desc: "Estribos de aluminio, antivuelcos, defensas de acero, molduras de capot y más" },
+      { nombre: "SKY ACCESSORIES", logo: "/images/brand/marcas/sky-accessories.png", desc: "Cobertores, plumillas, cubre volantes, medidor de aire y mucho más" },
+      { nombre: "SKY EQUIPMENT", logo: "/images/brand/marcas/sky-equipment.png", desc: "Estribos laterales, antivuelcos, defensas, molduras de capot y mucho más" },
     ],
   },
   { nombre: "TACPRO", logo: "/images/brand/marcas/tacpro.png", desc: "Focos y faros LED de alta gama" },
-  { nombre: "SKYLINE", logo: "/images/brand/marcas/skyline.png", desc: "Barras transversales, parrillas, porta equipajes y tapas de tolva" },
+  { nombre: "SKYLINE", logo: "/images/brand/marcas/skyline.png", desc: "Barras transversales, parrillas, porta equipajes, canopys y tapas de tolva" },
   { nombre: "SPORTS", logo: "/images/brand/marcas/sports.png", desc: "Accesorios tuning" },
   { nombre: "RoadSafe", logo: "/images/brand/marcas/roadsafe.png", desc: "Cinturón de seguridad y cintas reflectivas" },
   // Logo en "PAG WEB SKY/LOGOS/LOGOS BLOX"; listada entre las marcas con garantía extendida (GARANTIAS - INFO OK.docx).
