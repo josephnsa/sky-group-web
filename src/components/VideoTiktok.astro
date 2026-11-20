@@ -1,7 +1,12 @@
 ---
-// Video de TikTok insertado con el reproductor oficial (formato vertical 9:16).
-// No arranca solo: la persona lo inicia. Debajo queda un enlace de respaldo
-// por si el reproductor no carga (red, región o bloqueadores).
+// Video de TikTok en formato vertical 9:16.
+// Si el video está guardado en la propia web (public/videos/tiktok-<id>.mp4),
+// se reproduce con el reproductor normal del navegador: no depende de TikTok
+// y no falla por bloqueadores, cookies ni red. Si no está (por ejemplo, se
+// cambió el enlace desde el panel), usa el reproductor oficial de TikTok.
+import fs from "node:fs";
+import path from "node:path";
+
 interface Props {
   embed: string;
   enlace: string;
@@ -10,18 +15,34 @@ interface Props {
 
 const { embed, enlace, titulo } = Astro.props;
 const src = embed.replace("autoplay=1", "autoplay=0");
+const id = embed.match(/\/player\/v1\/(\d+)/)?.[1];
+const local = id && fs.existsSync(path.join(process.cwd(), "public", "videos", `tiktok-${id}.mp4`)) ? `/videos/tiktok-${id}` : null;
 ---
 
 <div class="mt-4 flex flex-col items-center">
   <div class="relative aspect-[9/16] w-full max-w-[325px] overflow-hidden rounded-lg bg-black">
-    <iframe
-      src={src}
-      title={titulo}
-      loading="lazy"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share"
-      allowfullscreen
-      class="absolute inset-0 h-full w-full"
-    ></iframe>
+    {
+      local ? (
+        <video
+          src={`${local}.mp4`}
+          poster={`${local}.webp`}
+          controls
+          playsinline
+          preload="metadata"
+          title={titulo}
+          class="absolute inset-0 h-full w-full object-contain"
+        />
+      ) : (
+        <iframe
+          src={src}
+          title={titulo}
+          loading="lazy"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share"
+          allowfullscreen
+          class="absolute inset-0 h-full w-full"
+        />
+      )
+    }
   </div>
   <a
     href={enlace}
@@ -32,5 +53,5 @@ const src = embed.replace("autoplay=1", "autoplay=0");
     <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true"><path d="M16.6 5.8A4.3 4.3 0 0 1 15.5 3h-3.1v12.4a2.6 2.6 0 1 1-2.6-2.6c.3 0 .5 0 .8.1V9.7a5.7 5.7 0 1 0 4.9 5.7V9.1a7.3 7.3 0 0 0 4.3 1.4V7.4a4.3 4.3 0 0 1-3.2-1.6z"></path></svg>
     Ver en TikTok
   </a>
-  <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">Si el video no carga aquí, ábrelo directo en TikTok.</p>
+  {!local && <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">Si el video no carga aquí, ábrelo directo en TikTok.</p>}
 </div>

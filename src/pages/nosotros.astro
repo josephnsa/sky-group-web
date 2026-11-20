@@ -1,6 +1,7 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import MarcasSection from "../components/MarcasSection.astro";
+import { IconBox, IconChat, IconShield, IconTruck } from "../components/icons/ui";
 import { configuracionSitio as c } from "../data/configuracion";
 import { HISTORIA_DEFECTO, MISION_DEFECTO, VALORES_DEFECTO, VISION_DEFECTO } from "../data/textos-defecto";
 
@@ -16,6 +17,14 @@ const historia = c.historia || HISTORIA_DEFECTO;
 // el admin a propósito, para mantener esto simple).
 const heroImagen = "/images/hero/auto-real.webp";
 const historiaImagen = "/images/nosotros/fachada.webp";
+
+// Franja bajo el hero: mismos textos que la franja de confianza del inicio.
+const FRANJA = [
+  { icono: IconTruck, titulo: "Envíos a todo el Perú" },
+  { icono: IconShield, titulo: "Garantía en productos" },
+  { icono: IconChat, titulo: "Atención por WhatsApp" },
+  { icono: IconBox, titulo: "Catálogo amplio" },
+];
 
 const VALORES = c.valores && c.valores.length > 0 ? c.valores : VALORES_DEFECTO;
 
@@ -61,20 +70,34 @@ const svg = (nombre: string) =>
 ---
 
 <Layout title="Nosotros" description="Conoce a SKY Group: misión, visión, valores e historia de la empresa importadora de accesorios y equipamiento vehicular en Lima, Perú.">
-  <section class="relative isolate overflow-hidden bg-gradient-to-br from-brand-blue to-brand-green">
-    <img src={heroImagen} alt="" class="absolute inset-y-0 right-0 -z-10 hidden h-full w-3/5 object-cover sm:block" />
-    <div class="absolute inset-0 -z-10 hidden bg-gradient-to-r from-brand-blue from-40% via-brand-blue/80 to-brand-green/10 sm:block"></div>
-    <div class="mx-auto max-w-6xl px-4 py-16 text-white sm:py-24">
+  <section class="relative isolate overflow-hidden bg-white dark:bg-neutral-950">
+    <img src={heroImagen} alt="" class="absolute inset-0 -z-10 h-full w-full object-cover object-right" />
+    <div class="absolute inset-0 -z-10 bg-white/85 sm:hidden dark:bg-neutral-950/85"></div>
+    <div class="absolute inset-0 -z-10 hidden bg-gradient-to-r from-white from-35% via-white/80 to-white/0 sm:block dark:from-neutral-950 dark:via-neutral-950/80 dark:to-neutral-950/10"></div>
+    <div class="mx-auto max-w-6xl px-4 pb-14 pt-16 sm:pb-20 sm:pt-24">
       <div class="max-w-xl">
-        <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl">Nosotros</h1>
-        <span class="mt-4 block h-1 w-16 rounded-full bg-white/80"></span>
-        <p class="mt-4 text-white/90 sm:text-lg">
+        <h1 class="bg-gradient-to-r from-brand-blue-dark to-brand-green-dark bg-clip-text pb-1 text-4xl font-extrabold tracking-tight text-transparent sm:text-5xl lg:text-6xl dark:from-brand-blue dark:to-brand-green">Nosotros</h1>
+        <p class="mt-4 text-neutral-700 sm:text-lg dark:text-neutral-200">
           Somos una empresa peruana líder en la importación, comercialización
           y distribución de accesorios y equipamiento para vehículos, con
           atención directa y personalizada por WhatsApp para clientes
           mayoristas y minoristas.
         </p>
       </div>
+    </div>
+    <div class="border-t border-neutral-200/80 bg-white/75 backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/75">
+      <ul class="mx-auto grid max-w-6xl grid-cols-2 gap-y-4 px-4 py-5 sm:grid-cols-4 sm:divide-x sm:divide-neutral-200 dark:sm:divide-neutral-800">
+        {
+          FRANJA.map((f, i) => (
+            <li class="flex items-center justify-center gap-3 px-2 text-sm font-semibold text-neutral-800 dark:text-neutral-100">
+              <span class={`flex h-9 w-9 flex-none items-center justify-center rounded-full text-white ${i % 2 === 0 ? "bg-brand-blue" : "bg-brand-green"}`}>
+                <f.icono class="h-4 w-4" />
+              </span>
+              {f.titulo}
+            </li>
+          ))
+        }
+      </ul>
     </div>
   </section>
 
@@ -90,13 +113,11 @@ const svg = (nombre: string) =>
           class="flex gap-5 rounded-lg border border-neutral-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-900"
         >
           <span
-            class={`flex h-14 w-14 flex-none items-center justify-center rounded-full ${
-              b.color === "blue" ? "bg-brand-blue/10 text-brand-blue-dark dark:text-brand-blue" : "bg-brand-green/15 text-brand-green-dark dark:text-brand-green"
-            }`}
+            class={`flex h-14 w-14 flex-none items-center justify-center rounded-full text-white shadow-md ${b.color === "blue" ? "bg-brand-blue" : "bg-brand-green"}`}
             set:html={svg(b.icono).replace("h-6 w-6", "h-7 w-7")}
           />
           <div>
-            <h2 class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">{b.titulo}</h2>
+            <h2 class="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">{b.titulo}</h2>
             <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400">{b.texto}</p>
             <span class={`mt-4 block h-1 w-12 rounded-full ${b.color === "blue" ? "bg-brand-blue" : "bg-brand-green"}`}></span>
           </div>
@@ -106,9 +127,9 @@ const svg = (nombre: string) =>
   </section>
 
   <section class="mx-auto max-w-6xl px-4 pb-12 sm:pb-16">
-    <div class="grid items-center gap-8 overflow-hidden rounded-lg bg-neutral-50 sm:grid-cols-2 dark:bg-neutral-900">
+    <div class="grid items-center gap-8 overflow-hidden rounded-lg border border-neutral-200 bg-neutral-50 sm:grid-cols-2 dark:border-neutral-800 dark:bg-neutral-900">
       <div class="p-6 sm:p-10">
-        <h2 class="border-l-4 border-brand-green pl-3 text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">Nuestra historia</h2>
+        <h2 class="text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl dark:text-white">Nuestra <span class="text-brand-blue-dark dark:text-brand-blue">historia</span></h2>
         <p data-reveal class="mt-4 text-sm leading-relaxed text-neutral-600 sm:text-base dark:text-neutral-400">{historia}</p>
       </div>
       <div class="relative h-56 sm:h-full sm:min-h-72">
@@ -123,7 +144,7 @@ const svg = (nombre: string) =>
   </section>
 
   <section class="mx-auto max-w-6xl px-4 pb-12 sm:pb-16">
-    <h2 class="border-l-4 border-brand-blue pl-3 text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">Valores</h2>
+    <h2 class="text-2xl font-bold tracking-tight text-brand-blue-dark sm:text-3xl dark:text-brand-blue">Valores</h2>
     <div class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
       {
         VALORES.map((v, i) => (
@@ -136,9 +157,7 @@ const svg = (nombre: string) =>
               <img src={v.imagen} alt="" class="h-28 w-full object-cover" loading="lazy" />
             ) : (
               <span
-                class={`mt-6 flex h-12 w-12 items-center justify-center rounded-full ${
-                  i % 2 === 0 ? "bg-brand-blue/10 text-brand-blue-dark dark:text-brand-blue" : "bg-brand-green/15 text-brand-green-dark dark:text-brand-green"
-                }`}
+                class={`mt-6 flex h-12 w-12 items-center justify-center rounded-full text-white shadow-md ${i % 2 === 0 ? "bg-brand-blue" : "bg-brand-green"}`}
                 set:html={svg(iconoValor(v.titulo))}
               />
             )}
@@ -153,19 +172,21 @@ const svg = (nombre: string) =>
   </section>
 
   <section class="mx-auto max-w-6xl px-4 pb-12 sm:pb-16">
-    <div class="rounded-lg bg-neutral-900 p-6 text-white sm:p-10 dark:border dark:border-neutral-800">
-      <h2 class="border-l-4 border-brand-green pl-3 text-2xl font-bold tracking-tight">¿Por qué elegirnos?</h2>
-      <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="grid gap-8 rounded-lg border border-brand-blue/20 bg-brand-blue/5 p-6 sm:p-10 lg:grid-cols-[220px_1fr] lg:gap-10 dark:border-neutral-800 dark:bg-neutral-900">
+      <h2 class="text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl lg:border-r lg:border-brand-blue/20 lg:pr-8 dark:text-white dark:lg:border-neutral-700">
+        ¿Por qué <span class="text-brand-blue-dark dark:text-brand-blue">elegirnos?</span>
+      </h2>
+      <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {
           RAZONES.map((r, i) => (
             <div data-reveal style={`transition-delay: ${i * 90}ms`} class="flex gap-4">
               <span
-                class={`flex h-11 w-11 flex-none items-center justify-center rounded-full ${i % 2 === 0 ? "bg-brand-blue/15 text-brand-blue" : "bg-brand-green/15 text-brand-green"}`}
+                class={`flex h-11 w-11 flex-none items-center justify-center rounded-full text-white shadow-md ${i % 2 === 0 ? "bg-brand-blue" : "bg-brand-green"}`}
                 set:html={svg(r.icono)}
               />
               <div>
-                <p class="font-semibold">{r.titulo}</p>
-                <p class="mt-1 text-sm text-neutral-400">{r.desc}</p>
+                <p class="font-semibold text-neutral-900 dark:text-white">{r.titulo}</p>
+                <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{r.desc}</p>
               </div>
             </div>
           ))

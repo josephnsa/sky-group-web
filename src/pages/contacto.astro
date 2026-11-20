@@ -39,32 +39,32 @@ const botonMapa =
   description={`Contacta a SKY Group por WhatsApp ${NEGOCIO.telefono} o visítanos en ${SUCURSALES[0].direccion}. Horario: ${SUCURSALES[0].horario}.`}
   datosEstructurados={negocioJsonLd()}
 >
-  <section class="relative isolate overflow-hidden bg-gradient-to-br from-brand-blue to-brand-green">
-    <img src={heroImagen} alt="" class="absolute inset-y-0 right-0 -z-10 hidden h-full w-3/5 object-cover sm:block" />
-    <div class="absolute inset-0 -z-10 hidden bg-gradient-to-r from-brand-blue from-40% via-brand-blue/80 to-brand-green/10 sm:block"></div>
-    <div class="mx-auto max-w-6xl px-4 pb-24 pt-16 text-white sm:pb-36 sm:pt-20">
-      <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl">Contacto</h1>
-      <span class="mt-4 block h-1 w-16 rounded-full bg-white/80"></span>
+  <section class="relative isolate overflow-hidden bg-white dark:bg-neutral-950">
+    <img src={heroImagen} alt="" class="absolute inset-0 -z-10 h-full w-full object-cover object-right" />
+    <div class="absolute inset-0 -z-10 bg-white/85 sm:hidden dark:bg-neutral-950/85"></div>
+    <div class="absolute inset-0 -z-10 hidden bg-gradient-to-r from-white from-35% via-white/80 to-white/0 sm:block dark:from-neutral-950 dark:via-neutral-950/80 dark:to-neutral-950/10"></div>
+    <div class="mx-auto max-w-6xl px-4 pb-28 pt-16 sm:pb-40 sm:pt-24">
+      <h1 class="bg-gradient-to-r from-brand-blue-dark to-brand-green-dark bg-clip-text pb-1 text-4xl font-extrabold tracking-tight text-transparent sm:text-5xl lg:text-6xl dark:from-brand-blue dark:to-brand-green">Contacto</h1>
     </div>
   </section>
 
   <section class="mx-auto -mt-16 max-w-6xl px-4 sm:-mt-24">
     <div class="grid gap-6 lg:grid-cols-[2fr_3fr]">
-      <div data-reveal class="flex flex-col rounded-lg bg-neutral-900 p-6 text-white shadow-xl sm:p-8 dark:border dark:border-neutral-800">
+      <div data-reveal class="flex flex-col rounded-lg border border-neutral-200 bg-neutral-50 p-6 shadow-xl sm:p-8 dark:border-neutral-800 dark:bg-neutral-900">
         <ul class="space-y-6">
           {
             DATOS.map((d, i) => (
               <li class="flex gap-4">
                 <span
-                  class={`flex h-11 w-11 flex-none items-center justify-center rounded-full ${i % 2 === 0 ? "bg-brand-blue/15 text-brand-blue" : "bg-brand-green/15 text-brand-green"}`}
+                  class={`flex h-11 w-11 flex-none items-center justify-center rounded-full text-white shadow-md ${i % 2 === 0 ? "bg-brand-blue" : "bg-brand-green"}`}
                   set:html={svg(d.icono)}
                 />
                 <div class="min-w-0">
-                  <p class="font-semibold">{d.titulo}</p>
+                  <p class="font-semibold text-neutral-900 dark:text-white">{d.titulo}</p>
                   {d.enlace ? (
-                    <a href={d.enlace} class="mt-0.5 block break-words text-sm text-neutral-300 hover:text-white hover:underline">{d.texto}</a>
+                    <a href={d.enlace} class="mt-0.5 block break-words text-sm text-neutral-600 hover:text-brand-blue-dark hover:underline dark:text-neutral-300 dark:hover:text-white">{d.texto}</a>
                   ) : (
-                    <p class="mt-0.5 text-sm text-neutral-300">{d.texto}</p>
+                    <p class="mt-0.5 text-sm text-neutral-600 dark:text-neutral-300">{d.texto}</p>
                   )}
                 </div>
               </li>
@@ -82,8 +82,8 @@ const botonMapa =
         </a>
       </div>
 
-      <div data-reveal style="transition-delay: 120ms" class="rounded-lg border border-neutral-200 bg-white p-6 shadow-xl sm:p-8 dark:border-neutral-800 dark:bg-neutral-950">
-        <h2 class="border-l-4 border-brand-blue pl-3 text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">Escríbenos</h2>
+      <div data-reveal style="transition-delay: 120ms" class="rounded-lg border border-neutral-200 bg-white p-6 shadow-xl sm:p-8 dark:border-neutral-800 dark:bg-neutral-900">
+        <h2 class="text-2xl font-bold tracking-tight text-brand-blue-dark sm:text-3xl dark:text-brand-blue">Escríbenos</h2>
         <div class="mt-4">
           <ContactoForm client:visible />
         </div>
@@ -93,7 +93,7 @@ const botonMapa =
 
   <section class="mx-auto max-w-6xl px-4 py-12 sm:py-16">
     <h2 class="flex items-center gap-2 text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
-      <span class="text-brand-blue-dark dark:text-brand-blue" set:html={svg(DATOS[0].icono, "h-6 w-6")} />
+      <span class="flex h-9 w-9 items-center justify-center rounded-full bg-brand-blue text-white shadow-md" set:html={svg(DATOS[0].icono, "h-5 w-5")} />
       Ubicación
     </h2>
     <div class="mt-4 overflow-hidden rounded-lg border border-neutral-200 shadow-sm dark:border-neutral-800">
