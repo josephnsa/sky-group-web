@@ -102,7 +102,6 @@ function Panel() {
   // Tercer nivel del Excel ("tipo de producto"). Vacío si la migración
   // docs/migracion-categorias-excel.sql todavía no se corrió.
   const [tipos, setTipos] = useState<TipoAdmin[]>([]);
-  const [nuevoTipo, setNuevoTipo] = useState("");
   const [productos, setProductos] = useState<ProductoAdmin[]>([]);
   // Categorías adicionales de los productos. null = todavía no se corrió
   // docs/migracion-multicategoria.sql: el panel funciona como antes.
@@ -130,8 +129,18 @@ function Panel() {
   const [subEditandoId, setSubEditandoId] = useState<string | null>(null);
   const [nombreSubEditado, setNombreSubEditado] = useState("");
   const [guardandoSub, setGuardandoSub] = useState(false);
-  const [subExpandidaId, setSubExpandidaId] = useState<string | null>(null);
-  const [compartirSubId, setCompartirSubId] = useState<string | null>(null);
+  // Categoría abierta: filtro de su lista de productos por subcategoría.
+  const [subFiltro, setSubFiltro] = useState<string | null>(null);
+  // Modal de subcategoría: nombre, categorías donde aparece (casillas) y tipos.
+  const [subModal, setSubModal] = useState<{
+    original: string | null;
+    nombre: string;
+    categorias: string[];
+    tipos: string[];
+    nuevoTipo: string;
+  } | null>(null);
+  const [guardandoSubModal, setGuardandoSubModal] = useState(false);
+  const [errorSubModal, setErrorSubModal] = useState<string | null>(null);
 
   // --- producto: agregar/editar (modal) ---
   const [prodFormAbierto, setProdFormAbierto] = useState(false);
@@ -329,7 +338,7 @@ function Panel() {
   function alternarExpandida(slug: string) {
     setExpandida((actual) => (actual === slug ? null : slug));
     setNuevaSub("");
-    setSubExpandidaId(null);
+    setSubFiltro(null);
     cancelarEdicionSub();
     cancelarProducto();
   }
@@ -352,25 +361,6 @@ function Panel() {
 
   function adicionalesDe(sku: string) {
     return (ubicaciones ?? []).filter((u) => u.producto_sku === sku);
-  }
-
-  async function compartirSubcategoria(sub: SubcategoriaAdmin, destino: string) {
-    if (!destino) return;
-    try {
-      await subcategoriasAdmin.crear({ categoria_slug: destino, nombre: sub.nombre, orden: subcategoriasDe(destino).length });
-      // Sus tipos de producto la acompañan.
-      const tiposOrigen = tiposDe(sub.categoria_slug, sub.nombre);
-      for (const [i, t] of tiposOrigen.entries()) {
-        if (!tiposDe(destino, sub.nombre).some((x) => x.nombre === t.nombre)) {
-          await tiposAdmin.crear({ categoria_slug: destino, subcategoria: sub.nombre, nombre: t.nombre, orden: i });
-        }
-      }
-      setCompartirSubId(null);
-      await cargar();
-      avisar(`"${sub.nombre}" ahora también está en ${nombreDeCategoria(destino)}`);
-    } catch {
-      setAviso(`No se pudo agregar "${sub.nombre}" a ${nombreDeCategoria(destino)}.`);
-    }
   }
 
   async function agregarSubcategoria(categoriaSlug: string) {
@@ -400,6 +390,16 @@ function Panel() {
 
   function esPrincipalEn(p: ProductoAdmin, categoriaSlug: string, subcategoria?: string) {
     return p.categoria_slug === categoriaSlug && (subcategoria === undefined || p.subcategoria === subcategoria);
+  }
+
+  // Subcategoría y tipo del producto dentro de una categoría (principal y adicionales).
+  function ubicacionesEnCategoria(p: ProductoAdmin, categoriaSlug: string) {
+    const lista: { subcategoria: string; tipo: string | null }[] = [];
+    if (p.categoria_slug === categoriaSlug) lista.push({ subcategoria: p.subcategoria, tipo: p.tipo ?? null });
+    for (const u of adicionalesDe(p.sku)) {
+      if (u.categoria_slug === categoriaSlug) lista.push({ subcategoria: u.subcategoria, tipo: u.tipo ?? null });
+    }
+    return lista;
   }
 
   function editarSubcategoria(sub: SubcategoriaAdmin) {
@@ -467,53 +467,159 @@ function Panel() {
     }, afectados.length > 0);
   }
 
+  // ===== Modal de subcategoría =====
+  // Una subcategoría puede estar en varias categorías (mismo nombre). El modal
+  // las administra juntas: se marcan las categorías donde aparece y sus tipos
+  // quedan iguales en todas. Nada se guarda hasta pulsar "Guardar".
+
+  function usoSubEn(categoriaSlug: string, nombre: string) {
+    return productos.filter(
+      (p) =>
+        (p.categoria_slug === categoriaSlug && p.subcategoria === nombre) ||
+        adicionalesDe(p.sku).some((u) => u.categoria_slug === categoriaSlug && u.subcategoria === nombre),
+    ).length;
+  }
+
+  function usoTipo(subNombre: string, tipo: string) {
+    const cats = categoriasConSubcategoria(subNombre);
+    return (
+      productos.filter((p) => cats.includes(p.categoria_slug) && p.subcategoria === subNombre && p.tipo === tipo).length +
+      (ubicaciones ?? []).filter((u) => cats.includes(u.categoria_slug) && u.subcategoria === subNombre && u.tipo === tipo).length
+    );
+  }
+
+  function abrirSubModal(sub: SubcategoriaAdmin | null, categoriaSlug: string) {
+    setErrorSubModal(null);
+    if (!sub) {
+      setSubModal({ original: null, nombre: "", categorias: [categoriaSlug], tipos: [], nuevoTipo: "" });
+      return;
+    }
+    const cats = categoriasConSubcategoria(sub.nombre);
+    const nombresTipos: string[] = [];
+    for (const cat of [sub.categoria_slug, ...cats]) {
+      for (const t of tiposDe(cat, sub.nombre)) if (!nombresTipos.includes(t.nombre)) nombresTipos.push(t.nombre);
+    }
+    setSubModal({ original: sub.nombre, nombre: sub.nombre, categorias: cats, tipos: nombresTipos, nuevoTipo: "" });
+  }
+
+  function alternarCategoriaSubModal(slug: string) {
+    setSubModal((m) =>
+      m && { ...m, categorias: m.categorias.includes(slug) ? m.categorias.filter((x) => x !== slug) : [...m.categorias, slug] },
+    );
+  }
+
+  function agregarTipoSubModal() {
+    if (!subModal) return;
+    const texto = subModal.nuevoTipo.trim();
+    if (!texto) return;
+    if (subModal.tipos.some((t) => t.toLowerCase() === texto.toLowerCase())) {
+      setErrorSubModal(`El tipo "${texto}" ya está en la lista.`);
+      return;
+    }
+    setErrorSubModal(null);
+    setSubModal({ ...subModal, tipos: [...subModal.tipos, texto], nuevoTipo: "" });
+  }
+
+  async function guardarSubModal(e: Event) {
+    e.preventDefault();
+    if (!subModal) return;
+    const m = subModal;
+    const nombre = m.nombre.trim();
+    const original = m.original;
+    if (!nombre) {
+      setErrorSubModal("Escribe el nombre de la subcategoría.");
+      return;
+    }
+    if (m.categorias.length === 0) {
+      setErrorSubModal("Marca al menos una categoría.");
+      return;
+    }
+    if (nombre !== original) {
+      const choca = subcategorias.find(
+        (x) => m.categorias.includes(x.categoria_slug) && x.nombre.toLowerCase() === nombre.toLowerCase() && x.nombre !== original,
+      );
+      if (choca) {
+        setErrorSubModal(`Ya existe "${choca.nombre}" en ${nombreDeCategoria(choca.categoria_slug)}. Ábrela con "Editar" y marca ahí las categorías.`);
+        return;
+      }
+    }
+    const actuales = original ? categoriasConSubcategoria(original) : [];
+    const quitar = actuales.filter((c) => !m.categorias.includes(c));
+    const agregar = m.categorias.filter((c) => !actuales.includes(c));
+    const bloqueada = original ? quitar.find((c) => usoSubEn(c, original) > 0) : undefined;
+    if (bloqueada) {
+      setErrorSubModal(`No se puede quitar de ${nombreDeCategoria(bloqueada)}: hay productos que la usan ahí.`);
+      return;
+    }
+    setGuardandoSubModal(true);
+    setErrorSubModal(null);
+    try {
+      if (original && nombre !== original) {
+        // Renombrar en todas sus categorías, con sus productos, ubicaciones y tipos.
+        await subcategoriasAdmin.renombrarEnCategorias(actuales, original, nombre);
+        const afectados = productos.filter((p) => actuales.includes(p.categoria_slug) && p.subcategoria === original);
+        await Promise.all(afectados.map((p) => productosAdmin.actualizar(p.sku, { subcategoria: nombre })));
+        if (ubicaciones !== null) await ubicacionesAdmin.renombrarSubcategoria(actuales, original, nombre);
+        await Promise.all(actuales.map((c) => tiposAdmin.renombrarSubcategoria(c, original, nombre)));
+      }
+      for (const c of quitar) {
+        const fila = subcategorias.find((x) => x.categoria_slug === c && x.nombre === original);
+        if (fila) await subcategoriasAdmin.borrar(fila.id);
+        await tiposAdmin.borrarDeSubcategoria(c, nombre);
+      }
+      for (const c of agregar) {
+        await subcategoriasAdmin.crear({ categoria_slug: c, nombre, orden: subcategoriasDe(c).length });
+      }
+      // Los mismos tipos en todas las categorías marcadas.
+      for (const c of m.categorias) {
+        const existentes = original && actuales.includes(c) ? tiposDe(c, original) : [];
+        for (const t of existentes) if (!m.tipos.includes(t.nombre)) await tiposAdmin.borrar(t.id);
+        for (const [i, t] of m.tipos.entries()) {
+          if (!existentes.some((x) => x.nombre === t)) {
+            await tiposAdmin.crear({ categoria_slug: c, subcategoria: nombre, nombre: t, orden: i });
+          }
+        }
+      }
+      setSubModal(null);
+      await cargar();
+      avisar(original ? `Subcategoría "${nombre}" guardada` : `Subcategoría "${nombre}" creada`);
+    } catch {
+      setErrorSubModal("No se pudo guardar todo. Revisa tu conexión y vuelve a intentarlo.");
+      await cargar();
+    } finally {
+      setGuardandoSubModal(false);
+    }
+  }
+
+  function borrarDesdeSubModal() {
+    const original = subModal?.original;
+    if (!original) return;
+    const cats = categoriasConSubcategoria(original);
+    const total = cats.reduce((n, c) => n + usoSubEn(c, original), 0);
+    const uso =
+      total > 0
+        ? `${total} producto${total !== 1 ? "s la tienen" : " la tiene"} asignada. No se modifican ni se borran, pero la subcategoría deja de estar disponible.`
+        : "Ningún producto la usa: se puede borrar sin afectar nada.";
+    const varias =
+      cats.length > 1
+        ? ` Se borra de todas sus categorías (${cats.map(nombreDeCategoria).join(", ")}). Para quitarla de una sola, desmarca esa categoría y pulsa Guardar.`
+        : "";
+    pedirConfirmacion(`Borrar subcategoría "${original}"`, `${uso}${varias} También se borran sus tipos de producto.`, async () => {
+      for (const c of cats) {
+        const fila = subcategorias.find((x) => x.categoria_slug === c && x.nombre === original);
+        if (fila) await subcategoriasAdmin.borrar(fila.id);
+        await tiposAdmin.borrarDeSubcategoria(c, original);
+      }
+      setSubModal(null);
+      await cargar();
+      avisar(`Subcategoría "${original}" borrada`);
+    }, total > 0);
+  }
+
   // ===== Tipo de producto (tercer nivel) =====
 
   function tiposDe(categoriaSlug: string, subcategoria: string) {
     return tipos.filter((t) => t.categoria_slug === categoriaSlug && t.subcategoria === subcategoria);
-  }
-
-  async function agregarTipo(sub: SubcategoriaAdmin) {
-    const texto = nuevoTipo.trim();
-    if (!texto) return;
-    if (tiposDe(sub.categoria_slug, sub.nombre).some((t) => t.nombre === texto)) {
-      setAviso(`El tipo "${texto}" ya existe en esta subcategoría.`);
-      return;
-    }
-    try {
-      // Subcategoría compartida: el tipo se agrega en todas sus categorías.
-      for (const cat of categoriasConSubcategoria(sub.nombre)) {
-        if (tiposDe(cat, sub.nombre).some((t) => t.nombre === texto)) continue;
-        await tiposAdmin.crear({
-          categoria_slug: cat,
-          subcategoria: sub.nombre,
-          nombre: texto,
-          orden: tiposDe(cat, sub.nombre).length,
-        });
-      }
-      setNuevoTipo("");
-      await cargar();
-    } catch {
-      setAviso("No se pudo agregar el tipo: es probable que ya exista en esta subcategoría, o que falte correr docs/migracion-categorias-excel.sql en Supabase.");
-    }
-  }
-
-  function borrarTipo(tipo: TipoAdmin) {
-    const cats = categoriasConSubcategoria(tipo.subcategoria);
-    const iguales = tipos.filter((t) => cats.includes(t.categoria_slug) && t.subcategoria === tipo.subcategoria && t.nombre === tipo.nombre);
-    const usan =
-      productos.filter(
-        (p) => cats.includes(p.categoria_slug) && p.subcategoria === tipo.subcategoria && p.tipo === tipo.nombre,
-      ).length +
-      (ubicaciones ?? []).filter((u) => cats.includes(u.categoria_slug) && u.subcategoria === tipo.subcategoria && u.tipo === tipo.nombre).length;
-    const mensaje =
-      usan > 0
-        ? `${usan} producto${usan !== 1 ? "s lo usan" : " lo usa"}. No se modifican, pero el tipo dejará de estar disponible para elegir.`
-        : "Ningún producto lo usa: se puede borrar sin afectar nada.";
-    pedirConfirmacion(`Borrar tipo "${tipo.nombre}"`, mensaje, async () => {
-      for (const t of iguales) await tiposAdmin.borrar(t.id);
-      await cargar();
-    }, usan > 0);
   }
 
   // ===== Producto =====
@@ -566,9 +672,7 @@ function Panel() {
   const pagCategorias = usePaginacion(categoriasFiltradas, 10, [filtro]);
   const pagProductos = usePaginacion(productosFiltrados, 15, [filtro, vista, filtroCategoria, filtroEstado]);
   const [paginaProdsCategoria, setPaginaProdsCategoria] = useState(1);
-  const [paginaProdsSub, setPaginaProdsSub] = useState(1);
-  useEffect(() => setPaginaProdsCategoria(1), [expandida, filtro]);
-  useEffect(() => setPaginaProdsSub(1), [subExpandidaId]);
+  useEffect(() => setPaginaProdsCategoria(1), [expandida, filtro, subFiltro]);
   const POR_PAGINA_LISTA = 8;
   const pagina = <T,>(lista: T[], n: number) => lista.slice((n - 1) * POR_PAGINA_LISTA, n * POR_PAGINA_LISTA);
 
@@ -1340,6 +1444,9 @@ function Panel() {
                         (p) => p.nombre.toLowerCase().includes(textoFiltro) || p.sku.toLowerCase().includes(textoFiltro),
                       )
                     : prodsDeEsta;
+                  const prodsVisibles = subFiltro
+                    ? prodsMostrados.filter((p) => ubicacionesEnCategoria(p, c.slug).some((u) => u.subcategoria === subFiltro))
+                    : prodsMostrados;
                   return (
                     <Fragment key={c.slug}>
                       <tr
@@ -1419,323 +1526,122 @@ function Panel() {
                       </tr>
                       {estaExpandida && (
                         <tr class="border-b border-neutral-200 last:border-0 dark:border-neutral-800">
-                          <td colSpan={5} class="bg-neutral-50/50 p-4 dark:bg-neutral-900/30">
-                            <div class="space-y-5">
-                      {/* Subcategorías */}
-                      <div>
-                        <p class="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                          Subcategorías {textoFiltro && `(${subsMostradas.length} de ${subsDeEsta.length} coinciden)`}
-                        </p>
-                        <div class="mt-2 overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-800">
-                          {subsDeEsta.length === 0 ? (
-                            <p class="p-3 text-sm text-neutral-500 dark:text-neutral-400">Todavía no tiene subcategorías.</p>
-                          ) : (
-                            <table class="w-full text-left text-sm">
-                              <thead>
-                                <tr class="border-b border-neutral-200 bg-white text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400">
-                                  <th class="px-3 py-2">Subcategoría</th>
-                                  <th class="px-3 py-2">Productos</th>
-                                  <th class="px-3 py-2 text-right">Acciones</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {subsMostradas.length === 0 && (
-                                  <tr>
-                                    <td colSpan={3} class="px-3 py-3 text-sm text-neutral-500 dark:text-neutral-400">
-                                      Ninguna subcategoría coincide con el filtro.
-                                    </td>
-                                  </tr>
-                                )}
-                                {subsMostradas.map((s) => (
-                                  <tr key={s.id} class="border-b border-neutral-100 bg-white last:border-0 dark:border-neutral-800 dark:bg-neutral-900/60">
-                                    {subEditandoId === s.id ? (
-                                      <td colSpan={3} class="px-3 py-2">
-                                        <form
-                                          onSubmit={(e) => {
-                                            e.preventDefault();
-                                            guardarSubcategoria(s);
-                                          }}
-                                          class="flex items-center gap-2"
-                                        >
-                                          <input
-                                            type="text"
-                                            required
-                                            autofocus
-                                            value={nombreSubEditado}
-                                            onInput={(e) => setNombreSubEditado((e.target as HTMLInputElement).value)}
-                                            class="w-full max-w-xs rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-                                          />
-                                          <button
-                                            type="submit"
-                                            disabled={guardandoSub}
-                                            class="shrink-0 text-xs font-semibold text-brand-blue-dark transition-colors duration-200 hover:underline disabled:opacity-50 dark:text-brand-blue"
-                                          >
-                                            Guardar
-                                          </button>
-                                          <button
-                                            type="button"
-                                            onClick={cancelarEdicionSub}
-                                            class="shrink-0 text-xs text-neutral-500 hover:underline dark:text-neutral-400"
-                                          >
-                                            Cancelar
-                                          </button>
-                                        </form>
-                                        {categoriasConSubcategoria(s.nombre).length > 1 && (
-                                          <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                                            Se renombra en todas sus categorías: {categoriasConSubcategoria(s.nombre).map(nombreDeCategoria).join(", ")}.
-                                          </p>
-                                        )}
-                                      </td>
-                                    ) : (
-                                      <>
-                                        <td class="px-3 py-2 text-neutral-700 dark:text-neutral-300">
-                                          {s.nombre}
-                                          {(() => {
-                                            const otras = categoriasConSubcategoria(s.nombre).filter((x) => x !== s.categoria_slug);
-                                            const disponibles = categorias.filter((x) => !categoriasConSubcategoria(s.nombre).includes(x.slug));
-                                            return (
-                                              <>
-                                                {otras.length > 0 && (
-                                                  <span class="mt-0.5 block text-xs text-neutral-500 dark:text-neutral-400">
-                                                    También en: {otras.map(nombreDeCategoria).join(", ")}
-                                                  </span>
-                                                )}
-                                                {compartirSubId === s.id && (
-                                                  <span class="mt-1 flex items-center gap-2">
-                                                    <select
-                                                      autofocus
-                                                      aria-label={`Agregar "${s.nombre}" a otra categoría`}
-                                                      value=""
-                                                      onInput={(e) => compartirSubcategoria(s, (e.target as HTMLSelectElement).value)}
-                                                      class="w-full max-w-xs rounded-md border border-neutral-300 bg-white px-2 py-1 text-xs dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-                                                    >
-                                                      <option value="" disabled>
-                                                        {disponibles.length ? "Elegir categoría..." : "Ya está en todas"}
-                                                      </option>
-                                                      {disponibles.map((x) => (
-                                                        <option value={x.slug}>{x.nombre}</option>
-                                                      ))}
-                                                    </select>
-                                                    <button type="button" onClick={() => setCompartirSubId(null)} class="shrink-0 text-xs text-neutral-500 hover:underline dark:text-neutral-400">
-                                                      Cancelar
-                                                    </button>
-                                                  </span>
-                                                )}
-                                              </>
-                                            );
-                                          })()}
-                                        </td>
-                                        <td class="px-3 py-2">
-                                          <button
-                                            type="button"
-                                            onClick={() => setSubExpandidaId((actual) => (actual === s.id ? null : s.id))}
-                                            class={`rounded-md px-2 py-0.5 text-xs font-semibold transition-colors duration-200 ${
-                                              subExpandidaId === s.id
-                                                ? "bg-brand-blue text-white"
-                                                : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
-                                            }`}
-                                          >
-                                            {productosConSubcategoria(s).length} {subExpandidaId === s.id ? "▲" : "▼"}
-                                          </button>
-                                        </td>
-                                        <td class="px-3 py-2">
-                                          <div class="flex justify-end gap-3">
-                                            <button
-                                              type="button"
-                                              onClick={() => setCompartirSubId((actual) => (actual === s.id ? null : s.id))}
-                                              title="Usar esta subcategoría también en otra categoría"
-                                              class="text-xs text-brand-blue-dark transition-colors duration-200 hover:underline dark:text-brand-blue"
-                                            >
-                                              + Categoría
-                                            </button>
-                                            <button
-                                              type="button"
-                                              onClick={() => editarSubcategoria(s)}
-                                              class="text-xs text-brand-blue-dark transition-colors duration-200 hover:underline dark:text-brand-blue"
-                                            >
-                                              Editar
-                                            </button>
-                                            <button
-                                              type="button"
-                                              onClick={() => borrarSubcategoria(s)}
-                                              class="text-xs text-red-600 transition-colors duration-200 hover:underline dark:text-red-400"
-                                            >
-                                              Borrar
-                                            </button>
-                                          </div>
-                                        </td>
-                                      </>
-                                    )}
-                                  </tr>
-                                ))}
-                                {subExpandidaId && subsMostradas.some((s) => s.id === subExpandidaId) && (
-                                  <tr class="border-b border-neutral-100 bg-neutral-50 last:border-0 dark:border-neutral-800 dark:bg-neutral-900/40">
-                                    <td colSpan={3} class="px-3 py-2">
-                                      {(() => {
-                                        const sub = subsMostradas.find((s) => s.id === subExpandidaId)!;
-                                        const prods = productosConSubcategoria(sub);
-                                        const tiposSub = tiposDe(sub.categoria_slug, sub.nombre);
-                                        return (
-                                          <>
-                                            {/* Tercer nivel del Excel: tipos de producto de esta subcategoría. */}
-                                            <div class="mb-4 rounded-md border border-dashed border-neutral-300 bg-white p-3 dark:border-neutral-700 dark:bg-neutral-900">
-                                              <p class="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                                                Tipos de producto en "{sub.nombre}" ({tiposSub.length})
-                                              </p>
-                                              {tiposSub.length > 0 ? (
-                                                <ul class="mt-2 flex flex-wrap gap-1.5">
-                                                  {tiposSub.map((t) => (
-                                                    <li key={t.id} class="inline-flex items-center gap-1 rounded-full bg-neutral-100 py-0.5 pl-2.5 pr-1 text-xs text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
-                                                      {t.nombre}
-                                                      <button
-                                                        type="button"
-                                                        onClick={() => borrarTipo(t)}
-                                                        aria-label={`Borrar tipo ${t.nombre}`}
-                                                        class="flex h-5 w-5 items-center justify-center rounded-full text-neutral-500 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/40"
-                                                      >
-                                                        ×
-                                                      </button>
-                                                    </li>
-                                                  ))}
-                                                </ul>
-                                              ) : (
-                                                <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">Sin tipos todavía.</p>
-                                              )}
-                                              <form
-                                                onSubmit={(e) => {
-                                                  e.preventDefault();
-                                                  agregarTipo(sub);
-                                                }}
-                                                class="mt-2 flex gap-2"
-                                              >
-                                                <input
-                                                  type="text"
-                                                  placeholder="Nuevo tipo..."
-                                                  aria-label={`Nuevo tipo en ${sub.nombre}`}
-                                                  value={nuevoTipo}
-                                                  onInput={(e) => setNuevoTipo((e.target as HTMLInputElement).value)}
-                                                  class="w-full max-w-xs rounded-md border border-neutral-300 bg-white px-2.5 py-1 text-xs dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100"
-                                                />
-                                                <button type="submit" class="shrink-0 rounded-md bg-brand-blue px-2.5 py-1 text-xs font-semibold text-white hover:bg-brand-blue-dark">
-                                                  Agregar tipo
-                                                </button>
-                                              </form>
-                                            </div>
-                                            <div class="mb-2 flex items-center justify-between">
-                                              <p class="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                                                Productos en "{sub.nombre}"
-                                              </p>
-                                              <button
-                                                type="button"
-                                                onClick={() => agregarProducto(c.slug, sub.nombre)}
-                                                class="text-xs font-medium text-brand-blue-dark transition-colors duration-200 hover:underline dark:text-brand-blue"
-                                              >
-                                                + Agregar producto
-                                              </button>
-                                            </div>
-                                            {prods.length === 0 ? (
-                                          <p class="text-sm text-neutral-500 dark:text-neutral-400">Ningún producto usa "{sub.nombre}" todavía.</p>
-                                        ) : (
-                                          <>
-                                          <ul class="space-y-2">
-                                            {pagina(prods, paginaProdsSub).map((p) => (
-                                              <li
-                                                key={p.sku}
-                                                class="flex items-center gap-3 rounded-md border border-neutral-200 bg-white p-2 dark:border-neutral-700 dark:bg-neutral-900"
-                                              >
-                                                {p.imagen ? (
-                                                  <img src={p.imagen} alt="" class="h-9 w-9 flex-none rounded-md object-cover" />
-                                                ) : (
-                                                  <div class="h-9 w-9 flex-none rounded-md bg-neutral-200 dark:bg-neutral-800" />
-                                                )}
-                                                <div class="min-w-0 flex-1">
-                                                  <p class="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                                                    {p.nombre}
-                                                    {!esPrincipalEn(p, sub.categoria_slug, sub.nombre) && <span class="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 align-middle text-[10px] font-semibold uppercase text-amber-800 dark:bg-amber-900/50 dark:text-amber-200" title={`Categoría principal: ${nombreDeCategoria(p.categoria_slug)} / ${p.subcategoria}`}>Adicional</span>}
-                                                  </p>
-                                                  <p class="truncate text-xs text-neutral-500 dark:text-neutral-400">
-                                                    {p.sku} · {p.marca}{p.tipo ? ` · ${p.tipo}` : ""} · {p.precio != null ? `S/ ${Number(p.precio).toFixed(2)}` : "Sin precio"}
-                                                  </p>
-                                                </div>
-                                                <button
-                                                  type="button"
-                                                  onClick={() => editarProducto(p)}
-                                                  class="shrink-0 text-xs text-brand-blue-dark transition-colors duration-200 hover:underline dark:text-brand-blue"
-                                                >
-                                                  Editar
-                                                </button>
-                                                <button
-                                                  type="button"
-                                                  onClick={() => borrarProducto(p)}
-                                                  class="shrink-0 text-xs text-red-600 transition-colors duration-200 hover:underline dark:text-red-400"
-                                                >
-                                                  Borrar
-                                                </button>
-                                              </li>
-                                            ))}
-                                          </ul>
-                                          <Paginacion pagina={paginaProdsSub} setPagina={setPaginaProdsSub} total={prods.length} porPagina={POR_PAGINA_LISTA} nombre="productos" />
-                                          </>
-                                        )}
-                                          </>
-                                        );
-                                      })()}
-                                    </td>
-                                  </tr>
-                                )}
-                              </tbody>
-                            </table>
-                          )}
-                          <form
-                            onSubmit={(e) => {
-                              e.preventDefault();
-                              agregarSubcategoria(c.slug);
-                            }}
-                            class="flex gap-2 border-t border-neutral-200 bg-white p-2 dark:border-neutral-800 dark:bg-neutral-900"
-                          >
-                            <input
-                              type="text"
-                              placeholder="Nueva subcategoría..."
-                              value={nuevaSub}
-                              onInput={(e) => setNuevaSub((e.target as HTMLInputElement).value)}
-                              class="w-full max-w-xs rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100"
-                            />
-                            <button
-                              type="submit"
-                              class="shrink-0 rounded-md bg-brand-blue px-3 py-1.5 text-xs font-semibold text-white transition-colors duration-200 hover:bg-brand-blue-dark"
-                            >
-                              Agregar
-                            </button>
-                          </form>
-                        </div>
-                      </div>
-
-                      {/* Productos */}
-                      <div>
-                        <div class="flex items-center justify-between">
+                          <td colSpan={5} class="bg-neutral-50/50 p-2 sm:p-4 dark:bg-neutral-900/30">
+                            {/* En celular la tabla se desplaza de lado: el detalle queda fijo y del ancho de la pantalla. */}
+                            <div class="sticky left-2 w-[calc(100vw-3.5rem)] space-y-5 sm:static sm:w-auto">
+                      {/* Subcategorías: lista simple; cada una se edita en un modal */}
+                      <div data-seccion="subcategorias-categoria">
+                        <div class="flex items-center justify-between gap-3">
                           <p class="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                            Productos {textoFiltro && `(${prodsMostrados.length} de ${prodsDeEsta.length} coinciden)`}
+                            Subcategorías ({textoFiltro && subsMostradas.length > 0 && subsMostradas.length < subsDeEsta.length ? `${subsMostradas.length} de ${subsDeEsta.length}` : subsDeEsta.length})
                           </p>
                           <button
                             type="button"
-                            onClick={() => agregarProducto(c.slug)}
-                            class="text-sm font-medium text-brand-blue-dark transition-colors duration-200 hover:underline dark:text-brand-blue"
+                            onClick={() => abrirSubModal(null, c.slug)}
+                            class="shrink-0 text-sm font-medium text-brand-blue-dark transition-colors duration-200 hover:underline dark:text-brand-blue"
+                          >
+                            + Nueva subcategoría
+                          </button>
+                        </div>
+                        {subsDeEsta.length === 0 ? (
+                          <p class="mt-2 text-sm text-neutral-500 dark:text-neutral-400">Todavía no tiene subcategorías.</p>
+                        ) : (
+                          <ul class="mt-2 divide-y divide-neutral-100 overflow-hidden rounded-lg border border-neutral-200 bg-white dark:divide-neutral-800 dark:border-neutral-800 dark:bg-neutral-900">
+                            {(textoFiltro && subsMostradas.length > 0 ? subsMostradas : subsDeEsta).map((s) => {
+                              const otras = categoriasConSubcategoria(s.nombre).filter((x) => x !== s.categoria_slug);
+                              const nt = tiposDe(s.categoria_slug, s.nombre).length;
+                              const np = productosConSubcategoria(s).length;
+                              return (
+                                <li key={s.id} data-subcategoria={s.nombre} class="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5 sm:flex-nowrap sm:gap-x-4">
+                                  <div class="w-full min-w-0 sm:w-auto sm:flex-1">
+                                    <p class="text-sm font-medium text-neutral-800 dark:text-neutral-200">{s.nombre}</p>
+                                    {otras.length > 0 && (
+                                      <p class="mt-1 flex flex-wrap items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400">
+                                        También en:
+                                        {otras.map((o) => (
+                                          <span key={o} class="rounded-full bg-brand-blue/10 px-2 py-0.5 font-medium text-brand-blue-dark dark:text-brand-blue">
+                                            {nombreDeCategoria(o)}
+                                          </span>
+                                        ))}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <button
+                                    type="button"
+                                    title={np > 0 ? "Ver sus productos" : undefined}
+                                    disabled={np === 0}
+                                    onClick={(e) => {
+                                      setSubFiltro(s.nombre);
+                                      (e.currentTarget as HTMLElement).closest("td")?.querySelector('[data-seccion="productos-categoria"]')?.scrollIntoView({ behavior: "smooth", block: "start" });
+                                    }}
+                                    class="mr-auto whitespace-nowrap rounded-md bg-neutral-100 px-2 py-1 text-xs font-medium sm:mr-0 text-neutral-600 transition-colors duration-200 enabled:hover:bg-neutral-200 disabled:cursor-default dark:bg-neutral-800 dark:text-neutral-400 dark:enabled:hover:bg-neutral-700"
+                                  >
+                                    {nt} {nt === 1 ? "tipo" : "tipos"} · {np} {np === 1 ? "producto" : "productos"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => abrirSubModal(s, c.slug)}
+                                    class="shrink-0 rounded-md border border-brand-blue px-3 py-1 text-xs font-semibold text-brand-blue-dark transition-colors duration-200 hover:bg-brand-blue/10 dark:text-brand-blue"
+                                  >
+                                    Editar
+                                  </button>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      </div>
+
+                      {/* Productos de la categoría: una sola lista, filtrable por subcategoría */}
+                      <div data-seccion="productos-categoria" class="scroll-mt-40">
+                        <div class="flex items-center justify-between gap-3">
+                          <p class="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+                            Productos ({textoFiltro || subFiltro ? `${prodsVisibles.length} de ${prodsDeEsta.length}` : prodsDeEsta.length})
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => agregarProducto(c.slug, subFiltro ?? undefined)}
+                            class="shrink-0 text-sm font-medium text-brand-blue-dark transition-colors duration-200 hover:underline dark:text-brand-blue"
                           >
                             + Agregar producto
                           </button>
                         </div>
+                        {subsDeEsta.length > 0 && (
+                          <div class="mt-2 flex flex-wrap gap-1.5" role="group" aria-label="Filtrar productos por subcategoría">
+                            {[{ nombre: null as string | null, n: prodsDeEsta.length }, ...subsDeEsta.map((s) => ({ nombre: s.nombre as string | null, n: productosConSubcategoria(s).length }))].map((f) => {
+                              const activo = subFiltro === f.nombre;
+                              return (
+                                <button
+                                  type="button"
+                                  key={f.nombre ?? "todas"}
+                                  aria-pressed={activo}
+                                  onClick={() => setSubFiltro(f.nombre)}
+                                  class={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors duration-200 ${
+                                    activo
+                                      ? "border-brand-blue bg-brand-blue text-white"
+                                      : "border-neutral-200 bg-white text-neutral-700 hover:border-brand-blue dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
+                                  } ${f.n === 0 && !activo ? "opacity-60" : ""}`}
+                                >
+                                  {f.nombre ?? "Todas"} <span class={activo ? "text-white/80" : "text-neutral-400"}>{f.n}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
 
                         <ul class="mt-3 space-y-2">
                           {prodsDeEsta.length === 0 && (
                             <p class="text-sm text-neutral-500 dark:text-neutral-400">Todavía no tiene productos.</p>
                           )}
-                          {prodsDeEsta.length > 0 && prodsMostrados.length === 0 && (
-                            <p class="text-sm text-neutral-500 dark:text-neutral-400">Ningún producto coincide con el filtro.</p>
+                          {prodsDeEsta.length > 0 && prodsVisibles.length === 0 && (
+                            <p class="text-sm text-neutral-500 dark:text-neutral-400">
+                              {subFiltro && !textoFiltro ? `Todavía no hay productos en "${subFiltro}".` : "Ningún producto coincide con el filtro."}
+                            </p>
                           )}
-                          {pagina(prodsMostrados, paginaProdsCategoria).map((p) => (
+                          {pagina(prodsVisibles, paginaProdsCategoria).map((p) => (
                             <li
                               key={p.sku}
-                              class={`flex items-center gap-3 rounded-md border p-2.5 dark:border-neutral-800 ${
+                              class={`flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md border p-2.5 sm:flex-nowrap dark:border-neutral-800 ${
                                 p.activo ? "border-neutral-200" : "border-neutral-200 opacity-60 dark:border-neutral-800"
                               }`}
                             >
@@ -1744,15 +1650,20 @@ function Panel() {
                               ) : (
                                 <div class="h-10 w-10 flex-none rounded-md bg-neutral-200 dark:bg-neutral-800" />
                               )}
-                              <div class="min-w-0 flex-1">
-                                <p class="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                                  {p.nombre}
-                                  {!esPrincipalEn(p, c.slug) && <span class="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 align-middle text-[10px] font-semibold uppercase text-amber-800 dark:bg-amber-900/50 dark:text-amber-200" title={`Categoría principal: ${nombreDeCategoria(p.categoria_slug)} / ${p.subcategoria}`}>Adicional</span>}
+                              <div class="min-w-0 flex-1 basis-[calc(100%-3.25rem)] sm:basis-auto">
+                                <p class="flex min-w-0 items-center gap-1.5 text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                                  <span class="truncate">{p.nombre}</span>
+                                  {!esPrincipalEn(p, c.slug) && <span class="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-amber-800 dark:bg-amber-900/50 dark:text-amber-200" title={`Categoría principal: ${nombreDeCategoria(p.categoria_slug)} / ${p.subcategoria}`}>Adicional</span>}
                                 </p>
                                 <p class="truncate text-xs text-neutral-500 dark:text-neutral-400">
+                                  <span class="text-neutral-700 dark:text-neutral-300">
+                                    {ubicacionesEnCategoria(p, c.slug).map((u) => u.subcategoria + (u.tipo ? ` › ${u.tipo}` : "")).join(" · ")}
+                                  </span>
+                                  {" · "}
                                   {p.sku} · {p.marca} · {p.precio != null ? `S/ ${Number(p.precio).toFixed(2)}` : "Sin precio"}
                                 </p>
                               </div>
+                              <div class="flex w-full shrink-0 items-center justify-end gap-3 sm:w-auto">
                               <button
                                 type="button"
                                 onClick={() => alternarActivoProducto(p)}
@@ -1778,10 +1689,11 @@ function Panel() {
                               >
                                 Borrar
                               </button>
+                              </div>
                             </li>
                           ))}
                         </ul>
-                        <Paginacion pagina={paginaProdsCategoria} setPagina={setPaginaProdsCategoria} total={prodsMostrados.length} porPagina={POR_PAGINA_LISTA} nombre="productos" />
+                        <Paginacion pagina={paginaProdsCategoria} setPagina={setPaginaProdsCategoria} total={prodsVisibles.length} porPagina={POR_PAGINA_LISTA} nombre="productos" />
                       </div>
                             </div>
                           </td>
@@ -1881,8 +1793,19 @@ function Panel() {
                         <td class="px-4 py-3 text-neutral-600 dark:text-neutral-400">
                           {categorias.find((c) => c.slug === p.categoria_slug)?.nombre ?? p.categoria_slug}
                           {adicionalesDe(p.sku).length > 0 && (
-                            <span class="block text-xs text-neutral-500 dark:text-neutral-500" title={adicionalesDe(p.sku).map((u) => `${nombreDeCategoria(u.categoria_slug)} / ${u.subcategoria}`).join("\n")}>
-                              + {adicionalesDe(p.sku).map((u) => nombreDeCategoria(u.categoria_slug)).filter((v, i, a) => a.indexOf(v) === i).join(", ")}
+                            <span class="mt-1 flex flex-wrap gap-1">
+                              {adicionalesDe(p.sku)
+                                .map((u) => u.categoria_slug)
+                                .filter((v, i, a) => a.indexOf(v) === i)
+                                .map((slug) => (
+                                  <span
+                                    key={slug}
+                                    title={`También se muestra en ${nombreDeCategoria(slug)} / ${adicionalesDe(p.sku).filter((u) => u.categoria_slug === slug).map((u) => u.subcategoria).join(", ")}`}
+                                    class="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-900/50 dark:text-amber-200"
+                                  >
+                                    + {nombreDeCategoria(slug)}
+                                  </span>
+                                ))}
                             </span>
                           )}
                         </td>
@@ -1934,6 +1857,187 @@ function Panel() {
         )}
       </div>
 
+      {subModal && (
+        <div class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-3 sm:items-center sm:p-4">
+          <form
+            id="form-subcategoria"
+            onSubmit={guardarSubModal}
+            class="my-4 max-h-[92vh] w-full max-w-xl space-y-5 overflow-y-auto rounded-xl bg-white p-4 shadow-xl sm:my-8 sm:p-6 dark:bg-neutral-900"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="text-base font-semibold text-neutral-900 dark:text-white">{subModal.original ? "Editar subcategoría" : "Nueva subcategoría"}</p>
+                <p class="text-xs text-neutral-500 dark:text-neutral-400">Nada se guarda hasta pulsar "Guardar".</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSubModal(null)}
+                aria-label="Cerrar sin guardar"
+                class="flex h-9 w-9 flex-none items-center justify-center rounded-full text-lg text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div>
+              <label for="nombre-subcategoria" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                Nombre
+              </label>
+              <input
+                id="nombre-subcategoria"
+                type="text"
+                required
+                autofocus={!subModal.original}
+                value={subModal.nombre}
+                onInput={(e) => setSubModal({ ...subModal, nombre: (e.target as HTMLInputElement).value })}
+                placeholder="Ej: Cubre Volantes"
+                class="mt-1 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+              />
+              {subModal.original && subModal.nombre.trim() && subModal.nombre.trim() !== subModal.original && (
+                <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                  {categoriasConSubcategoria(subModal.original).length > 1
+                    ? "Se renombra en todas sus categorías y en los productos que la usan."
+                    : "Se renombra también en los productos que la usan."}
+                </p>
+              )}
+            </div>
+
+            <fieldset data-seccion="categorias-subcategoria">
+              <legend class="text-sm font-medium text-neutral-700 dark:text-neutral-300">¿En qué categorías aparece?</legend>
+              <p class="text-xs text-neutral-500 dark:text-neutral-400">Marca todas las que correspondan. Tendrá los mismos tipos en todas.</p>
+              <ul class="mt-2 grid gap-1.5 sm:grid-cols-2">
+                {categorias.map((c) => {
+                  const usados = subModal.original ? usoSubEn(c.slug, subModal.original) : 0;
+                  const marcada = subModal.categorias.includes(c.slug);
+                  const bloqueada = marcada && usados > 0;
+                  return (
+                    <li key={c.slug}>
+                      <label
+                        class={`flex items-start gap-2 rounded-md border px-2.5 py-2 text-sm transition-colors duration-200 ${
+                          marcada
+                            ? "border-brand-blue bg-brand-blue/5 dark:bg-brand-blue/10"
+                            : "border-neutral-200 hover:border-neutral-300 dark:border-neutral-700"
+                        } ${bloqueada ? "cursor-not-allowed" : "cursor-pointer"}`}
+                        title={bloqueada ? "Para quitarla de aquí, primero cambia de subcategoría a sus productos." : undefined}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={marcada}
+                          disabled={bloqueada}
+                          onChange={() => alternarCategoriaSubModal(c.slug)}
+                          class="mt-0.5 h-4 w-4 flex-none accent-brand-blue"
+                        />
+                        <span class="min-w-0">
+                          <span class="block text-neutral-800 dark:text-neutral-200">
+                            {c.nombre}
+                            {c.activo === false ? " (inactiva)" : ""}
+                          </span>
+                          {usados > 0 && (
+                            <span class="block text-xs text-neutral-500 dark:text-neutral-400">
+                              {usados} {usados === 1 ? "producto la usa" : "productos la usan"} aquí
+                            </span>
+                          )}
+                        </span>
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            </fieldset>
+
+            <div data-seccion="tipos-subcategoria">
+              <p class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                Tipos de producto <span class="font-normal text-neutral-500 dark:text-neutral-400">(opcional)</span>
+              </p>
+              {subModal.tipos.length > 0 ? (
+                <ul class="mt-2 flex flex-wrap gap-1.5">
+                  {subModal.tipos.map((t) => (
+                    <li key={t} class="inline-flex items-center gap-1 rounded-full bg-neutral-100 py-0.5 pl-2.5 pr-1 text-xs text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
+                      {t}
+                      <button
+                        type="button"
+                        onClick={() => setSubModal({ ...subModal, tipos: subModal.tipos.filter((x) => x !== t) })}
+                        aria-label={`Quitar tipo ${t}`}
+                        class="flex h-5 w-5 items-center justify-center rounded-full text-neutral-500 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/40"
+                      >
+                        ×
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">Sin tipos todavía.</p>
+              )}
+              <div class="mt-2 flex gap-2">
+                <input
+                  type="text"
+                  aria-label="Nuevo tipo de producto"
+                  placeholder="Nuevo tipo..."
+                  value={subModal.nuevoTipo}
+                  onInput={(e) => setSubModal({ ...subModal, nuevoTipo: (e.target as HTMLInputElement).value })}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      agregarTipoSubModal();
+                    }
+                  }}
+                  class="w-full rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                />
+                <button
+                  type="button"
+                  onClick={agregarTipoSubModal}
+                  class="shrink-0 rounded-md bg-neutral-100 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition-colors duration-200 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                >
+                  Agregar tipo
+                </button>
+              </div>
+              {(() => {
+                const original = subModal.original;
+                if (!original) return null;
+                const quitados = Array.from(
+                  new Set(categoriasConSubcategoria(original).flatMap((c) => tiposDe(c, original).map((t) => t.nombre))),
+                ).filter((t) => !subModal.tipos.includes(t) && usoTipo(original, t) > 0);
+                return quitados.length > 0 ? (
+                  <p class="mt-2 text-xs text-amber-700 dark:text-amber-300">
+                    Al guardar se quitará{quitados.length > 1 ? "n" : ""} {quitados.map((t) => `"${t}" (${usoTipo(original, t)} producto${usoTipo(original, t) !== 1 ? "s" : ""})`).join(", ")}. Esos productos no se modifican.
+                  </p>
+                ) : null;
+              })()}
+            </div>
+
+            {errorSubModal && <p class="rounded-md bg-red-50 p-2 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-300">{errorSubModal}</p>}
+
+            <div class="sticky -bottom-4 -mx-4 flex flex-wrap items-center gap-3 border-t border-neutral-200 bg-white px-4 py-3 sm:-bottom-6 sm:-mx-6 sm:px-6 dark:border-neutral-800 dark:bg-neutral-900">
+              {subModal.original && (
+                <button
+                  type="button"
+                  onClick={borrarDesdeSubModal}
+                  class="text-sm font-medium text-red-600 hover:underline dark:text-red-400"
+                >
+                  Borrar subcategoría
+                </button>
+              )}
+              <div class="ml-auto flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSubModal(null)}
+                  class="rounded-md px-4 py-2 text-sm font-semibold text-neutral-600 transition-colors duration-200 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={guardandoSubModal}
+                  class="rounded-md bg-brand-blue px-5 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-brand-blue-dark disabled:opacity-50"
+                >
+                  {guardandoSubModal ? "Guardando..." : "Guardar"}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      )}
+
       {prodFormAbierto && prodFormCategoriaSlug !== null && (
         <div class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-3 sm:items-center sm:p-4">
           <form
@@ -1960,8 +2064,13 @@ function Panel() {
               </button>
             </div>
 
-            <p class="text-xs font-semibold uppercase tracking-wide text-brand-blue-dark dark:text-brand-blue">1. Datos básicos</p>
-            <div class="grid gap-3 sm:grid-cols-2">
+            <p class="text-xs font-semibold uppercase tracking-wide text-brand-blue-dark dark:text-brand-blue">1. ¿Dónde se muestra?</p>
+            <div class="rounded-lg border border-brand-blue/30 bg-brand-blue/5 p-3 dark:bg-brand-blue/10" data-seccion="ubicacion-producto">
+            <p class="mb-2 flex flex-wrap items-center gap-2 text-xs text-neutral-600 dark:text-neutral-400">
+              <span class="rounded bg-brand-blue px-1.5 py-0.5 text-[10px] font-semibold uppercase text-white">Principal</span>
+              Su categoría de origen: define la ruta de la ficha del producto.
+            </p>
+            <div class="grid gap-3 sm:grid-cols-3">
               <div>
                 <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300" htmlFor="categoria-producto">
                   Categoría
@@ -2047,71 +2156,22 @@ function Panel() {
                   />
                 )}
               </div>
-              <CampoTexto label="SKU" value={prodForm.sku} onInput={(v) => campoProducto("sku", v)} required />
-              <CampoTexto label="Nombre" value={prodForm.nombre} onInput={(v) => campoProducto("nombre", v)} required />
-              <CampoTexto label="Marca" value={prodForm.marca} onInput={(v) => campoProducto("marca", v)} required />
-              <CampoTexto
-                label="Precio (S/, opcional)"
-                type="number"
-                value={prodForm.precio}
-                onInput={(v) => campoProducto("precio", v)}
-              />
-              <CampoTexto
-                label="Precio anterior (S/, opcional)"
-                type="number"
-                value={prodForm.precioAnterior}
-                onInput={(v) => campoProducto("precioAnterior", v)}
-              />
             </div>
-
-            {ubicaciones !== null && (() => {
-              const subPrincipal = prodForm.subcategoria.trim();
-              const sugeridas = subPrincipal
-                ? categoriasConSubcategoria(subPrincipal).filter(
-                    (c) => c !== prodFormCategoriaSlug && !ubicacionesForm.some((u) => u.categoria_slug === c && u.subcategoria === subPrincipal),
-                  )
-                : [];
-              return (
-                <div class="rounded-lg border border-neutral-200 p-3 dark:border-neutral-800" data-seccion="categorias-adicionales">
-                  <div class="flex flex-wrap items-start justify-between gap-2">
-                    <div class="min-w-0">
-                      <p class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Categorías adicionales (opcional)</p>
-                      <p class="text-xs text-neutral-500 dark:text-neutral-400">
-                        {prodFormCategoriaSlug
-                          ? `El producto también se mostrará en estas categorías. Su categoría principal es ${nombreDeCategoria(prodFormCategoriaSlug)}.`
-                          : "El producto también se mostrará en estas categorías, además de la que elijas arriba."}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => agregarFilaUbicacion()}
-                      class="shrink-0 rounded-md border border-brand-blue px-2.5 py-1 text-xs font-semibold text-brand-blue-dark transition-colors duration-200 hover:bg-brand-blue/10 dark:text-brand-blue"
-                    >
-                      + Agregar categoría
-                    </button>
-                  </div>
-                  {sugeridas.length > 0 && (
-                    <p class="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-400">
-                      "{subPrincipal}" también está en:
-                      {sugeridas.map((c) => (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            agregarFilaUbicacion({
-                              categoria_slug: c,
-                              subcategoria: subPrincipal,
-                              tipo: tiposDe(c, subPrincipal).some((t) => t.nombre === prodForm.tipo) ? prodForm.tipo : "",
-                            })
-                          }
-                          class="rounded-full bg-brand-blue/10 px-2 py-0.5 font-medium text-brand-blue-dark hover:bg-brand-blue/20 dark:text-brand-blue"
-                        >
-                          + {nombreDeCategoria(c)}
-                        </button>
-                      ))}
+              {ubicaciones !== null && (() => {
+                const subPrincipal = prodForm.subcategoria.trim();
+                const sugeridas = subPrincipal
+                  ? categoriasConSubcategoria(subPrincipal).filter(
+                      (c) => c !== prodFormCategoriaSlug && !ubicacionesForm.some((u) => u.categoria_slug === c && u.subcategoria === subPrincipal),
+                    )
+                  : [];
+                return (
+                  <div class="mt-3 border-t border-brand-blue/20 pt-3" data-seccion="categorias-adicionales">
+                    <p class="flex flex-wrap items-center gap-2 text-xs text-neutral-600 dark:text-neutral-400">
+                      <span class="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-amber-800 dark:bg-amber-900/50 dark:text-amber-200">Adicional</span>
+                      {ubicacionesForm.length > 0 ? "También se muestra en:" : "¿También debe verse en otra categoría? (opcional)"}
                     </p>
-                  )}
-                  {ubicacionesForm.map((u, i) => (
-                    <div key={i} class="mt-2 grid grid-cols-[1fr_auto] gap-2 rounded-md border border-neutral-200 p-2 sm:grid-cols-[1fr_1fr_1fr_auto] sm:border-0 sm:p-0 dark:border-neutral-800">
+                    {ubicacionesForm.map((u, i) => (
+                      <div key={i} class="mt-2 grid grid-cols-[1fr_auto] gap-2 rounded-md border border-neutral-200 bg-white p-2 sm:grid-cols-[1fr_1fr_1fr_auto] sm:border-0 sm:bg-transparent sm:p-0 dark:border-neutral-800 dark:bg-neutral-900 sm:dark:bg-transparent">
                       <select
                         aria-label={`Categoría adicional ${i + 1}`}
                         value={u.categoria_slug}
@@ -2157,14 +2217,64 @@ function Panel() {
                           <option value={t.nombre}>{t.nombre}</option>
                         ))}
                       </select>
-                    </div>
-                  ))}
-                </div>
-              );
-            })()}
+                      </div>
+                    ))}
+                    {sugeridas.length > 0 && (
+                      <p class="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-400">
+                        "{subPrincipal}" también está en:
+                        {sugeridas.map((c) => (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              agregarFilaUbicacion({
+                                categoria_slug: c,
+                                subcategoria: subPrincipal,
+                                tipo: tiposDe(c, subPrincipal).some((t) => t.nombre === prodForm.tipo) ? prodForm.tipo : "",
+                              })
+                            }
+                            class="rounded-full bg-brand-blue/10 px-2 py-0.5 font-medium text-brand-blue-dark hover:bg-brand-blue/20 dark:text-brand-blue"
+                          >
+                            + {nombreDeCategoria(c)}
+                          </button>
+                        ))}
+                      </p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => agregarFilaUbicacion()}
+                      class="mt-2 rounded-md border border-brand-blue bg-white px-2.5 py-1 text-xs font-semibold text-brand-blue-dark transition-colors duration-200 hover:bg-brand-blue/10 dark:bg-neutral-900 dark:text-brand-blue"
+                    >
+                      + Mostrar también en otra categoría
+                    </button>
+                  </div>
+                );
+              })()}
+            </div>
 
             <p class="border-t border-neutral-200 pt-4 text-xs font-semibold uppercase tracking-wide text-brand-blue-dark dark:border-neutral-800 dark:text-brand-blue">
-              2. Fotos y video
+              2. Datos del producto
+            </p>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <CampoTexto label="SKU" value={prodForm.sku} onInput={(v) => campoProducto("sku", v)} required />
+              <CampoTexto label="Nombre" value={prodForm.nombre} onInput={(v) => campoProducto("nombre", v)} required />
+              <CampoTexto label="Marca" value={prodForm.marca} onInput={(v) => campoProducto("marca", v)} required />
+              <CampoTexto
+                label="Precio (S/, opcional)"
+                type="number"
+                value={prodForm.precio}
+                onInput={(v) => campoProducto("precio", v)}
+              />
+              <CampoTexto
+                label="Precio anterior (S/, opcional)"
+                type="number"
+                value={prodForm.precioAnterior}
+                onInput={(v) => campoProducto("precioAnterior", v)}
+              />
+            </div>
+
+
+            <p class="border-t border-neutral-200 pt-4 text-xs font-semibold uppercase tracking-wide text-brand-blue-dark dark:border-neutral-800 dark:text-brand-blue">
+              3. Fotos y video
             </p>
             <div>
               <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300" htmlFor="fotos-producto">
@@ -2190,7 +2300,7 @@ function Panel() {
             </div>
 
             <p class="border-t border-neutral-200 pt-4 text-xs font-semibold uppercase tracking-wide text-brand-blue-dark dark:border-neutral-800 dark:text-brand-blue">
-              3. Descripción y ficha técnica
+              4. Descripción y ficha técnica
             </p>
             <div>
               <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Descripción</label>
@@ -2265,7 +2375,7 @@ function Panel() {
             </div>
 
             <p class="border-t border-neutral-200 pt-4 text-xs font-semibold uppercase tracking-wide text-brand-blue-dark dark:border-neutral-800 dark:text-brand-blue">
-              4. Visibilidad
+              5. Visibilidad
             </p>
             <label class="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
               <input
