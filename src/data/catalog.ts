@@ -7,6 +7,16 @@
 // forma síncrona necesitó cambiar.
 import { supabase } from "../lib/supabase";
 
+// Dónde aparece un producto: su categoría principal (la de la tabla
+// productos, que define la ruta de la ficha) y las adicionales de la tabla
+// producto_categorias (docs/migracion-multicategoria.sql).
+export interface Ubicacion {
+  categoria: string;
+  categoriaSlug: string;
+  subcategoria: string;
+  tipo?: string;
+}
+
 export interface Producto {
   sku: string;
   categoria: string;
@@ -34,6 +44,8 @@ export interface Producto {
   destacado?: boolean;
   compatibilidad?: string[]; // modelos/vehículos compatibles, ej. "Toyota Yaris 2015-2020"
   especificaciones?: { etiqueta: string; valor: string }[]; // ficha técnica
+  // La primera es siempre la principal; las demás, las categorías adicionales.
+  ubicaciones: Ubicacion[];
 }
 
 interface CategoriaFila {
@@ -59,6 +71,7 @@ async function cargarDatos() {
     { data: filasCarrusel, error: errorCarrusel },
     { data: filasSubcategorias },
     { data: filasTipos },
+    { data: filasUbicaciones },
   ] = await Promise.all([
     // El sitio público solo muestra categorías/productos activos — algo
     // "inactivado" desde el panel de admin sigue existiendo (no se borra),
@@ -80,6 +93,10 @@ async function cargarDatos() {
     // correr), el error se ignora y se ordena alfabéticamente.
     supabase.from("subcategorias").select("categoria_slug, nombre, orden").order("orden"),
     supabase.from("tipos_producto").select("categoria_slug, subcategoria, nombre, orden").order("orden"),
+    // Categorías adicionales de cada producto. Si la tabla todavía no existe
+    // (migración sin correr), el error se ignora y cada producto queda solo
+    // en su categoría principal, como antes.
+    supabase.from("producto_categorias").select("producto_sku, categoria_slug, subcategoria, tipo, orden").order("orden"),
   ]);
 
   // No se usa `throw` acá a propósito: si Supabase todavía no tiene las
@@ -108,6 +125,31 @@ async function cargarDatos() {
   // Si la categoría de un producto está desactivada (o no existe), el
   // producto tampoco se muestra — evita el caso raro de un producto "suelto"
   // apuntando a una categoría que ya no aparece en ningún lado del sitio.
+  // Ubicaciones adicionales por SKU: solo en categorías activas y sin repetir
+  // la principal ni otra ya agregada.
+  const adicionalesPorSku = new Map<string, Ubicacion[]>();
+  for (const u of (filasUbicaciones ?? []) as any[]) {
+    const nombre = nombrePorSlug.get(u.categoria_slug);
+    const subcategoria = u.subcategoria?.trim();
+    if (!nombre || !subcategoria) continue;
+    const lista = adicionalesPorSku.get(u.producto_sku) ?? [];
+    lista.push({ categoria: nombre, categoriaSlug: u.categoria_slug, subcategoria, tipo: u.tipo?.trim() || undefined });
+    adicionalesPorSku.set(u.producto_sku, lista);
+  }
+  function ubicacionesDe(f: any): Ubicacion[] {
+    const principal: Ubicacion = {
+      categoria: nombrePorSlug.get(f.categoria_slug) ?? f.categoria_slug,
+      categoriaSlug: f.categoria_slug,
+      subcategoria: f.subcategoria,
+      tipo: f.tipo?.trim() || undefined,
+    };
+    const todas = [principal];
+    for (const u of adicionalesPorSku.get(f.sku) ?? []) {
+      if (!todas.some((t) => t.categoriaSlug === u.categoriaSlug && t.subcategoria === u.subcategoria)) todas.push(u);
+    }
+    return todas;
+  }
+
   const productos: Producto[] = (filasProductos ?? [])
     .filter((f: any) => nombrePorSlug.has(f.categoria_slug))
     .map((f: any) => ({
@@ -129,6 +171,7 @@ async function cargarDatos() {
       destacado: f.destacado ?? false,
       compatibilidad: f.compatibilidad ?? undefined,
       especificaciones: f.especificaciones ?? undefined,
+      ubicaciones: ubicacionesDe(f),
     }));
 
   const carrusel = (filasCarrusel ?? []) as DiapositivaCarrusel[];
@@ -163,12 +206,14 @@ export interface SubcategoriaPublica {
 export function getCategorias() {
   return categoriasCache
     .map((cat) => {
-      const suyos = productos.filter((p) => p.categoriaSlug === cat.slug);
-      const nombresSub = Array.from(new Set(suyos.map((p) => p.subcategoria)));
+      const suyos = getProductosPorCategoria(cat.slug);
+      // Cuenta tanto la ubicación principal como las adicionales en esta categoría.
+      const aqui = suyos.flatMap((p) => ubicacionesEnCategoria(p, cat.slug));
+      const nombresSub = Array.from(new Set(aqui.map((u) => u.subcategoria)));
       const arbol: SubcategoriaPublica[] = ordenar(nombresSub, (s) => `${cat.slug}|${s}`, ordenSub, (s) => s).map((sub) => ({
         nombre: sub,
         tipos: ordenar(
-          Array.from(new Set(suyos.filter((p) => p.subcategoria === sub && p.tipo).map((p) => p.tipo!))),
+          Array.from(new Set(aqui.filter((u) => u.subcategoria === sub && u.tipo).map((u) => u.tipo!))),
           (t) => `${cat.slug}|${sub}|${t}`,
           ordenTipo,
           (t) => t,
@@ -185,8 +230,15 @@ export function getCategorias() {
     .filter((c) => c.cantidad > 0);
 }
 
+// Ubicaciones de un producto dentro de una categoría (puede estar en más de
+// una subcategoría de la misma categoría).
+export function ubicacionesEnCategoria(p: Producto, categoriaSlug: string) {
+  return p.ubicaciones.filter((u) => u.categoriaSlug === categoriaSlug);
+}
+
+// Productos de una categoría: los que la tienen como principal o como adicional.
 export function getProductosPorCategoria(categoriaSlug: string) {
-  return productos.filter((p) => p.categoriaSlug === categoriaSlug);
+  return productos.filter((p) => p.ubicaciones.some((u) => u.categoriaSlug === categoriaSlug));
 }
 
 export function getSlugCategoria(nombreCategoria: string) {

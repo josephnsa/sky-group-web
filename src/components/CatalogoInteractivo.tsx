@@ -12,6 +12,10 @@ interface Props {
   // Si se pasa, se muestra el selector de categoría (uso: /catalogo).
   // Si se omite, el listado ya viene fijo a una categoría (uso: /catalogo/[categoria]).
   categorias?: string[];
+  // En /catalogo/[categoria]: nombre de la categoría de la página, para que
+  // los filtros usen la subcategoría y el tipo que el producto tiene AQUÍ
+  // (un producto puede estar en varias categorías).
+  categoriaFija?: string;
 }
 
 type Orden = "relevancia" | "precio-asc" | "precio-desc" | "nombre-asc";
@@ -41,7 +45,7 @@ function paramDesdeUrl(nombre: string) {
   return new URLSearchParams(window.location.search).get(nombre) ?? "";
 }
 
-export default function CatalogoInteractivo({ productos, categorias }: Props) {
+export default function CatalogoInteractivo({ productos, categorias, categoriaFija }: Props) {
   const [busqueda, setBusqueda] = useState("");
 
   // El estado inicial de un input controlado no siempre "prende" durante la
@@ -76,23 +80,35 @@ export default function CatalogoInteractivo({ productos, categorias }: Props) {
   // mostrar como opción (evita listar marcas que no tienen sentido en el filtro actual).
   const universoCategoria = useMemo(() => {
     return productos.filter((p) => {
-      const okCategoria = !categoria || p.categoria === categoria;
+      const okCategoria = !categoria || p.ubicaciones.some((u) => u.categoria === categoria);
       return okCategoria;
     });
   }, [productos, categoria]);
 
+  // Un producto puede estar en varias categorías: subcategoría y tipo se
+  // toman de sus ubicaciones en la categoría que se está mirando (la elegida
+  // en el filtro o la de la página); sin categoría, de todas.
+  const categoriaActiva = categoria || categoriaFija || "";
+  function ubicacionesVisibles(p: Producto) {
+    return categoriaActiva ? p.ubicaciones.filter((u) => u.categoria === categoriaActiva) : p.ubicaciones;
+  }
+
   const subcategoriasDisponibles = useMemo(() => {
-    return Array.from(new Set(universoCategoria.map((p) => p.subcategoria))).sort();
-  }, [universoCategoria]);
+    return Array.from(new Set(universoCategoria.flatMap((p) => ubicacionesVisibles(p).map((u) => u.subcategoria)))).sort();
+  }, [universoCategoria, categoriaActiva]);
 
   // Tercer nivel (tipo de producto): solo se ofrece cuando hay una
   // subcategoría elegida y alguno de sus productos tiene tipo.
   const tiposDisponibles = useMemo(() => {
     if (!subcategoria) return [];
     return Array.from(
-      new Set(universoCategoria.filter((p) => p.subcategoria === subcategoria && p.tipo).map((p) => p.tipo!)),
+      new Set(
+        universoCategoria.flatMap((p) =>
+          ubicacionesVisibles(p).filter((u) => u.subcategoria === subcategoria && u.tipo).map((u) => u.tipo!),
+        ),
+      ),
     ).sort();
-  }, [universoCategoria, subcategoria]);
+  }, [universoCategoria, subcategoria, categoriaActiva]);
 
   const marcasDisponibles = useMemo(() => {
     // "Genérico"/"Sin marca" no son marcas: no se ofrecen como filtro.
@@ -125,9 +141,11 @@ export default function CatalogoInteractivo({ productos, categorias }: Props) {
 
     let lista = productos.filter((p) => {
       const coincideTexto = coincideProducto(p, busqueda);
-      const coincideCategoria = !categoria || p.categoria === categoria;
-      const coincideSubcategoria = !subcategoria || p.subcategoria === subcategoria;
-      const coincideTipo = !tipo || p.tipo === tipo;
+      const coincideCategoria = !categoria || p.ubicaciones.some((u) => u.categoria === categoria);
+      const ubicaciones = ubicacionesVisibles(p);
+      const coincideSubcategoria = !subcategoria || ubicaciones.some((u) => u.subcategoria === subcategoria);
+      const coincideTipo =
+        !tipo || ubicaciones.some((u) => (!subcategoria || u.subcategoria === subcategoria) && u.tipo === tipo);
       const coincideMarca = marcas.length === 0 || marcas.includes(marcaVisible(p.marca));
       // Un producto sin precio cargado no se puede confirmar que esté "dentro"
       // de un rango de precio — se excluye en vez de asumir que sí entra.
@@ -160,7 +178,7 @@ export default function CatalogoInteractivo({ productos, categorias }: Props) {
     });
 
     return lista;
-  }, [busqueda, categoria, subcategoria, tipo, marcas, precioMin, precioMax, soloOfertas, orden, productos]);
+  }, [busqueda, categoria, categoriaActiva, subcategoria, tipo, marcas, precioMin, precioMax, soloOfertas, orden, productos]);
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA));
   const paginaActual = Math.min(pagina, totalPaginas);

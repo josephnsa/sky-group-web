@@ -6,11 +6,13 @@ import {
   productosAdmin,
   subcategoriasAdmin,
   tiposAdmin,
+  ubicacionesAdmin,
   subirImagen,
   type CategoriaAdmin,
   type ProductoAdmin,
   type SubcategoriaAdmin,
   type TipoAdmin,
+  type UbicacionAdmin,
 } from "../../lib/supabase-admin";
 import {
   GestorFotos,
@@ -42,6 +44,13 @@ interface ProductoRapido {
   precio: string;
   subcategoria: string;
   archivo: File | null;
+}
+
+// Fila del formulario "Categorías adicionales" de un producto.
+interface FilaUbicacion {
+  categoria_slug: string;
+  subcategoria: string;
+  tipo: string;
 }
 
 const PRODUCTO_RAPIDO_VACIO: ProductoRapido = { sku: "", nombre: "", marca: "", precio: "", subcategoria: "", archivo: null };
@@ -95,6 +104,9 @@ function Panel() {
   const [tipos, setTipos] = useState<TipoAdmin[]>([]);
   const [nuevoTipo, setNuevoTipo] = useState("");
   const [productos, setProductos] = useState<ProductoAdmin[]>([]);
+  // Categorías adicionales de los productos. null = todavía no se corrió
+  // docs/migracion-multicategoria.sql: el panel funciona como antes.
+  const [ubicaciones, setUbicaciones] = useState<UbicacionAdmin[] | null>(null);
   const [cargando, setCargando] = useState(true);
 
   // --- categoría: agregar/editar (modal) ---
@@ -119,6 +131,7 @@ function Panel() {
   const [nombreSubEditado, setNombreSubEditado] = useState("");
   const [guardandoSub, setGuardandoSub] = useState(false);
   const [subExpandidaId, setSubExpandidaId] = useState<string | null>(null);
+  const [compartirSubId, setCompartirSubId] = useState<string | null>(null);
 
   // --- producto: agregar/editar (modal) ---
   const [prodFormAbierto, setProdFormAbierto] = useState(false);
@@ -134,6 +147,7 @@ function Panel() {
   const [quitarVideo, setQuitarVideo] = useState(false);
   const [guardandoProducto, setGuardandoProducto] = useState(false);
   const [errorProducto, setErrorProducto] = useState<string | null>(null);
+  const [ubicacionesForm, setUbicacionesForm] = useState<FilaUbicacion[]>([]);
 
   // --- filtro único de la tabla (busca en categoría, subcategoría y producto a la vez) ---
   const [filtro, setFiltro] = useState("");
@@ -157,16 +171,18 @@ function Panel() {
 
   async function cargar() {
     setCargando(true);
-    const [c, s, p, t] = await Promise.all([
+    const [c, s, p, t, u] = await Promise.all([
       categoriasAdmin.listar(),
       subcategoriasAdmin.listar(),
       productosAdmin.listar(),
       tiposAdmin.listar(),
+      ubicacionesAdmin.listar(),
     ]);
     setCategorias(c);
     setSubcategorias(s);
     setTipos(t);
     setProductos(p);
+    setUbicaciones(u);
     setCargando(false);
   }
 
@@ -300,7 +316,7 @@ function Panel() {
   }
 
   function borrarCategoria(cat: CategoriaAdmin) {
-    pedirConfirmacion(`Borrar "${cat.nombre}"`, "Solo se puede borrar si la categoría no tiene productos asignados.", async () => {
+    pedirConfirmacion(`Borrar "${cat.nombre}"`, "Solo se puede borrar si ningún producto la tiene como categoría principal. Los productos que la usan como categoría adicional dejan de mostrarse en ella.", async () => {
       try {
         await categoriasAdmin.borrar(cat.slug);
         await cargar();
@@ -324,6 +340,39 @@ function Panel() {
     return subcategorias.filter((s) => s.categoria_slug === categoriaSlug);
   }
 
+  // Una subcategoría puede estar en varias categorías: es la misma cuando
+  // tiene el mismo nombre (así viene ya en el Excel del cliente).
+  function categoriasConSubcategoria(nombre: string) {
+    return subcategorias.filter((s) => s.nombre === nombre).map((s) => s.categoria_slug);
+  }
+
+  function nombreDeCategoria(slug: string) {
+    return categorias.find((c) => c.slug === slug)?.nombre ?? slug;
+  }
+
+  function adicionalesDe(sku: string) {
+    return (ubicaciones ?? []).filter((u) => u.producto_sku === sku);
+  }
+
+  async function compartirSubcategoria(sub: SubcategoriaAdmin, destino: string) {
+    if (!destino) return;
+    try {
+      await subcategoriasAdmin.crear({ categoria_slug: destino, nombre: sub.nombre, orden: subcategoriasDe(destino).length });
+      // Sus tipos de producto la acompañan.
+      const tiposOrigen = tiposDe(sub.categoria_slug, sub.nombre);
+      for (const [i, t] of tiposOrigen.entries()) {
+        if (!tiposDe(destino, sub.nombre).some((x) => x.nombre === t.nombre)) {
+          await tiposAdmin.crear({ categoria_slug: destino, subcategoria: sub.nombre, nombre: t.nombre, orden: i });
+        }
+      }
+      setCompartirSubId(null);
+      await cargar();
+      avisar(`"${sub.nombre}" ahora también está en ${nombreDeCategoria(destino)}`);
+    } catch {
+      setAviso(`No se pudo agregar "${sub.nombre}" a ${nombreDeCategoria(destino)}.`);
+    }
+  }
+
   async function agregarSubcategoria(categoriaSlug: string) {
     const texto = nuevaSub.trim();
     if (!texto) return;
@@ -340,8 +389,17 @@ function Panel() {
     }
   }
 
+  // Productos en esta subcategoría de esta categoría: como principal o como adicional.
   function productosConSubcategoria(sub: SubcategoriaAdmin) {
-    return productos.filter((p) => p.categoria_slug === sub.categoria_slug && p.subcategoria === sub.nombre);
+    return productos.filter(
+      (p) =>
+        (p.categoria_slug === sub.categoria_slug && p.subcategoria === sub.nombre) ||
+        adicionalesDe(p.sku).some((u) => u.categoria_slug === sub.categoria_slug && u.subcategoria === sub.nombre),
+    );
+  }
+
+  function esPrincipalEn(p: ProductoAdmin, categoriaSlug: string, subcategoria?: string) {
+    return p.categoria_slug === categoriaSlug && (subcategoria === undefined || p.subcategoria === subcategoria);
   }
 
   function editarSubcategoria(sub: SubcategoriaAdmin) {
@@ -360,22 +418,30 @@ function Panel() {
       cancelarEdicionSub();
       return;
     }
+    // Si la subcategoría está en varias categorías, se renombra en todas.
+    const cats = categoriasConSubcategoria(sub.nombre);
+    const choca = subcategorias.find((s) => cats.includes(s.categoria_slug) && s.nombre === nuevoNombre);
+    if (choca) {
+      setAviso(`Ya existe una subcategoría "${nuevoNombre}" en ${nombreDeCategoria(choca.categoria_slug)}.`);
+      return;
+    }
     setGuardandoSub(true);
     try {
-      await subcategoriasAdmin.renombrar(sub.id, nuevoNombre);
+      await subcategoriasAdmin.renombrarEnCategorias(cats, sub.nombre, nuevoNombre);
       // Los productos guardan el nombre de la subcategoría como texto, no
       // como referencia — hay que actualizarlos a mano para que no se
       // queden apuntando al nombre viejo que ya no existe en la lista.
-      const productosAfectados = productosConSubcategoria(sub);
+      const productosAfectados = productos.filter((p) => cats.includes(p.categoria_slug) && p.subcategoria === sub.nombre);
       await Promise.all(
         productosAfectados.map((p) => productosAdmin.actualizar(p.sku, { subcategoria: nuevoNombre })),
       );
-      // Sus tipos de producto pasan a colgar del nombre nuevo.
-      await tiposAdmin.renombrarSubcategoria(sub.categoria_slug, sub.nombre, nuevoNombre);
+      // Las categorías adicionales y los tipos de producto pasan a colgar del nombre nuevo.
+      if (ubicaciones !== null) await ubicacionesAdmin.renombrarSubcategoria(cats, sub.nombre, nuevoNombre);
+      await Promise.all(cats.map((c) => tiposAdmin.renombrarSubcategoria(c, sub.nombre, nuevoNombre)));
       cancelarEdicionSub();
       await cargar();
     } catch {
-      setAviso("No se pudo renombrar — es probable que ya exista otra subcategoría con ese nombre en esta categoría.");
+      setAviso("No se pudo renombrar — es probable que ya exista otra subcategoría con ese nombre en una de sus categorías.");
     } finally {
       setGuardandoSub(false);
     }
@@ -388,9 +454,13 @@ function Panel() {
         ? `${afectados.length} producto${afectados.length !== 1 ? "s" : ""} la tiene${afectados.length !== 1 ? "n" : ""} asignada actualmente. No se van a modificar ni a borrar, pero esta subcategoría dejará de estar disponible para elegir en productos nuevos.`
         : "Ningún producto la tiene asignada actualmente — se puede borrar sin afectar nada.";
     const tiposDeEsta = tiposDe(sub.categoria_slug, sub.nombre).length;
-    const mensajeCompleto =
+    const otras = categoriasConSubcategoria(sub.nombre).filter((c) => c !== sub.categoria_slug);
+    const mensajeTipos =
       tiposDeEsta > 0 ? `${mensaje} También se borran sus ${tiposDeEsta} tipo${tiposDeEsta !== 1 ? "s" : ""} de producto.` : mensaje;
-    pedirConfirmacion(`Borrar subcategoría "${sub.nombre}"`, mensajeCompleto, async () => {
+    const mensajeCompleto = otras.length
+      ? `${mensajeTipos} Se quita solo de ${nombreDeCategoria(sub.categoria_slug)}: sigue en ${otras.map(nombreDeCategoria).join(", ")}.`
+      : mensajeTipos;
+    pedirConfirmacion(otras.length ? `Quitar "${sub.nombre}" de ${nombreDeCategoria(sub.categoria_slug)}` : `Borrar subcategoría "${sub.nombre}"`, mensajeCompleto, async () => {
       await subcategoriasAdmin.borrar(sub.id);
       await tiposAdmin.borrarDeSubcategoria(sub.categoria_slug, sub.nombre);
       await cargar();
@@ -406,13 +476,21 @@ function Panel() {
   async function agregarTipo(sub: SubcategoriaAdmin) {
     const texto = nuevoTipo.trim();
     if (!texto) return;
+    if (tiposDe(sub.categoria_slug, sub.nombre).some((t) => t.nombre === texto)) {
+      setAviso(`El tipo "${texto}" ya existe en esta subcategoría.`);
+      return;
+    }
     try {
-      await tiposAdmin.crear({
-        categoria_slug: sub.categoria_slug,
-        subcategoria: sub.nombre,
-        nombre: texto,
-        orden: tiposDe(sub.categoria_slug, sub.nombre).length,
-      });
+      // Subcategoría compartida: el tipo se agrega en todas sus categorías.
+      for (const cat of categoriasConSubcategoria(sub.nombre)) {
+        if (tiposDe(cat, sub.nombre).some((t) => t.nombre === texto)) continue;
+        await tiposAdmin.crear({
+          categoria_slug: cat,
+          subcategoria: sub.nombre,
+          nombre: texto,
+          orden: tiposDe(cat, sub.nombre).length,
+        });
+      }
       setNuevoTipo("");
       await cargar();
     } catch {
@@ -421,15 +499,19 @@ function Panel() {
   }
 
   function borrarTipo(tipo: TipoAdmin) {
-    const usan = productos.filter(
-      (p) => p.categoria_slug === tipo.categoria_slug && p.subcategoria === tipo.subcategoria && p.tipo === tipo.nombre,
-    ).length;
+    const cats = categoriasConSubcategoria(tipo.subcategoria);
+    const iguales = tipos.filter((t) => cats.includes(t.categoria_slug) && t.subcategoria === tipo.subcategoria && t.nombre === tipo.nombre);
+    const usan =
+      productos.filter(
+        (p) => cats.includes(p.categoria_slug) && p.subcategoria === tipo.subcategoria && p.tipo === tipo.nombre,
+      ).length +
+      (ubicaciones ?? []).filter((u) => cats.includes(u.categoria_slug) && u.subcategoria === tipo.subcategoria && u.tipo === tipo.nombre).length;
     const mensaje =
       usan > 0
         ? `${usan} producto${usan !== 1 ? "s lo usan" : " lo usa"}. No se modifican, pero el tipo dejará de estar disponible para elegir.`
         : "Ningún producto lo usa: se puede borrar sin afectar nada.";
     pedirConfirmacion(`Borrar tipo "${tipo.nombre}"`, mensaje, async () => {
-      await tiposAdmin.borrar(tipo.id);
+      for (const t of iguales) await tiposAdmin.borrar(t.id);
       await cargar();
     }, usan > 0);
   }
@@ -437,7 +519,9 @@ function Panel() {
   // ===== Producto =====
 
   function productosDe(categoriaSlug: string) {
-    return productos.filter((p) => p.categoria_slug === categoriaSlug);
+    return productos.filter(
+      (p) => p.categoria_slug === categoriaSlug || adicionalesDe(p.sku).some((u) => u.categoria_slug === categoriaSlug),
+    );
   }
 
   function normalizar(texto: string) {
@@ -464,7 +548,7 @@ function Panel() {
   }
 
   const productosFiltrados = productos.filter((p) => {
-    if (filtroCategoria && p.categoria_slug !== filtroCategoria) return false;
+    if (filtroCategoria && !productosDe(filtroCategoria).includes(p)) return false;
     if (filtroEstado && (filtroEstado === "activo") !== p.activo) return false;
     const texto = normalizar(filtro);
     if (!texto) return true;
@@ -496,6 +580,7 @@ function Panel() {
     setProdFormCategoriaSlug(categoriaSlug);
     setProdEditandoSku(null);
     setProdForm({ ...PRODUCTO_VACIO, subcategoria: subcategoria ?? "" });
+    setUbicacionesForm([]);
     setFotosProducto([]);
     setArchivoVideoProducto(null);
     setQuitarVideo(false);
@@ -510,6 +595,7 @@ function Panel() {
     setProdFormCategoriaSlug(p.categoria_slug);
     setProdEditandoSku(p.sku);
     setProdForm(productoAFormulario(p));
+    setUbicacionesForm(adicionalesDe(p.sku).map((u) => ({ categoria_slug: u.categoria_slug, subcategoria: u.subcategoria, tipo: u.tipo ?? "" })));
     setFotosProducto(fotosDesdeUrls([p.imagen, ...(p.imagenes ?? [])]));
     setArchivoVideoProducto(null);
     setQuitarVideo(false);
@@ -525,6 +611,7 @@ function Panel() {
     setProdFormCategoriaSlug(null);
     setProdEditandoSku(null);
     setProdForm(PRODUCTO_VACIO);
+    setUbicacionesForm([]);
     setFotosProducto([]);
     setArchivoVideoProducto(null);
     setQuitarVideo(false);
@@ -557,6 +644,30 @@ function Panel() {
     }
   }
 
+  function agregarFilaUbicacion(fila: FilaUbicacion = { categoria_slug: "", subcategoria: "", tipo: "" }) {
+    setUbicacionesForm((actual) => [...actual, fila]);
+  }
+
+  function cambiarFilaUbicacion(i: number, cambios: Partial<FilaUbicacion>) {
+    setUbicacionesForm((actual) =>
+      actual.map((f, j) => {
+        if (j !== i) return f;
+        const nueva = { ...f, ...cambios };
+        // Al cambiar de categoría o de subcategoría, lo que dependía de ella ya no corresponde.
+        if (cambios.categoria_slug !== undefined && cambios.categoria_slug !== f.categoria_slug) {
+          nueva.subcategoria = "";
+          nueva.tipo = "";
+        }
+        if (cambios.subcategoria !== undefined && cambios.subcategoria !== f.subcategoria) nueva.tipo = "";
+        return nueva;
+      }),
+    );
+  }
+
+  function quitarFilaUbicacion(i: number) {
+    setUbicacionesForm((actual) => actual.filter((_, j) => j !== i));
+  }
+
   function parsearEspecificaciones(texto: string) {
     const lineas = texto.split("\n").map((l) => l.trim()).filter(Boolean);
     if (lineas.length === 0) return null;
@@ -575,6 +686,20 @@ function Panel() {
     e.preventDefault();
     if (!prodForm.sku.trim() || !prodForm.nombre.trim() || !prodFormCategoriaSlug) return;
     const categoriaSlug = prodFormCategoriaSlug;
+    if (ubicacionesForm.some((u) => !u.categoria_slug || !u.subcategoria.trim())) {
+      setErrorProducto("En Categorías adicionales, elige la categoría y la subcategoría de cada fila, o quita la fila.");
+      return;
+    }
+    // Sin repetir la ubicación principal ni filas iguales.
+    const vistas = new Set([`${categoriaSlug}|${prodForm.subcategoria.trim()}`]);
+    const ubicacionesDeseadas = ubicacionesForm
+      .map((u) => ({ categoria_slug: u.categoria_slug, subcategoria: u.subcategoria.trim(), tipo: u.tipo.trim() || null }))
+      .filter((u) => {
+        const clave = `${u.categoria_slug}|${u.subcategoria}`;
+        if (vistas.has(clave)) return false;
+        vistas.add(clave);
+        return true;
+      });
     setGuardandoProducto(true);
     setErrorProducto(null);
     try {
@@ -660,6 +785,20 @@ function Panel() {
           activo: true,
           ...datosComunes,
         });
+      }
+
+      // Categorías adicionales (solo si la migración ya se corrió).
+      const skuFinal = prodForm.sku.trim().toUpperCase();
+      if (ubicaciones !== null) {
+        try {
+          await ubicacionesAdmin.sincronizar(skuFinal, adicionalesDe(prodEditandoSku ?? skuFinal), ubicacionesDeseadas);
+        } catch {
+          // El producto ya quedó guardado: el siguiente "Guardar" lo actualiza
+          // en vez de intentar crearlo otra vez.
+          setProdEditandoSku(skuFinal);
+          await cargar();
+          throw new Error("El producto se guardó, pero no se pudieron guardar sus categorías adicionales. Vuelve a pulsar Guardar.");
+        }
       }
 
       const nombreGuardado = prodForm.nombre.trim();
@@ -1320,10 +1459,51 @@ function Panel() {
                                             Cancelar
                                           </button>
                                         </form>
+                                        {categoriasConSubcategoria(s.nombre).length > 1 && (
+                                          <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                                            Se renombra en todas sus categorías: {categoriasConSubcategoria(s.nombre).map(nombreDeCategoria).join(", ")}.
+                                          </p>
+                                        )}
                                       </td>
                                     ) : (
                                       <>
-                                        <td class="px-3 py-2 text-neutral-700 dark:text-neutral-300">{s.nombre}</td>
+                                        <td class="px-3 py-2 text-neutral-700 dark:text-neutral-300">
+                                          {s.nombre}
+                                          {(() => {
+                                            const otras = categoriasConSubcategoria(s.nombre).filter((x) => x !== s.categoria_slug);
+                                            const disponibles = categorias.filter((x) => !categoriasConSubcategoria(s.nombre).includes(x.slug));
+                                            return (
+                                              <>
+                                                {otras.length > 0 && (
+                                                  <span class="mt-0.5 block text-xs text-neutral-500 dark:text-neutral-400">
+                                                    También en: {otras.map(nombreDeCategoria).join(", ")}
+                                                  </span>
+                                                )}
+                                                {compartirSubId === s.id && (
+                                                  <span class="mt-1 flex items-center gap-2">
+                                                    <select
+                                                      autofocus
+                                                      aria-label={`Agregar "${s.nombre}" a otra categoría`}
+                                                      value=""
+                                                      onInput={(e) => compartirSubcategoria(s, (e.target as HTMLSelectElement).value)}
+                                                      class="w-full max-w-xs rounded-md border border-neutral-300 bg-white px-2 py-1 text-xs dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                                                    >
+                                                      <option value="" disabled>
+                                                        {disponibles.length ? "Elegir categoría..." : "Ya está en todas"}
+                                                      </option>
+                                                      {disponibles.map((x) => (
+                                                        <option value={x.slug}>{x.nombre}</option>
+                                                      ))}
+                                                    </select>
+                                                    <button type="button" onClick={() => setCompartirSubId(null)} class="shrink-0 text-xs text-neutral-500 hover:underline dark:text-neutral-400">
+                                                      Cancelar
+                                                    </button>
+                                                  </span>
+                                                )}
+                                              </>
+                                            );
+                                          })()}
+                                        </td>
                                         <td class="px-3 py-2">
                                           <button
                                             type="button"
@@ -1339,6 +1519,14 @@ function Panel() {
                                         </td>
                                         <td class="px-3 py-2">
                                           <div class="flex justify-end gap-3">
+                                            <button
+                                              type="button"
+                                              onClick={() => setCompartirSubId((actual) => (actual === s.id ? null : s.id))}
+                                              title="Usar esta subcategoría también en otra categoría"
+                                              class="text-xs text-brand-blue-dark transition-colors duration-200 hover:underline dark:text-brand-blue"
+                                            >
+                                              + Categoría
+                                            </button>
                                             <button
                                               type="button"
                                               onClick={() => editarSubcategoria(s)}
@@ -1440,7 +1628,10 @@ function Panel() {
                                                   <div class="h-9 w-9 flex-none rounded-md bg-neutral-200 dark:bg-neutral-800" />
                                                 )}
                                                 <div class="min-w-0 flex-1">
-                                                  <p class="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">{p.nombre}</p>
+                                                  <p class="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                                                    {p.nombre}
+                                                    {!esPrincipalEn(p, sub.categoria_slug, sub.nombre) && <span class="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 align-middle text-[10px] font-semibold uppercase text-amber-800 dark:bg-amber-900/50 dark:text-amber-200" title={`Categoría principal: ${nombreDeCategoria(p.categoria_slug)} / ${p.subcategoria}`}>Adicional</span>}
+                                                  </p>
                                                   <p class="truncate text-xs text-neutral-500 dark:text-neutral-400">
                                                     {p.sku} · {p.marca}{p.tipo ? ` · ${p.tipo}` : ""} · {p.precio != null ? `S/ ${Number(p.precio).toFixed(2)}` : "Sin precio"}
                                                   </p>
@@ -1533,7 +1724,10 @@ function Panel() {
                                 <div class="h-10 w-10 flex-none rounded-md bg-neutral-200 dark:bg-neutral-800" />
                               )}
                               <div class="min-w-0 flex-1">
-                                <p class="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">{p.nombre}</p>
+                                <p class="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                                  {p.nombre}
+                                  {!esPrincipalEn(p, c.slug) && <span class="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 align-middle text-[10px] font-semibold uppercase text-amber-800 dark:bg-amber-900/50 dark:text-amber-200" title={`Categoría principal: ${nombreDeCategoria(p.categoria_slug)} / ${p.subcategoria}`}>Adicional</span>}
+                                </p>
                                 <p class="truncate text-xs text-neutral-500 dark:text-neutral-400">
                                   {p.sku} · {p.marca} · {p.precio != null ? `S/ ${Number(p.precio).toFixed(2)}` : "Sin precio"}
                                 </p>
@@ -1665,6 +1859,11 @@ function Panel() {
                         </td>
                         <td class="px-4 py-3 text-neutral-600 dark:text-neutral-400">
                           {categorias.find((c) => c.slug === p.categoria_slug)?.nombre ?? p.categoria_slug}
+                          {adicionalesDe(p.sku).length > 0 && (
+                            <span class="block text-xs text-neutral-500 dark:text-neutral-500" title={adicionalesDe(p.sku).map((u) => `${nombreDeCategoria(u.categoria_slug)} / ${u.subcategoria}`).join("\n")}>
+                              + {adicionalesDe(p.sku).map((u) => nombreDeCategoria(u.categoria_slug)).filter((v, i, a) => a.indexOf(v) === i).join(", ")}
+                            </span>
+                          )}
                         </td>
                         <td class="px-4 py-3 text-neutral-600 dark:text-neutral-400">
                           {p.subcategoria}
@@ -1820,6 +2019,103 @@ function Panel() {
                 onInput={(v) => campoProducto("precioAnterior", v)}
               />
             </div>
+
+            {ubicaciones !== null && (() => {
+              const subPrincipal = prodForm.subcategoria.trim();
+              const sugeridas = subPrincipal
+                ? categoriasConSubcategoria(subPrincipal).filter(
+                    (c) => c !== prodFormCategoriaSlug && !ubicacionesForm.some((u) => u.categoria_slug === c && u.subcategoria === subPrincipal),
+                  )
+                : [];
+              return (
+                <div class="rounded-lg border border-neutral-200 p-3 dark:border-neutral-800" data-seccion="categorias-adicionales">
+                  <div class="flex flex-wrap items-start justify-between gap-2">
+                    <div class="min-w-0">
+                      <p class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Categorías adicionales (opcional)</p>
+                      <p class="text-xs text-neutral-500 dark:text-neutral-400">
+                        El producto también se mostrará en estas categorías. Su categoría principal es {nombreDeCategoria(prodFormCategoriaSlug)}.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => agregarFilaUbicacion()}
+                      class="shrink-0 rounded-md border border-brand-blue px-2.5 py-1 text-xs font-semibold text-brand-blue-dark transition-colors duration-200 hover:bg-brand-blue/10 dark:text-brand-blue"
+                    >
+                      + Agregar categoría
+                    </button>
+                  </div>
+                  {sugeridas.length > 0 && (
+                    <p class="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-400">
+                      "{subPrincipal}" también está en:
+                      {sugeridas.map((c) => (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            agregarFilaUbicacion({
+                              categoria_slug: c,
+                              subcategoria: subPrincipal,
+                              tipo: tiposDe(c, subPrincipal).some((t) => t.nombre === prodForm.tipo) ? prodForm.tipo : "",
+                            })
+                          }
+                          class="rounded-full bg-brand-blue/10 px-2 py-0.5 font-medium text-brand-blue-dark hover:bg-brand-blue/20 dark:text-brand-blue"
+                        >
+                          + {nombreDeCategoria(c)}
+                        </button>
+                      ))}
+                    </p>
+                  )}
+                  {ubicacionesForm.map((u, i) => (
+                    <div key={i} class="mt-2 grid grid-cols-[1fr_auto] gap-2 rounded-md border border-neutral-200 p-2 sm:grid-cols-[1fr_1fr_1fr_auto] sm:border-0 sm:p-0 dark:border-neutral-800">
+                      <select
+                        aria-label={`Categoría adicional ${i + 1}`}
+                        value={u.categoria_slug}
+                        onInput={(e) => cambiarFilaUbicacion(i, { categoria_slug: (e.target as HTMLSelectElement).value })}
+                        class="w-full rounded-md border border-neutral-300 bg-white px-2.5 py-2 text-sm disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                      >
+                        <option value="" disabled>
+                          Categoría
+                        </option>
+                        {categorias.map((c) => (
+                          <option value={c.slug}>{c.nombre}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => quitarFilaUbicacion(i)}
+                        aria-label={`Quitar categoría adicional ${i + 1}`}
+                        class="row-span-3 flex h-9 w-9 items-center justify-center self-start rounded-md text-neutral-500 hover:bg-red-100 hover:text-red-600 sm:order-last sm:row-span-1 dark:hover:bg-red-900/40"
+                      >
+                        ✕
+                      </button>
+                      <select
+                        aria-label={`Subcategoría adicional ${i + 1}`}
+                        disabled={!u.categoria_slug}
+                        value={u.subcategoria}
+                        onInput={(e) => cambiarFilaUbicacion(i, { subcategoria: (e.target as HTMLSelectElement).value })}
+                        class="w-full rounded-md border border-neutral-300 bg-white px-2.5 py-2 text-sm disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                      >
+                        <option value="">{u.categoria_slug ? "Subcategoría" : "Primero la categoría"}</option>
+                        {subcategoriasDe(u.categoria_slug).map((sc) => (
+                          <option value={sc.nombre}>{sc.nombre}</option>
+                        ))}
+                      </select>
+                      <select
+                        aria-label={`Tipo adicional ${i + 1}`}
+                        disabled={!u.subcategoria}
+                        value={u.tipo}
+                        onInput={(e) => cambiarFilaUbicacion(i, { tipo: (e.target as HTMLSelectElement).value })}
+                        class="w-full rounded-md border border-neutral-300 bg-white px-2.5 py-2 text-sm disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                      >
+                        <option value="">Sin tipo</option>
+                        {tiposDe(u.categoria_slug, u.subcategoria).map((t) => (
+                          <option value={t.nombre}>{t.nombre}</option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
 
             <p class="border-t border-neutral-200 pt-4 text-xs font-semibold uppercase tracking-wide text-brand-blue-dark dark:border-neutral-800 dark:text-brand-blue">
               2. Fotos y video
@@ -1980,7 +2276,7 @@ function Panel() {
                   confirmacion.peligroso ? "bg-red-600 hover:bg-red-700" : "bg-brand-blue hover:bg-brand-blue-dark"
                 }`}
               >
-                Borrar
+                {confirmacion.titulo.startsWith("Quitar") ? "Quitar" : "Borrar"}
               </button>
             </div>
           </div>

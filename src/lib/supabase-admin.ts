@@ -48,6 +48,17 @@ export interface ProductoAdmin {
   especificaciones: { etiqueta: string; valor: string }[] | null;
 }
 
+// Categoría adicional de un producto (tabla producto_categorias, creada por
+// docs/migracion-multicategoria.sql). La principal sigue en productos.
+export interface UbicacionAdmin {
+  id?: string;
+  producto_sku: string;
+  categoria_slug: string;
+  subcategoria: string;
+  tipo: string | null;
+  orden: number;
+}
+
 export interface CarouselSlideAdmin {
   id: string;
   imagen_url: string;
@@ -141,6 +152,11 @@ export const subcategoriasAdmin = {
     const { error } = await supabase.from("subcategorias").delete().eq("id", id);
     if (error) throw error;
   },
+  // Subcategoría compartida: el mismo nombre en varias categorías.
+  async renombrarEnCategorias(categorias: string[], anterior: string, nueva: string) {
+    const { error } = await supabase.from("subcategorias").update({ nombre: nueva }).in("categoria_slug", categorias).eq("nombre", anterior);
+    if (error) throw error;
+  },
 };
 
 export const tiposAdmin = {
@@ -169,6 +185,46 @@ export const tiposAdmin = {
   async borrarDeSubcategoria(categoria_slug: string, subcategoria: string) {
     const { error } = await supabase.from("tipos_producto").delete().eq("categoria_slug", categoria_slug).eq("subcategoria", subcategoria);
     if (error) console.warn("tipos_producto: no se pudieron borrar los tipos", error.message);
+  },
+};
+
+// Categorías adicionales de los productos. Si la migración todavía no se
+// corrió, `listar` devuelve null y el panel oculta esa sección: todo lo demás
+// sigue funcionando como antes.
+export const ubicacionesAdmin = {
+  async listar(): Promise<UbicacionAdmin[] | null> {
+    const { data, error } = await supabase.from("producto_categorias").select("*").order("orden");
+    if (error) return null;
+    return data;
+  },
+  // Deja las categorías adicionales de un producto como `deseadas`, tocando
+  // solo lo que cambió (nunca borra todo para volver a crearlo: si algo
+  // falla a mitad, no se pierden las que ya estaban).
+  async sincronizar(sku: string, actuales: UbicacionAdmin[], deseadas: Omit<UbicacionAdmin, "id" | "producto_sku" | "orden">[]) {
+    const clave = (u: { categoria_slug: string; subcategoria: string }) => `${u.categoria_slug}|${u.subcategoria}`;
+    const quedan = new Map(deseadas.map((d, i) => [clave(d), { ...d, orden: i }]));
+    const sobran = actuales.filter((a) => !quedan.has(clave(a)));
+    if (sobran.length > 0) {
+      const { error } = await supabase.from("producto_categorias").delete().in("id", sobran.map((a) => a.id!));
+      if (error) throw error;
+    }
+    for (const a of actuales) {
+      const d = quedan.get(clave(a));
+      if (d && (d.tipo !== a.tipo || d.orden !== a.orden)) {
+        const { error } = await supabase.from("producto_categorias").update({ tipo: d.tipo, orden: d.orden }).eq("id", a.id!);
+        if (error) throw error;
+      }
+    }
+    const nuevas = [...quedan.values()].filter((d) => !actuales.some((a) => clave(a) === clave(d)));
+    if (nuevas.length > 0) {
+      const { error } = await supabase.from("producto_categorias").insert(nuevas.map((d) => ({ ...d, producto_sku: sku })));
+      if (error) throw error;
+    }
+  },
+  // Al renombrar una subcategoría, las ubicaciones que la usan la siguen.
+  async renombrarSubcategoria(categorias: string[], anterior: string, nueva: string) {
+    const { error } = await supabase.from("producto_categorias").update({ subcategoria: nueva }).in("categoria_slug", categorias).eq("subcategoria", anterior);
+    if (error) console.warn("producto_categorias: no se pudo actualizar la subcategoría", error.message);
   },
 };
 
