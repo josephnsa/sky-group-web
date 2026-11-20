@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "preact/hooks";
 import { motion } from "framer-motion";
 import type { Producto } from "../data/catalog";
 import { coincideProducto } from "../lib/busqueda";
-import { esSinMarca } from "../lib/marca";
+import { esSinMarca, marcaVisible } from "../lib/marca";
 import { IconChevronDown } from "./icons/ui";
 import { DURATION } from "../lib/motion";
 import ProductGrid from "./ProductGrid";
@@ -96,7 +96,9 @@ export default function CatalogoInteractivo({ productos, categorias }: Props) {
 
   const marcasDisponibles = useMemo(() => {
     // "Genérico"/"Sin marca" no son marcas: no se ofrecen como filtro.
-    return Array.from(new Set(universoCategoria.filter((p) => !esSinMarca(p.marca)).map((p) => p.marca))).sort();
+    const conMarca = Array.from(new Set(universoCategoria.filter((p) => !esSinMarca(p.marca)).map((p) => marcaVisible(p.marca)))).sort();
+    // Los productos sin marca se filtran con "S/M", al final de la lista.
+    return universoCategoria.some((p) => esSinMarca(p.marca)) ? [...conMarca, "S/M"] : conMarca;
   }, [universoCategoria]);
 
   function toggleMarca(m: string) {
@@ -126,7 +128,7 @@ export default function CatalogoInteractivo({ productos, categorias }: Props) {
       const coincideCategoria = !categoria || p.categoria === categoria;
       const coincideSubcategoria = !subcategoria || p.subcategoria === subcategoria;
       const coincideTipo = !tipo || p.tipo === tipo;
-      const coincideMarca = marcas.length === 0 || marcas.includes(p.marca);
+      const coincideMarca = marcas.length === 0 || marcas.includes(marcaVisible(p.marca));
       // Un producto sin precio cargado no se puede confirmar que esté "dentro"
       // de un rango de precio — se excluye en vez de asumir que sí entra.
       const coincideMin = min === null || (p.precio != null && p.precio >= min);
